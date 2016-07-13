@@ -1,6 +1,7 @@
 package com.persistentbit.sql;
 
 import com.persistentbit.core.collections.PMap;
+import com.persistentbit.core.collections.PStream;
 
 /**
  * @author Peter Muys
@@ -13,6 +14,12 @@ public class RecordImpl implements Record{
         this.fieldNameIndexes = fieldNameIndexes;
         this.values = values;
     }
+
+    @Override
+    public PStream<String> getNames() {
+        return fieldNameIndexes.keys();
+    }
+
     public boolean hasName(String name){
         return fieldNameIndexes.containsKey(name.toLowerCase());
     }
@@ -26,13 +33,20 @@ public class RecordImpl implements Record{
 
 
     public String toString() {
-        String res = "";
-        for(int t=0; t<values.length;t++){
-            if(t != 0) { res += ", ";}
-            res += values[t];
-        }
-        return "Record[" + res + "]";
+        return "Record[" +getAll().mapString().join((a,b)->",").orElse("") + "]";
+
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == this) { return true; }
+        if(obj instanceof Record == false) { return false; }
+        Record other = (Record)obj;
+        return getAll().equals(other.getAll());
+    }
 
+    @Override
+    public int hashCode() {
+        return getAll().hashCode();
+    }
 }

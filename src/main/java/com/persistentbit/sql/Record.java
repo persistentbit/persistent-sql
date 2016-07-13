@@ -1,5 +1,9 @@
 package com.persistentbit.sql;
 
+import com.persistentbit.core.Tuple2;
+import com.persistentbit.core.collections.PMap;
+import com.persistentbit.core.collections.PStream;
+
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -15,7 +19,18 @@ import java.util.Date;
 public interface Record {
     boolean hasName(String name);
 
+    PStream<String> getNames();
+
     Object getObject(String naam);
+
+
+    default PMap<String,Object> getAll(){
+        return getNames().with(PMap.<String,Object>empty(),(m,n)-> m = m.put(n,getObject(n)));
+    }
+
+    default Record getSubRecord(String name){
+        return new RecordSubSet(name+"_",this);
+    }
 
     default Number getNumber(String naam) {
         return (Number) getObject(naam);

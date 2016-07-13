@@ -115,7 +115,7 @@ public class Mapper<S> implements Function<Record,S> {
 
     public S map(Record r){
         if(prefix != null){
-            r = new RecordWithPrefix(prefix+"_",r);
+            r = new RecordSubSet(prefix+"_",r);
         }
         return fromRecord.apply(r);
     }

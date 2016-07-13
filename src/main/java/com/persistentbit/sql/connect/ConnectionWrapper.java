@@ -1,4 +1,4 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.connect;
 
 import java.sql.*;
 import java.util.Map;

@@ -1,4 +1,6 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.connect;
+
+import com.persistentbit.sql.PersistSqlException;
 
 import java.sql.Connection;
 import java.sql.Driver;

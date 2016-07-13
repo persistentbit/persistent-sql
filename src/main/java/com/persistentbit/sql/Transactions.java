@@ -6,6 +6,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -70,6 +71,21 @@ public class Transactions implements Supplier<Connection> {
             code.run();
             return null;
         });
+    }
+    @FunctionalInterface
+    public interface SqlCode{
+        void accept(Connection c) throws SQLException;
+    }
+
+    public void run(SqlCode code){
+
+            run(() -> {
+                try {
+                    code.accept(this.get());
+                }catch(SQLException e){
+                    throw new PersistSqlException(e);
+                }
+            });
     }
 
     public <R> R run(Callable<R> code){

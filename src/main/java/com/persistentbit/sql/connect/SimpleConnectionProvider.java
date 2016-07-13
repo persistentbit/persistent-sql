@@ -27,12 +27,20 @@ public class SimpleConnectionProvider implements Supplier<Connection>{
         this.passWord = password;
         this.userName = userName;
     }
+    public SimpleConnectionProvider(String driverClass, String url){
+        this(driverClass,url,null,null);
+    }
 
 
     @Override
     public Connection get() {
         try {
-            return DriverManager.getConnection(url,userName,passWord);
+            if(userName != null){
+                return DriverManager.getConnection(url,userName,passWord);
+            } else {
+                return DriverManager.getConnection(url);
+            }
+
         } catch (SQLException e) {
             throw new PersistSqlException(e);
         }

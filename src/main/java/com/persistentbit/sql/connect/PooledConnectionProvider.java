@@ -23,7 +23,6 @@ public class PooledConnectionProvider implements Supplier<Connection>{
     private final Consumer<Connection> resetter;
     private final int poolSize;
     private int activeConnections;
-    private Object w = new Object();
     private final BlockingQueue<Connection> freeConnections;
 
 
@@ -44,15 +43,22 @@ public class PooledConnectionProvider implements Supplier<Connection>{
                 //Nog geen pool opgebouwd...
                 ConnectionWrapper con = newConnection(supplier.get());
                 activeConnections++;
+                return con;
             }
         }
-        Connection con;
+        Connection con=null;
         try {
-            con = freeConnections.poll();
+            do {
+                try {
+                    con = freeConnections.poll(1000, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    log.warning("Waiting for a free connection...");
+                }
+            }while(con == null);
             if(con.isValid(0) == false){
-                con = newConnection(supplier.get());
+                return newConnection(supplier.get());
             }
-            return con;
+            return newConnection(con);
         } catch (SQLException e) {
             throw new PersistSqlException(e);
         }
@@ -69,7 +75,7 @@ public class PooledConnectionProvider implements Supplier<Connection>{
                     connection.rollback();
                 }
                 freeConnections.add(connection);
-                w.notify();
+
             }
 
             @Override
@@ -94,14 +100,26 @@ public class PooledConnectionProvider implements Supplier<Connection>{
     }
 
     public synchronized void close(){
+        int inuse = activeConnections -freeConnections.size();
+        if(inuse > 0) {
+            log.warning("Closing the connection pool with " + inuse + " connections still in use");
+        } else {
+            log.info("Closing the connection pool with " + activeConnections + " open connections");
+        }
         while(activeConnections>0){
             Connection con = null;
             try {
-                con = freeConnections.poll(1000, TimeUnit.MILLISECONDS);
+                for(int t=0; t<20; t++) {
+                    con = freeConnections.poll(1000, TimeUnit.MILLISECONDS);
+                    if(con != null){
+                        break;
+                    }
+                    log.warning("Waiting for the release of a connection");
+                }
                 try {
                     con.close();
                 } catch (SQLException e) {
-                    throw new PersistSqlException(e);
+                    e.printStackTrace();
                 }
                 activeConnections--;
             } catch (InterruptedException e) {

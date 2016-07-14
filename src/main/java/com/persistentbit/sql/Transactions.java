@@ -2,19 +2,23 @@ package com.persistentbit.sql;
 
 
 
+import com.persistentbit.sql.connect.ConnectionWrapper;
+import com.persistentbit.sql.connect.SQLRunner;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
-import java.util.function.Consumer;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
+ * A SQLRunner for running code in transactions.<br>
  * @author Peter Muys
  * @since 29/02/2016
  */
-public class Transactions implements Supplier<Connection> {
+public class Transactions implements SQLRunner {
     static private final Logger log = Logger.getLogger(Transactions.class.getName());
 
     private final Supplier<Connection>   connectionSupplier;
@@ -37,6 +41,29 @@ public class Transactions implements Supplier<Connection> {
     }
 
 
+    @Override
+    public <T> T run(SqlCodeWithResult<T> code) {
+        return doRun(() -> {
+            try {
+                return code.run(currentConnection.get());
+            }catch(SQLException e){
+                throw new PersistSqlException(e);
+            }
+        });
+    }
+
+
+    public void run(SqlCode code){
+
+        doRun(() -> {
+            try {
+                code.run(currentConnection.get());
+            }catch(SQLException e){
+                throw new PersistSqlException(e);
+            }
+            return null;
+        });
+    }
 
 
     @Override
@@ -45,18 +72,31 @@ public class Transactions implements Supplier<Connection> {
         if(c == null){
             throw new TransactionsException("Not running in a transaction!");
         }
-        return c;
-    }
+        return new ConnectionWrapper(c, new ConnectionWrapper.ConnectionHandler() {
+            @Override
+            public void onClose(Connection connection) throws SQLException {
 
+            }
 
-    public void runNew(Runnable code){
-        runNew(() -> {
-            code.run();
-            return null;
+            @Override
+            public void onAbort(Connection connection, Executor executor) throws SQLException {
+
+            }
         });
     }
 
-    public <R> R runNew(Callable<R> code){
+
+    public void runNew(SqlCode code){
+        Connection prev = currentConnection.get();
+        try {
+            currentConnection.remove();
+            run(code);
+        }finally{
+            currentConnection.set(prev);
+        }
+    }
+
+    public <R> R runNew(SqlCodeWithResult<R> code){
         Connection prev = currentConnection.get();
         try {
             currentConnection.remove();
@@ -66,29 +106,11 @@ public class Transactions implements Supplier<Connection> {
         }
     }
 
-    public void run(Runnable code){
-        run(() -> {
-            code.run();
-            return null;
-        });
-    }
-    @FunctionalInterface
-    public interface SqlCode{
-        void accept(Connection c) throws SQLException;
-    }
 
-    public void run(SqlCode code){
 
-            run(() -> {
-                try {
-                    code.accept(this.get());
-                }catch(SQLException e){
-                    throw new PersistSqlException(e);
-                }
-            });
-    }
 
-    public <R> R run(Callable<R> code){
+
+    private <R> R doRun(Callable<R> code){
         boolean isNewConnection = false;
         if(currentConnection.get() == null){
             currentConnection.set(connectionSupplier.get());
@@ -119,7 +141,5 @@ public class Transactions implements Supplier<Connection> {
                 currentConnection.remove();
             }
         }
-
-
     }
 }

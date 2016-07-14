@@ -6,13 +6,12 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.function.Supplier;
 
 /**
  * @author Peter Muys
  * @since 13/07/2016
  */
-public class SimpleConnectionProvider implements Supplier<Connection>{
+public class SimpleConnectionProvider implements SQLRunner {
     private final String url;
     private final String userName;
     private final String passWord;

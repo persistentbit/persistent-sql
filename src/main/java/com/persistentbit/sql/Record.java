@@ -1,6 +1,5 @@
 package com.persistentbit.sql;
 
-import com.persistentbit.core.Tuple2;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
 
@@ -31,6 +30,36 @@ public interface Record {
     default Record getSubRecord(String name){
         return new RecordSubSet(name+"_",this);
     }
+
+    /*
+    default Record lazyMapSubRecord(String subName, Function<Record,?> mapped){
+        final String lowName = subName.toLowerCase();
+        return new Record(){
+            @Override
+            public boolean hasName(String name) {
+                if(name.equals(lowName)){
+                    return true;
+                }
+                if(name.startsWith(lowName)){
+                    return false;
+                }
+                return Record.this.hasName(name);
+            }
+
+            @Override
+            public PStream<String> getNames() {
+                return Record.this.getNames().filter(n -> n.startsWith(lowName)== false).plus(lowName);
+            }
+
+            @Override
+            public Object getObject(String naam) {
+                if(lowName.equals(naam.toLowerCase())){
+                    return mapped.apply(new RecordSubSet(subName+"_",Record.this));
+                }
+                return Record.this.getObject(naam);
+            }
+        };
+    }*/
 
     default Number getNumber(String naam) {
         return (Number) getObject(naam);

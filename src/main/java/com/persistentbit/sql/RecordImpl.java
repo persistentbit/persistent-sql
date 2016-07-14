@@ -33,7 +33,7 @@ public class RecordImpl implements Record{
 
 
     public String toString() {
-        return "Record[" +getAll().mapString().join((a,b)->",").orElse("") + "]";
+        return "Record[" +getAll().mapString().join((a,b)->a + "," + b).orElse("") + "]";
 
     }
 

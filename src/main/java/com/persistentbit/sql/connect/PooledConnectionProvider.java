@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * @author Peter Muys
  * @since 13/07/2016
  */
-public class PooledConnectionProvider implements Supplier<Connection>{
+public class PooledConnectionProvider implements SQLRunner {
     static private final Logger log = Logger.getLogger(PooledConnectionProvider.class.getName());
 
     private final Supplier<Connection> supplier;

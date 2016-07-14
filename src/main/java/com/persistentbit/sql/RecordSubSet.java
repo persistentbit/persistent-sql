@@ -41,7 +41,7 @@ public class RecordSubSet implements Record{
         return getAll().hashCode();
     }
     public String toString() {
-        return "Recordsubset(" + prefix + ")[" +getAll().mapString().join((a,b)->",").orElse("") + "]";
+        return "Recordsubset(" + prefix + ")[" +getAll().mapString().toString(",") + "]";
 
     }
 

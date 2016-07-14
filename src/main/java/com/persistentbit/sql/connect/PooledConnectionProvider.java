@@ -33,7 +33,13 @@ public class PooledConnectionProvider implements Supplier<Connection>{
         this.freeConnections = new LinkedBlockingQueue(poolSize);
     }
     public PooledConnectionProvider(Supplier<Connection> supplier,int poolSize){
-        this(supplier,poolSize,(c)-> {});
+        this(supplier,poolSize,(c)-> {
+            try {
+                c.setAutoCommit(false);
+            } catch (SQLException e) {
+                throw new PersistSqlException(e);
+            }
+        });
     }
 
     @Override

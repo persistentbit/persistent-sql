@@ -7,7 +7,6 @@ import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.lenses.Lens;
 import com.persistentbit.core.utils.ImTools;
 
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -159,14 +158,14 @@ public class Mapper<S> implements Function<Record,S> {
     public S apply(Record record) {
         return map(record);
     }
-
+/*
     public Mapper<S> setStatArgs(S state, SqlArguments<?> stat){
         if(prefix != null){
             stat = new SqlArgumentsWithPrefix(prefix,stat);
         }
         toStat.apply(state,stat);
         return this;
-    }
+    }*/
     public String createSelectList() {
         String res = "";
         for(Col c : cols){

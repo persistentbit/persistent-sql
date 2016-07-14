@@ -1,4 +1,4 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.dbdef;
 
 import com.persistentbit.sql.connect.SQLRunner;
 

@@ -1,7 +1,8 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.dbdef;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.sql.PersistSqlException;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -31,10 +32,10 @@ public class TableDef {
         return cols;
     }
     public PStream<TableColDef> getIdCols() {
-        return cols.filter(c -> c.isId);
+        return cols.filter(c -> c.isId());
     }
     public PStream<TableColDef> getAutoGenCols() {
-        return cols.filter(c-> c.isAutoGen);
+        return cols.filter(c-> c.isAutoGen());
     }
 
     @Override

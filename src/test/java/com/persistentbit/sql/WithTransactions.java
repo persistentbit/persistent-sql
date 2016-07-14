@@ -1,5 +1,6 @@
 package com.persistentbit.sql;
 
+import com.persistentbit.sql.statement.SqlLoader;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 

@@ -1,9 +1,12 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.connect.SQLRunner;
+import com.persistentbit.sql.dbdef.DbDef;
+import com.persistentbit.sql.dbdef.TableDef;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -79,7 +82,7 @@ public class EStat implements SqlArguments<EStat>{
                 ESqlParser.TableFieldsToken tf = (ESqlParser.TableFieldsToken)t;
                 String al = tf.tableName;
                 TableDef td = aliases.get(al);
-                return td.getCols().map(col -> al + "." + col.name + " as " + al + "_" + col.name).toString(",");
+                return td.getCols().map(col -> al + "." + col.getName() + " as " + al + "_" + col.getName()).toString(",");
             }else {
                 throw new RuntimeException(t.toString());
             }

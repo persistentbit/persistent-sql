@@ -1,7 +1,8 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.sql.PersistSqlException;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;

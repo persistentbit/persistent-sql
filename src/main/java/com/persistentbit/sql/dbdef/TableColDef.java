@@ -1,13 +1,14 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.dbdef;
 
 /**
  * @author Peter Muys
  * @since 14/07/2016
  */
 public class TableColDef {
-    final String name;
-    final boolean isId;
-    final boolean isAutoGen;
+    private final String name;
+    private final boolean isId;
+    private final boolean isAutoGen;
+
     public TableColDef(String name){
         this(name,false,false);
     }
@@ -22,6 +23,18 @@ public class TableColDef {
     }
     public TableColDef asAutoGen() {
         return new TableColDef(name,true,true);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isId() {
+        return isId;
+    }
+
+    public boolean isAutoGen() {
+        return isAutoGen;
     }
 
     @Override

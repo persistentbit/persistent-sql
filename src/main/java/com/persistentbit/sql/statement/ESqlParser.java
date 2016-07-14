@@ -1,4 +1,4 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.collections.PList;
 

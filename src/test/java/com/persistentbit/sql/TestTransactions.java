@@ -2,7 +2,6 @@ package com.persistentbit.sql;
 
 import org.testng.annotations.Test;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -10,7 +9,7 @@ import java.sql.PreparedStatement;
  * Date: 13/07/16
  * Time: 19:36
  */
-public class TestTransactions extends WithTransactions{
+public class TestTransactions extends TestWithTransactions {
 
     @Test
     void testTrans(){

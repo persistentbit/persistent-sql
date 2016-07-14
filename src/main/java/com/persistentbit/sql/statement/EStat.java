@@ -5,12 +5,9 @@ import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.connect.SQLRunner;
-import com.persistentbit.sql.dbdef.DbDef;
 import com.persistentbit.sql.dbdef.TableDef;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -19,14 +16,22 @@ import java.util.function.Function;
  * @since 14/07/2016
  */
 public class EStat implements SqlArguments<EStat>{
-    private final DbDef dbDef;
+    private final Function<String,TableDef> tableDefSupplier;
     private final SQLRunner runner;
     private String sql;
     private PList<ESqlParser.Token> sqlTokens;
     private PMap<String,Object> args = PMap.empty();
 
-    public EStat(DbDef dbDef,SQLRunner runner){
-        this.dbDef = dbDef;
+
+    public EStat(SQLRunner runner){
+        this(runner,n -> {
+            throw new PersistSqlException("Don't know how to supply a TableDef for the table named '" + n + "'");
+        });
+    }
+
+
+    public EStat(SQLRunner runner,Function<String,TableDef> tableDefSupplier){
+        this.tableDefSupplier = tableDefSupplier;
         this.runner = runner;
     }
     public EStat sql(String...sql){
@@ -41,7 +46,7 @@ public class EStat implements SqlArguments<EStat>{
     }
 
 
-    public void selectAndDo(Consumer<PStream<Record>> code){
+    public void selectAndForEach(Consumer<PStream<Record>> code){
         runner.run(c -> {
             try(PreparedStatement stat = prepare(c)){
                 code.accept(new ResultSetRecordStream(stat.executeQuery()));
@@ -61,12 +66,35 @@ public class EStat implements SqlArguments<EStat>{
         });
     }
 
+    public boolean execute() {
+        return runner.run(c -> {
+            try(PreparedStatement s = prepare(c)){
+                return s.execute();
+            }
+        });
+    }
+
+    public int update() {
+        return runner.run(c-> {
+           try(PreparedStatement s = prepare(c)){
+               return s.executeUpdate();
+           }
+        });
+    }
+
+    public void updateOne() {
+        int count = update();
+        if(count != 1){
+            throw new PersistSqlException("Expected 1 update. Got " + count + " updates instead." );
+        }
+    }
+
     private PreparedStatement prepare(Connection c){
         PMap<String,TableDef> aliases =
                 sqlTokens.filter( f-> f instanceof ESqlParser.TableAsToken)
                 .map(f -> (ESqlParser.TableAsToken)f)
                 .groupBy(f-> f.alias)
-                .mapValues(v -> dbDef.get(v.head().tableName));
+                .mapValues(v -> tableDefSupplier.apply(v.head().tableName));
         PList<String> argNames =
                 sqlTokens.filter( f-> f instanceof ESqlParser.ArgToken)
                 .map(f -> ((ESqlParser.ArgToken)f).fieldName);
@@ -86,8 +114,9 @@ public class EStat implements SqlArguments<EStat>{
             }else {
                 throw new RuntimeException(t.toString());
             }
-        }).join((a,b)->a+b).get();
-        System.out.println(js);
+        }).join(
+                (a,b)->a+b).get();
+        //System.out.println(js);
         try {
             PreparedStatement s = c.prepareStatement(js);
             argNames.zipWithIndex().forEach(n -> {
@@ -114,5 +143,16 @@ public class EStat implements SqlArguments<EStat>{
     @Override
     public String toString() {
         return sqlTokens.toString();
+    }
+
+
+    public boolean tableExists(String tableName){
+        return runner.run(c -> {
+            DatabaseMetaData dbm = c.getMetaData();
+            try(ResultSet rs = dbm.getTables(null,null,tableName,null)){
+                return rs.next();
+            }
+        });
+
     }
 }

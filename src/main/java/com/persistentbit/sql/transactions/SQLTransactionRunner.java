@@ -1,7 +1,8 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.transactions;
 
 
 
+import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.connect.ConnectionWrapper;
 import com.persistentbit.sql.connect.SQLRunner;
 
@@ -18,18 +19,18 @@ import java.util.logging.Logger;
  * @author Peter Muys
  * @since 29/02/2016
  */
-public class Transactions implements SQLRunner {
-    static private final Logger log = Logger.getLogger(Transactions.class.getName());
+public class SQLTransactionRunner implements SQLRunner {
+    static private final Logger log = Logger.getLogger(SQLTransactionRunner.class.getName());
 
     private final Supplier<Connection>   connectionSupplier;
 
     private ThreadLocal<Connection> currentConnection = new ThreadLocal<>();
 
-    public Transactions(Supplier<Connection> connectionSupplier){
+    public SQLTransactionRunner(Supplier<Connection> connectionSupplier){
         this.connectionSupplier = connectionSupplier;
     }
 
-    public Transactions(DataSource ds){
+    public SQLTransactionRunner(DataSource ds){
         this(() -> {
             try {
                 return ds.getConnection();
@@ -52,7 +53,7 @@ public class Transactions implements SQLRunner {
         });
     }
 
-
+    @Override
     public void run(SqlCode code){
 
         doRun(() -> {
@@ -68,21 +69,7 @@ public class Transactions implements SQLRunner {
 
     @Override
     public Connection get() {
-        Connection c = currentConnection.get();
-        if(c == null){
-            throw new TransactionsException("Not running in a transaction!");
-        }
-        return new ConnectionWrapper(c, new ConnectionWrapper.ConnectionHandler() {
-            @Override
-            public void onClose(Connection connection) throws SQLException {
-
-            }
-
-            @Override
-            public void onAbort(Connection connection, Executor executor) throws SQLException {
-
-            }
-        });
+        return connectionSupplier.get();
     }
 
 

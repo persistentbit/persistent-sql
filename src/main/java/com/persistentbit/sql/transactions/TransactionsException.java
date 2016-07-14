@@ -1,4 +1,4 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.transactions;
 
 /**
  * @author Peter Muys

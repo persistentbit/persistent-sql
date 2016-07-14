@@ -133,7 +133,7 @@ public class ESqlParser {
         next();
         do{
 
-            if(c == '.' || eof || Character.isWhitespace(c)){
+            if(c == '.' || eof || Character.isJavaIdentifierPart(c)==false){
                 break;
             }
             first = first + c;
@@ -162,7 +162,7 @@ public class ESqlParser {
         do{
             second += c;
             next();
-            if(eof || Character.isWhitespace(c)){
+            if(eof || Character.isJavaIdentifierPart(c)==false){
                 break;
             }
         }while(true);

@@ -1,6 +1,7 @@
 package com.persistentbit.sql;
 
 import com.persistentbit.sql.statement.SqlLoader;
+import com.persistentbit.sql.transactions.SQLTransactionRunner;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 
@@ -11,15 +12,15 @@ import java.util.logging.Logger;
  * Date: 13/07/16
  * Time: 19:37
  */
-public class WithTransactions {
+public class TestWithTransactions {
     protected Logger log = Logger.getLogger(this.getClass().getName());
     private InMemConnectionProvider dbConnector;
-    protected Transactions trans;
+    protected SQLTransactionRunner trans;
     protected SqlLoader loader = new SqlLoader("Tests.sql");
     @BeforeTest
     public void setupTransactions() {
         dbConnector = new InMemConnectionProvider();
-        trans = new Transactions(dbConnector);
+        trans = new SQLTransactionRunner(dbConnector);
     }
     @AfterTest
     public void closeTransactions() {

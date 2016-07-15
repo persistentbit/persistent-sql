@@ -1,11 +1,8 @@
 package com.persistentbit.sql.dbupdates;
 
-import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.connect.SQLRunner;
 import com.persistentbit.sql.statement.EStat;
-import com.persistentbit.sql.transactions.SQLTransactionRunner;
 import com.persistentbit.sql.transactions.WithSQLRunner;
-import com.persistentbit.sql.transactions.WithTransactions;
 
 import java.util.logging.Logger;
 
@@ -64,6 +61,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory,WithSQLRunne
                     "  CONSTRAINT " + tableName +"_uc UNIQUE (project_name,module_name,update_name)",
                     ")");
             stat.execute();
+
         }
 
     }

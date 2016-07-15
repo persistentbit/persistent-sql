@@ -34,7 +34,7 @@
         </license>
     </licenses>
     <properties>
-        <testng.version>6.9.10</testng.version>
+        <junit.version>4.12</junit.version>
     </properties>
 
     <distributionManagement>
@@ -105,10 +105,16 @@
         </plugins>
     </build>
     <dependencies>
-        <dependency>
+        <!--<dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <version>${testng.version}</version>
+            <scope>test</scope>
+        </dependency>-->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

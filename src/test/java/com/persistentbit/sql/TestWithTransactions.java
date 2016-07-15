@@ -2,7 +2,8 @@ package com.persistentbit.sql;
 
 import com.persistentbit.sql.statement.SqlLoader;
 import com.persistentbit.sql.transactions.SQLTransactionRunner;
-import org.testng.annotations.*;
+import org.junit.After;
+import org.junit.Before;
 
 import java.util.logging.Logger;
 
@@ -17,13 +18,13 @@ public class TestWithTransactions {
     protected SQLTransactionRunner trans;
     protected SqlLoader loader;
 
-    @BeforeClass(alwaysRun = true)
+    @Before
     public void setupTransactions() {
         dbConnector = new InMemConnectionProvider();
         trans = new SQLTransactionRunner(dbConnector);
         loader = new SqlLoader("Tests.sql");
     }
-    @AfterClass(alwaysRun = true)
+    @After
     public void closeTransactions() {
         trans = null;
         dbConnector.close();

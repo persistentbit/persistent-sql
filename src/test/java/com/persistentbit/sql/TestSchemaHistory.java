@@ -2,7 +2,8 @@ package com.persistentbit.sql;
 
 import com.persistentbit.sql.dbupdates.SchemaUpdateHistory;
 import com.persistentbit.sql.dbupdates.SchemaUpdateHistoryImpl;
-import org.testng.annotations.Test;
+import org.junit.Test;
+
 
 /**
  * User: petermuys
@@ -12,7 +13,7 @@ import org.testng.annotations.Test;
 public class TestSchemaHistory extends TestWithTransactions {
 
     @Test
-    void test(){
+    public void testa(){
         assert trans != null;
         trans.run(c -> {
             SchemaUpdateHistory uh = new SchemaUpdateHistoryImpl(trans);
@@ -23,4 +24,5 @@ public class TestSchemaHistory extends TestWithTransactions {
 
 
     }
+
 }

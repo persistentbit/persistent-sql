@@ -149,8 +149,9 @@ public class EStat implements SqlArguments<EStat>{
     public boolean tableExists(String tableName){
         return runner.run(c -> {
             DatabaseMetaData dbm = c.getMetaData();
-            try(ResultSet rs = dbm.getTables(null,null,tableName,null)){
-                return rs.next();
+            try(ResultSet rs = dbm.getTables(null,null,null,null)){
+                PList<String> res = new ResultSetRecordStream(rs).map(r -> r.getString("table_name")).plist();
+                return res.find(r -> r.equalsIgnoreCase(tableName)).isPresent();
             }
         });
 

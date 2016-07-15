@@ -1,6 +1,8 @@
 package com.persistentbit.sql;
 
-import org.testng.annotations.Test;
+
+
+import org.junit.Test;
 
 import java.sql.PreparedStatement;
 
@@ -12,7 +14,7 @@ import java.sql.PreparedStatement;
 public class TestTransactions extends TestWithTransactions {
 
     @Test
-    void testTrans(){
+    public void testTrans(){
         trans.run(c -> {
             String sql = loader.getOne("create_test_table");
             log.fine(sql);

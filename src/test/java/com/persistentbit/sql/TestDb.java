@@ -1,8 +1,8 @@
 package com.persistentbit.sql;
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.sql.Connection;
 
@@ -13,11 +13,11 @@ import java.sql.Connection;
  */
 public class TestDb {
     private InMemConnectionProvider dbConnector;
-    @BeforeTest
+    @Before
     public void setupConnection() {
         dbConnector = new InMemConnectionProvider();
     }
-    @AfterTest
+    @After
     public void closeConnection() {
         dbConnector.close();
     }

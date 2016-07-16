@@ -43,8 +43,8 @@ public class DefaultObjectReaderWriter {
      * @return me,myself and I
      */
     public DefaultObjectReaderWriter rename(String fieldName, String propertyName){
-        reader.prefix(fieldName,propertyName);
-        writer.prefix(fieldName,propertyName);
+        reader.rename(fieldName,propertyName);
+        writer.rename(fieldName,propertyName);
         return this;
     }
 
@@ -102,6 +102,17 @@ public class DefaultObjectReaderWriter {
      */
     public DefaultObjectReaderWriter    setFieldWriter(String fieldName, ObjectWriter fieldWriter){
         writer.setFieldWriter(fieldName,fieldWriter);
+        return this;
+    }
+
+    public DefaultObjectReaderWriter readFieldAsInt(String fieldName){
+        reader.mapToField(fieldName, f -> {
+            if(f instanceof Integer == false){
+                Number n = (Number)f;
+                return n.intValue();
+            }
+            return f;
+        });
         return this;
     }
 }

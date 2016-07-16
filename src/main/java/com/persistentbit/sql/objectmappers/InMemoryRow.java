@@ -8,7 +8,7 @@ import com.persistentbit.core.collections.PMap;
  * @see ReadableRow
  * @see WritableRow
  */
-public class MemoryProperties implements WritableRow,ReadableRow {
+public class InMemoryRow implements WritableRow,ReadableRow {
     static private final Tuple2<String,Object> nullTuple = Tuple2.of(null,null);
     private PMap<String,Tuple2<String,Object>>  all = PMap.empty();
     @Override

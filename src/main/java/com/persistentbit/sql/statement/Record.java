@@ -3,6 +3,7 @@ package com.persistentbit.sql.statement;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.function.NamedSupplier;
+import com.persistentbit.sql.objectmappers.ReadableRow;
 
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
@@ -16,15 +17,16 @@ import java.util.Date;
  * @author Peter Muys
  * @since 4/07/2016
  */
-public interface Record extends NamedSupplier<Object>{
+public interface Record extends ReadableRow{
     boolean hasName(String name);
 
     PStream<String> getNames();
 
     Object getObject(String naam);
 
+
     @Override
-    default Object apply(String name) {
+    default Object read(String name) {
         return getObject(name);
     }
 

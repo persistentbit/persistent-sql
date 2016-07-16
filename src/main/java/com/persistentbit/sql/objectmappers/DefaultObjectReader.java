@@ -35,6 +35,20 @@ public class DefaultObjectReader implements ObjectReader{
         return im.createNew(map);
     }
 
+    private Object mapProperty(Class type, Object value){
+        if(value == null){
+            return null;
+        }
+        if(type.equals(Integer.class) || type.equals(int.class)){
+            return ((Number)value).intValue();
+
+        }
+        if(type.equals(Long.class) || type.equals(long.class)){
+            return ((Number)value).longValue();
+
+        }
+        return value;
+    }
 
 
     public DefaultObjectReader addAllFields(){
@@ -51,7 +65,7 @@ public class DefaultObjectReader implements ObjectReader{
                 fw = new ObjectReader() {
                     @Override
                     public Object read(Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
-                        return properties.read(g.propertyName);
+                        return mapProperty(fieldClass,properties.read(g.propertyName));
                     }
 
                     @Override
@@ -81,13 +95,19 @@ public class DefaultObjectReader implements ObjectReader{
         ObjectReader orgReader = getObjectReader(fieldName);
         fieldReaders = fieldReaders.put(fieldName, new ObjectReader() {
             @Override
+            public String toString() {
+                return "RenamedReader(fieldName=" + fieldName + ", propName=" + propertyName + ", reader=" + orgReader + ")";
+            }
+
+            @Override
             public Object read(Function<Class, ObjectReader> masterReader, ReadableRow properties) {
                 return orgReader.read(masterReader, name -> {
-                    if(name.equalsIgnoreCase(propertyName)){
+                    if(name.equalsIgnoreCase(fieldName)){
                         name = propertyName;
                     }
                     return properties.read(name);
                 });
+
             }
         });
         return this;

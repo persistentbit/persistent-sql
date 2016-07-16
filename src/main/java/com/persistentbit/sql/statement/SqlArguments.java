@@ -1,17 +1,19 @@
 package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.function.NamedConsumer;
+import com.persistentbit.sql.objectmappers.WritableRow;
 
 /**
  * @author Peter Muys
  * @since 4/07/2016
  */
-public interface SqlArguments<B extends SqlArguments<B>> extends NamedConsumer<Object> {
+public interface SqlArguments<B extends SqlArguments<B>> extends WritableRow{
 
 
     @Override
-    default void accept(String name, Object value) {
+    default WritableRow write(String name, Object value) {
         arg(name,value);
+        return this;
     }
 
     B arg(String name, Object value);

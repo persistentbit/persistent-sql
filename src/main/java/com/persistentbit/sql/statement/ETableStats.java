@@ -18,7 +18,7 @@ import java.util.function.Function;
  * Date: 16/07/16
  * Time: 15:26
  */
-public class ETableStats<T> {
+public class ETableStats<T> implements Joinable {
     private final SQLRunner runner;
     private final TableDef  tableDef;
     private final ObjectRowMapper   mapper;
@@ -32,6 +32,17 @@ public class ETableStats<T> {
         this.statementPreparer = new EStatementPreparer(tableDefSupplier);
         this.mappedClass = mappedClass;
     }
+
+    @Override
+    public Class getMappedClass() {
+        return mappedClass;
+    }
+
+    @Override
+    public TableDef getTableDef() {
+        return tableDef;
+    }
+
     public class SelectBuilder implements SqlArguments<SelectBuilder>,ReadableRow{
         private PMap<String,Object> args = PMap.empty();
         private String sqlRest = "";

@@ -3,6 +3,7 @@ package com.persistentbit.sql.statement;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.core.function.NamedSupplier;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.connect.SQLRunner;
 import com.persistentbit.sql.dbdef.TableDef;
@@ -17,6 +18,7 @@ import java.util.function.Function;
  */
 public class EStat implements SqlArguments<EStat>{
     private final Function<String,TableDef> tableDefSupplier;
+
     private final SQLRunner runner;
     private String sql;
     private PList<ESqlParser.Token> sqlTokens;
@@ -28,7 +30,6 @@ public class EStat implements SqlArguments<EStat>{
             throw new PersistSqlException("Don't know how to supply a TableDef for the table named '" + n + "'");
         });
     }
-
 
     public EStat(SQLRunner runner,Function<String,TableDef> tableDefSupplier){
         this.tableDefSupplier = tableDefSupplier;
@@ -88,8 +89,11 @@ public class EStat implements SqlArguments<EStat>{
             throw new PersistSqlException("Expected 1 update. Got " + count + " updates instead." );
         }
     }
-
     private PreparedStatement prepare(Connection c){
+        return prepare(c,false);
+    }
+
+    private PreparedStatement prepare(Connection c,boolean autGenKeys){
         PMap<String,TableDef> aliases =
                 sqlTokens.filter( f-> f instanceof ESqlParser.TableAsToken)
                 .map(f -> (ESqlParser.TableAsToken)f)
@@ -116,9 +120,9 @@ public class EStat implements SqlArguments<EStat>{
             }
         }).join(
                 (a,b)->a+b).get();
-        //System.out.println(js);
+
         try {
-            PreparedStatement s = c.prepareStatement(js);
+            PreparedStatement s = autGenKeys ? c.prepareStatement(js,Statement.RETURN_GENERATED_KEYS)  : c.prepareStatement(js);
             argNames.zipWithIndex().forEach(n -> {
                 try {
                     s.setObject(n._1+1,args.get(n._2));
@@ -133,6 +137,7 @@ public class EStat implements SqlArguments<EStat>{
 
 
     }
+
 
     @Override
     public EStat arg(String name, Object value) {

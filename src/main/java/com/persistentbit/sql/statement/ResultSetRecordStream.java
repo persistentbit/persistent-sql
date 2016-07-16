@@ -36,7 +36,7 @@ public class ResultSetRecordStream implements PStream<Record>{
     @Override
     public Iterator<Record> iterator() {
         if(firstIter == false) {
-            throw new IllegalStateException("Can't iterate mode than once over a ResultSet!");
+            throw new IllegalStateException("Can't iterate more than once over a ResultSet!");
         }
         firstIter = false;
         return new Iterator<Record>() {

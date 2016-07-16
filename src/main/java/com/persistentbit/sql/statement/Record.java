@@ -2,6 +2,7 @@ package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.core.function.NamedSupplier;
 
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
@@ -15,13 +16,17 @@ import java.util.Date;
  * @author Peter Muys
  * @since 4/07/2016
  */
-public interface Record {
+public interface Record extends NamedSupplier<Object>{
     boolean hasName(String name);
 
     PStream<String> getNames();
 
     Object getObject(String naam);
 
+    @Override
+    default Object apply(String name) {
+        return getObject(name);
+    }
 
     default PMap<String,Object> getAll(){
         return getNames().with(PMap.<String,Object>empty(),(m,n)-> m = m.put(n,getObject(n)));

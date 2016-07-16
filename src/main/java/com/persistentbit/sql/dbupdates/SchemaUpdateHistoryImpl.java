@@ -8,9 +8,6 @@ import java.util.logging.Logger;
 
 /**
  * Implements A {@link SchemaUpdateHistory} interface by using a db table<br>
- * User: petermuys
- * Date: 14/07/16
- * Time: 21:45
  */
 public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory,WithSQLRunner{
     static private Logger log = Logger.getLogger(SchemaUpdateHistoryImpl.class.getName());
@@ -32,7 +29,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory,WithSQLRunne
 
     /**
      * Creates an instance with 'schema_history' as table name
-     * @param runner
+     * @param runner The SQL runner to use
      */
     public SchemaUpdateHistoryImpl(SQLRunner runner){
         this(runner,"schema_history");

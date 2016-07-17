@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 /**
  * User: petermuys
@@ -19,7 +20,7 @@ import java.util.function.Function;
  * Time: 16:00
  */
 public class EStatementPreparer {
-
+    static private final Logger log = Logger.getLogger(EStatementPreparer.class.getName());
     private final Function<String,TableDef> tableDefSupplier;
 
 
@@ -70,6 +71,7 @@ public class EStatementPreparer {
             });
             return s;
         } catch (SQLException e) {
+            log.severe("Error preparing statement " + js);
             throw new PersistSqlException(e);
         }
 

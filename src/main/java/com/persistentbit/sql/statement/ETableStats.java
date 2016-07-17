@@ -1,8 +1,10 @@
 package com.persistentbit.sql.statement;
 
+import com.persistentbit.core.Lazy;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.connect.SQLRunner;
 import com.persistentbit.sql.dbdef.TableColDef;
 import com.persistentbit.sql.dbdef.TableDef;
@@ -10,8 +12,10 @@ import com.persistentbit.sql.objectmappers.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 /**
  * User: petermuys
@@ -19,18 +23,23 @@ import java.util.function.Function;
  * Time: 15:26
  */
 public class ETableStats<T>{
+    static private final Logger log = Logger.getLogger(ETableStats.class.getName());
     private final SQLRunner runner;
-    private final TableDef  tableDef;
+    private final Lazy<TableDef> tableDef;
     private final ObjectRowMapper   mapper;
     private final EStatementPreparer    statementPreparer;
     private final Class<T> mappedClass;
 
     public ETableStats(SQLRunner runner,String tableName, Class<T> mappedClass,Function<String,TableDef> tableDefSupplier, ObjectRowMapper mapper){
         this.runner = runner;
-        this.tableDef = tableDefSupplier.apply(tableName);
+        this.tableDef = new Lazy<>(()->tableDefSupplier.apply(tableName));
         this.mapper = mapper;
         this.statementPreparer = new EStatementPreparer(tableDefSupplier);
         this.mappedClass = mappedClass;
+    }
+
+    private String tableName() {
+        return tableDef.get().getTableName();
     }
 
     public EJoinable<T> asJoinable(String name){
@@ -47,7 +56,7 @@ public class ETableStats<T>{
 
             @Override
             public String getTableName() {
-                return  tableDef.getTableName();
+                return  tableName();
             }
 
             @Override
@@ -90,7 +99,7 @@ public class ETableStats<T>{
         }
 
         public Optional<T> forId(Object id){
-            String idName = tableDef.getIdCols().head().getName();
+            String idName = tableDef.get().getIdCols().head().getName();
             sqlRest(" where t." + idName+" = :id");
             arg("id",id);
             return getOne();
@@ -108,7 +117,7 @@ public class ETableStats<T>{
 
         }
         private <RES> RES visit(Function<PStream<T>,RES> streamReader){
-            String sql = "SELECT :t.* from :" + tableDef.getTableName() + ".as.t " + sqlRest;
+            String sql = "SELECT :t.* from :" + tableName() + ".as.t " + sqlRest;
             return runner.run(c -> {
                 try(PreparedStatement stat = statementPreparer.prepare(c,sql,SelectBuilder.this)) {
 
@@ -132,15 +141,15 @@ public class ETableStats<T>{
     public int delete(T obj){
         InMemoryRow row = new InMemoryRow();
         mapper.write(obj,row);
-        return deleteForId(row.read(tableDef.getIdCols().head().getName()));
+        return deleteForId(row.read(tableDef.get().getIdCols().head().getName()));
     }
 
     public int deleteForId(Object id){
-        PStream<String> ids = tableDef.getIdCols().map(c -> c.getName());
+        PStream<String> ids = tableDef.get().getIdCols().map(c -> c.getName());
 
-        String sql = "DELETE FROM " + tableDef.getTableName() +" WHERE " + ids.map(n-> n + "=:" + n).toString(" AND ");
+        String sql = "DELETE FROM " + tableDef.get().getTableName() +" WHERE " + ids.map(n-> n + "=:" + n).toString(" AND ");
         InMemoryRow row = new InMemoryRow();
-        TableColDef idCol = tableDef.getIdCols().head();
+        TableColDef idCol = tableDef.get().getIdCols().head();
         row.write(idCol.getName(),id);
         return runner.run(c -> {
            try(PreparedStatement stat = statementPreparer.prepare(c,sql,row) ){
@@ -151,16 +160,16 @@ public class ETableStats<T>{
 
     public int deleteAll() {
         return runner.run(c -> {
-            try(PreparedStatement s = c.prepareStatement("DELETE FROM " + tableDef.getTableName())){
+            try(PreparedStatement s = c.prepareStatement("DELETE FROM " + tableDef.get().getTableName())){
                 return s.executeUpdate();
             }
         });
     }
 
     public int update(T obj){
-        PList<String> names = tableDef.getCols().filter(c -> c.isAutoGen() == false && c.isId() == false).map(c -> c.getName());
-        PStream<String> ids = tableDef.getIdCols().map(c -> c.getName());
-        String sql = "UPDATE " + tableDef.getTableName() +
+        PList<String> names = tableDef.get().getCols().filter(c -> c.isAutoGen() == false && c.isId() == false).map(c -> c.getName());
+        PStream<String> ids = tableDef.get().getIdCols().map(c -> c.getName());
+        String sql = "UPDATE " + tableDef.get().getTableName() +
                 " SET " + names.map(n -> n + "=:"+ n).toString(",") +
                 " WHERE " + ids.map(n-> n + "=:" + n).toString(" AND ");
         InMemoryRow row = new InMemoryRow();
@@ -176,12 +185,12 @@ public class ETableStats<T>{
 
     public T insert(T obj){
 
-        PList<String> names = tableDef.getCols().filter(c -> c.isAutoGen() == false).map(c -> c.getName());
-        String sql = "INSERT INTO " + tableDef.getTableName() + " (" + names.toString(", ") + ") VALUES (" + names.map(n -> ":"+n.toLowerCase()).toString(", ") + ")";
+        PList<String> names = tableDef.get().getCols().filter(c -> c.isAutoGen() == false).map(c -> c.getName());
+        String sql = "INSERT INTO " + tableName() + " (" + names.toString(", ") + ") VALUES (" + names.map(n -> ":"+n.toLowerCase()).toString(", ") + ")";
         InMemoryRow row = new InMemoryRow();
         mapper.write(obj,row);
         return runner.run(c -> {
-            boolean autoGen = tableDef.getAutoGenCols().isEmpty() == false;
+            boolean autoGen = tableDef.get().getAutoGenCols().isEmpty() == false;
             try(PreparedStatement stat = statementPreparer.prepare(c,sql,row, autoGen)) {
                 stat.executeUpdate();
                 if (autoGen == false) {
@@ -200,13 +209,17 @@ public class ETableStats<T>{
                 ReadableRow newRec = new ReadableRow() {
                     @Override
                     public Object read(String name) {
-                        if (tableDef.getAutoGenCols().find(tc -> tc.getName().equalsIgnoreCase(name)).isPresent()) {
+                        if (tableDef.get().getAutoGenCols().find(tc -> tc.getName().equalsIgnoreCase(name)).isPresent()) {
                             return autoGenObj;
                         }
                         return row.read(name);
                     }
                 };
                 return (T) mapper.read(mappedClass, newRec);
+            }catch (SQLException e){
+                log.severe("Error executing " + sql);
+                log.severe(e.getMessage());
+                throw new PersistSqlException(e);
             }
         });
 

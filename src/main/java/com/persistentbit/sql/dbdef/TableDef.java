@@ -44,7 +44,7 @@ public class TableDef {
     }
 
 
-    public static TableDef getFromDb(String tableName, Connection c){
+    public static TableDef  getFromDb(String tableName, Connection c){
         Set<String> primKeys = new HashSet<>();
         PList<TableColDef> res = PList.empty();
         try {

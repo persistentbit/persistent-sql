@@ -23,7 +23,7 @@ public class TableDefSupplierImpl implements Function<String,TableDef> {
         this.runner = runner;
     }
 
-    public TableDef apply(String name){
+    public synchronized TableDef apply(String name){
         TableDef res = defs.getOrDefault(name.toLowerCase(),null);
         if(res == null){
             res = runner.run((c) -> {

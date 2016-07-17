@@ -1,11 +1,18 @@
 package com.persistentbit.sql.statement;
 
+import com.persistentbit.core.Immutable;
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.collections.PStream;
+
+import java.util.function.Function;
 
 /**
  * Created by petermuys on 16/07/16.
  */
-public class EJoinStats {
+@Immutable
+public class EJoinStats<T> {
+    private final Function<PStream<Object>,T> resultConverter;
+    private PList<JoinElement>  elements = PList.empty();
     private class JoinElement{
         public final String name;
         public final Joinable element;
@@ -17,17 +24,21 @@ public class EJoinStats {
             this.joinSql = joinSql;
         }
     }
-    private PList<JoinElement>  elements = PList.empty();
 
-    EJoinStats  addJoin(String name,Joinable j1,String joinSql){
-        elements = elements.plus(new JoinElement(name,j1,joinSql));
-        return this;
+    private EJoinStats(Function<PStream<Object>,T> resultConverter,PList<JoinElement> elements){
+        this.resultConverter = resultConverter;
+        this.elements = elements;
     }
 
+
+
     class SelectBuilder {
+
+
 
     }
     public SelectBuilder select() {
         return new SelectBuilder();
     }
+
 }

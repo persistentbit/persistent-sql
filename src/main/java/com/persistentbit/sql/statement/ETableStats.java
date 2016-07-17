@@ -98,6 +98,44 @@ public class ETableStats<T> implements Joinable {
         return select().sqlRest(sqlRest);
     }
 
+    public int delete(T obj){
+        InMemoryRow row = new InMemoryRow();
+        mapper.write(obj,row);
+        return deleteForId(row.read(tableDef.getIdCols().head().getName()));
+    }
+
+    public int deleteForId(Object id){
+        PStream<String> ids = tableDef.getIdCols().map(c -> c.getName());
+
+        String sql = "DELETE FROM " + tableDef.getTableName() +" WHERE " + ids.map(n-> n + "=: + n").toString(" AND ");
+        return runner.run(c -> {
+           try(PreparedStatement stat = c.prepareStatement(sql) ){
+               return stat.executeUpdate();
+           }
+        });
+    }
+
+    public void deleteAll() {
+
+    }
+
+    public int update(T obj){
+        PList<String> names = tableDef.getCols().filter(c -> c.isAutoGen() == false && c.isId() == false).map(c -> c.getName());
+        PStream<String> ids = tableDef.getIdCols().map(c -> c.getName());
+        String sql = "UPDATE " + tableDef.getTableName() +
+                " SET " + names.map(n -> n + "=:"+ n).toString(",") +
+                " WHERE " + ids.map(n-> n + "=: + n").toString(" AND ");
+        InMemoryRow row = new InMemoryRow();
+        mapper.write(obj,row);
+        return runner.run(c -> {
+            try (PreparedStatement stat = statementPreparer.prepare(c, sql, row)) {
+                int count = stat.executeUpdate();
+                return count;
+            }
+        });
+    }
+
+
     public T insert(T obj){
 
         PList<String> names = tableDef.getCols().filter(c -> c.isAutoGen() == false).map(c -> c.getName());
@@ -106,31 +144,32 @@ public class ETableStats<T> implements Joinable {
         mapper.write(obj,row);
         return runner.run(c -> {
             boolean autoGen = tableDef.getAutoGenCols().isEmpty() == false;
-            PreparedStatement stat = statementPreparer.prepare(c,sql,row, autoGen);
-            stat.executeUpdate();
-            if(autoGen == false){
-                return obj;
-            }
-            Object autoGenObj ;
-            try(ResultSet res = stat.getGeneratedKeys()){
-                if(res.next()) {
-                    autoGenObj = res.getObject(1);
-                } else {
-                    autoGenObj = null;
+            try(PreparedStatement stat = statementPreparer.prepare(c,sql,row, autoGen)) {
+                stat.executeUpdate();
+                if (autoGen == false) {
+                    return obj;
                 }
-
-            }
-            //Create a row mapper for the auto generated Id's
-            ReadableRow newRec = new ReadableRow() {
-                @Override
-                public Object read(String name) {
-                    if(tableDef.getAutoGenCols().find(tc -> tc.getName().equalsIgnoreCase(name)).isPresent()){
-                        return autoGenObj;
+                Object autoGenObj;
+                try (ResultSet res = stat.getGeneratedKeys()) {
+                    if (res.next()) {
+                        autoGenObj = res.getObject(1);
+                    } else {
+                        autoGenObj = null;
                     }
-                    return row.read(name);
+
                 }
-            };
-            return (T)mapper.read(mappedClass,newRec);
+                //Create a row mapper for the auto generated Id's
+                ReadableRow newRec = new ReadableRow() {
+                    @Override
+                    public Object read(String name) {
+                        if (tableDef.getAutoGenCols().find(tc -> tc.getName().equalsIgnoreCase(name)).isPresent()) {
+                            return autoGenObj;
+                        }
+                        return row.read(name);
+                    }
+                };
+                return (T) mapper.read(mappedClass, newRec);
+            }
         });
 
     }

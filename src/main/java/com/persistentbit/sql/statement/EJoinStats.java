@@ -30,6 +30,9 @@ public class EJoinStats<L, R, T> {
     static public <L, R> EJoinStats<L, R, Tuple2<L, R>> joinTuple(String joinType, EJoinable<L> left, EJoinable<R> right, String joinSQL) {
         return new EJoinStats<L, R, Tuple2<L, R>>(joinType, left, right, joinSQL, t -> t);
     }
+    static public <L, R, T > EJoinStats<L, R, T> join(String joinType, EJoinable<L> left, EJoinable<R> right, String joinSQL,Function<Tuple2<L,R>,T> mapper) {
+        return new EJoinStats<L, R, T>(joinType, left, right, joinSQL, mapper);
+    }
 
     private EJoinStats(String joinType, EJoinable<L> left, EJoinable<R> right, String joinSQL, Function<Tuple2<L, R>, T> resultConverter) {
         this.joinType = joinType;
@@ -103,39 +106,36 @@ public class EJoinStats<L, R, T> {
 
         public Optional<T> getOne() {
             return left.getRunner().run(c -> {
-                return visit(c).headOpt();
+                return visit(v -> v.headOpt());
             });
         }
 
         public PList<T> getList() {
-            return left.getRunner().run(c ->{
-                return visit(c).plist();
-            });
+            return visit(s -> s.plist());
         }
 
-        public void visit(Consumer<T> visitor) {
-            left.getRunner().run(c -> {
-                visit(c).forEach(visitor);
+
+
+        private <X> X visit(Function<PStream<T>,X> visitor) {
+            return left.getRunner().run(c -> {
+                String sql = "SELECT " + left.getSelectPart() + "," + right.getSelectPart() + " FROM :" + left.getTableName() + ".as." + left.getName()
+                        + " " + joinType + " :" + right.getTableName() + ".as." + right.getName() + " ON " + joinSQL + right.getOwnJoins() + sqlRest;
+
+                try (PreparedStatement stat = left.getStatementPreparer().prepare(c, sql, SelectBuilder.this)) {
+
+                    ResultSetRecordStream rs = new ResultSetRecordStream(stat.executeQuery());
+
+
+                    PStream<T> trs = rs.map(r -> {
+                        L leftValue = left.mapRow(r);
+                        R rightValue = right.mapRow(r);
+                        return Tuple2.of(leftValue,rightValue);
+                    }).map(resultConverter);
+
+                    return visitor.apply(trs);
+                }
             });
-        }
 
-        private PStream<T> visit(Connection c) throws SQLException {
-            String sql = "SELECT " + left.getSelectPart() + "," + right.getSelectPart() + " FROM :" + left.getTableName() + ".as." + left.getName()
-                    + " " + joinType + " :" + right.getTableName() + ".as." + right.getName() + " ON " + joinSQL + right.getOwnJoins() + sqlRest;
-
-            try (PreparedStatement stat = left.getStatementPreparer().prepare(c, sql, SelectBuilder.this)) {
-
-                ResultSetRecordStream rs = new ResultSetRecordStream(stat.executeQuery());
-
-
-                PStream<Tuple2<L, R>> trs = rs.map(r -> {
-                    L leftValue = left.mapRow(r);
-                    R rightValue = right.mapRow(r);
-                    return Tuple2.of(leftValue,rightValue);
-                });
-
-                return trs.map(resultConverter);
-            }
         }
 
 

@@ -10,37 +10,44 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 /**
  * @author Peter Muys
  * @since 13/07/2016
  */
 public class ResultSetRecordStream extends PStreamLazy<Record>{
+    static private Logger log = Logger.getLogger(ResultSetRecordStream.class.getName());
     private PMap<String,Integer>    fieldNameIndexes;
     private ResultSetMetaData md;
     private ResultSet rs;
-    private boolean firstIter = true;
+    private boolean isIterating;
     public ResultSetRecordStream(ResultSet resultSet){
+
+        this.rs = resultSet;
+        fieldNameIndexes = PMap.empty();
         try {
-            this.rs = resultSet;
             md = resultSet.getMetaData();
-            PMap<String,Integer> fieldNameIndexes = PMap.empty();
+
             for(int t=0; t<md.getColumnCount(); t++){
                 fieldNameIndexes = fieldNameIndexes.put(md.getColumnLabel(t+1).toLowerCase(),t);
             }
-            this.fieldNameIndexes = fieldNameIndexes;
+
         } catch (SQLException e) {
+            log.severe(e.getMessage());
+
             throw new PersistSqlException(e);
         }
+        this.isIterating =true;
     }
 
 
     @Override
     public Iterator<Record> iterator() {
-        if(firstIter == false) {
+        if(this.isIterating == false) {
             throw new IllegalStateException("Can't iterate more than once over a ResultSet!");
         }
-        firstIter = false;
+        this.isIterating = false;
 
         return new Iterator<Record>() {
             boolean first = true;

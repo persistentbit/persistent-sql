@@ -150,7 +150,9 @@ public class EStat implements SqlArguments<EStat>{
         return runner.run(c -> {
             DatabaseMetaData dbm = c.getMetaData();
             try(ResultSet rs = dbm.getTables(null,null,null,null)){
-                PList<String> res = new ResultSetRecordStream(rs).map(r -> r.getString("table_name")).plist();
+                PStream<Record>  recStream = new ResultSetRecordStream(rs);
+                PStream<String> resStream = recStream.map(r -> r.getString("table_name"));
+                PList<String> res = resStream.plist();
                 return res.find(r -> r.equalsIgnoreCase(tableName)).isPresent();
             }
         });

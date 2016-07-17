@@ -30,7 +30,7 @@ public class DbInst extends Db {
                 .rename("userName","USER_NAME")
         ;
         rowMapper.createDefault(Invoice.class)
-                .addAllFields()
+                .addAllFieldsExcept("lines")
                 .rename("number","invoice_nummer")
                 .rename("fromPersonId","from_person_id")
                 .rename("toPersonId","to_person_id");
@@ -42,11 +42,14 @@ public class DbInst extends Db {
 
     public  ETableStats<Person> person() { return tableStats(Person.class,"PERSON");}
     public  ETableStats<Invoice> invoice() {  return tableStats(Invoice.class,"INVOICE");}
+
     public  ETableStats<InvoiceLine> invoiceLine() { return tableStats(InvoiceLine.class,"INVOICE_LINE");}
+
 
     public EJoinStats<Invoice,InvoiceLine,Tuple2<Invoice,InvoiceLine>> joinInvoiceLines() {
         return EJoinStats.joinTuple("left outer join", invoice().asJoinable("inv"),invoiceLine().asJoinable("line"),"line.invoice_id=inv.id");
     }
+
 
     static public void main(String...args){
         DbInst db = new DbInst();
@@ -67,13 +70,15 @@ public class DbInst extends Db {
 
         Person muys = db.person().insert(new Person(0,"petermuys","pwd"));
         Person axxes = db.person().insert(new Person(0,"axxes","pwd"));
-        Invoice in = db.invoice().insert(new Invoice(0,"2016-01",(int)muys.getId(),(int)axxes.getId()));
+        Invoice in = db.invoice().insert(new Invoice("2016-01",(int)muys.getId(),(int)axxes.getId()));
+        Invoice in2 = db.invoice().insert(new Invoice("2016-02",(int)muys.getId(),(int)axxes.getId()));
         db.invoiceLine().insert(new InvoiceLine(0,in.getId(),"Werken januari"));
         db.invoiceLine().insert(new InvoiceLine(0,in.getId(),"Werken februari"));
 
         System.out.println("START *********************");
-        //PList<Tuple2<Invoice,InvoiceLine>> s = db.joinInvoiceLines().select().getList();
-        //s.forEach(System.out::println);
+        PList<Tuple2<Invoice,InvoiceLine>> s = db.joinInvoiceLines().select().getList();
+        s.forEach(System.out::println);
+        s.groupByOrdered(t -> t._1).map(t -> t._1.withLines(t._2.map(ll -> ll._2).filter(r -> r != null))).forEach(System.out::println);
 
 
     }

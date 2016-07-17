@@ -3,8 +3,8 @@ package com.persistentbit.sql.statement;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
-import com.persistentbit.core.function.NamedSupplier;
 import com.persistentbit.sql.connect.SQLRunner;
+import com.persistentbit.sql.dbdef.TableColDef;
 import com.persistentbit.sql.dbdef.TableDef;
 import com.persistentbit.sql.objectmappers.*;
 
@@ -18,7 +18,7 @@ import java.util.function.Function;
  * Date: 16/07/16
  * Time: 15:26
  */
-public class ETableStats<T> implements Joinable {
+public class ETableStats<T>{
     private final SQLRunner runner;
     private final TableDef  tableDef;
     private final ObjectRowMapper   mapper;
@@ -33,15 +33,46 @@ public class ETableStats<T> implements Joinable {
         this.mappedClass = mappedClass;
     }
 
-    @Override
-    public Class getMappedClass() {
-        return mappedClass;
+    public EJoinable<T> asJoinable(String name){
+        return new EJoinable<T>() {
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public String getSelectPart() {
+                return ":" + name + ".*";
+            }
+
+            @Override
+            public String getTableName() {
+                return  tableDef.getTableName();
+            }
+
+            @Override
+            public T mapRow(Record row) {
+                return mapper.read(mappedClass,row.getSubRecord(name));
+            }
+
+            @Override
+            public SQLRunner getRunner() {
+                return runner;
+            }
+
+            @Override
+            public String getOwnJoins() {
+                return "";
+            }
+
+            @Override
+            public EStatementPreparer getStatementPreparer() {
+                return statementPreparer;
+            }
+        };
     }
 
-    @Override
-    public TableDef getTableDef() {
-        return tableDef;
-    }
+
 
     public class SelectBuilder implements SqlArguments<SelectBuilder>,ReadableRow{
         private PMap<String,Object> args = PMap.empty();
@@ -107,16 +138,23 @@ public class ETableStats<T> implements Joinable {
     public int deleteForId(Object id){
         PStream<String> ids = tableDef.getIdCols().map(c -> c.getName());
 
-        String sql = "DELETE FROM " + tableDef.getTableName() +" WHERE " + ids.map(n-> n + "=: + n").toString(" AND ");
+        String sql = "DELETE FROM " + tableDef.getTableName() +" WHERE " + ids.map(n-> n + "=:" + n).toString(" AND ");
+        InMemoryRow row = new InMemoryRow();
+        TableColDef idCol = tableDef.getIdCols().head();
+        row.write(idCol.getName(),id);
         return runner.run(c -> {
-           try(PreparedStatement stat = c.prepareStatement(sql) ){
+           try(PreparedStatement stat = statementPreparer.prepare(c,sql,row) ){
                return stat.executeUpdate();
            }
         });
     }
 
-    public void deleteAll() {
-
+    public int deleteAll() {
+        return runner.run(c -> {
+            try(PreparedStatement s = c.prepareStatement("DELETE FROM " + tableDef.getTableName())){
+                return s.executeUpdate();
+            }
+        });
     }
 
     public int update(T obj){
@@ -124,7 +162,7 @@ public class ETableStats<T> implements Joinable {
         PStream<String> ids = tableDef.getIdCols().map(c -> c.getName());
         String sql = "UPDATE " + tableDef.getTableName() +
                 " SET " + names.map(n -> n + "=:"+ n).toString(",") +
-                " WHERE " + ids.map(n-> n + "=: + n").toString(" AND ");
+                " WHERE " + ids.map(n-> n + "=:" + n).toString(" AND ");
         InMemoryRow row = new InMemoryRow();
         mapper.write(obj,row);
         return runner.run(c -> {

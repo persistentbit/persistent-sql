@@ -1,7 +1,9 @@
 package com.persistentbit.sql.statement;
 
+import com.persistentbit.core.Lazy;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.core.collections.PStreamLazy;
 import com.persistentbit.sql.PersistSqlException;
 
 import java.sql.ResultSet;
@@ -13,7 +15,7 @@ import java.util.Iterator;
  * @author Peter Muys
  * @since 13/07/2016
  */
-public class ResultSetRecordStream implements PStream<Record>{
+public class ResultSetRecordStream extends PStreamLazy<Record>{
     private PMap<String,Integer>    fieldNameIndexes;
     private ResultSetMetaData md;
     private ResultSet rs;
@@ -39,10 +41,16 @@ public class ResultSetRecordStream implements PStream<Record>{
             throw new IllegalStateException("Can't iterate more than once over a ResultSet!");
         }
         firstIter = false;
+
         return new Iterator<Record>() {
+            boolean first = true;
             @Override
             public boolean hasNext() {
                 try {
+                    if(first){
+                        System.out.println("STARTING ITERATION");
+                        first = false;
+                    }
                     boolean next = rs.next();
                     if(next == false){
                         rs.close();

@@ -104,7 +104,7 @@ public class SqlLoader {
                     }
                     current += line;
                     if(current.trim().endsWith(delimiter)){
-                        allCurrent.add(current);
+                        allCurrent.add(current.substring(0,current.length()-delimiter.length()));
                         current = "";
 
                     }

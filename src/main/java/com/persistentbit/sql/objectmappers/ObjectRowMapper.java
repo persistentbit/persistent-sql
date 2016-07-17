@@ -82,9 +82,9 @@ public class ObjectRowMapper {
      * @return The mapped Object from the row or null if all properties in the row are null
      * @see DefaultObjectReader
      */
-    public Object read(Class cls, ReadableRow row){
+    public <T> T read(Class<T> cls, ReadableRow row){
 
-        return thisAsReaderSupplier.apply(cls).read(thisAsReaderSupplier,row);
+        return (T)thisAsReaderSupplier.apply(cls).read(thisAsReaderSupplier,row);
     }
 
     /**

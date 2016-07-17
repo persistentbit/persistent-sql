@@ -117,7 +117,7 @@ public class EStat implements SqlArguments<EStat>{
         }).join(
                 (a,b)->a+b).get();
         //System.out.println(js);
-        try {
+        try{
             PreparedStatement s = c.prepareStatement(js);
             argNames.zipWithIndex().forEach(n -> {
                 try {
@@ -128,7 +128,7 @@ public class EStat implements SqlArguments<EStat>{
             });
             return s;
         } catch (SQLException e) {
-            throw new PersistSqlException(e);
+            throw new PersistSqlException("Error preparing statement \"" + js+ "\"",e);
         }
 
 

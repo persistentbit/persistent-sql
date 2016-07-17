@@ -6,7 +6,9 @@ import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.statement.Db;
 import com.persistentbit.sql.statement.EJoinStats;
+import com.persistentbit.sql.statement.EJoinable;
 import com.persistentbit.sql.statement.ETableStats;
+
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -51,6 +53,18 @@ public class DbInst extends Db {
         EJoinStats.joinTuple("left outer join", invoice.asJoinable("inv"),invoiceLine.asJoinable("line"),"line.invoice_id=inv.id");
 
 
+    public EJoinStats<Invoice,Person,Tuple2<Invoice,Person>> joinInvoiceFrom(EJoinable<Invoice> left)  {
+        return EJoinStats.joinTuple("left outer join",left,person.asJoinable("from"),"from.id=" + left.getName() + ".from_person_id");
+    }
+
+    /*public EJoinStats<Invoice,Person,Tuple2<Invoice,Person>> joinInvoiceTo(EJoinable<Invoice> left)  {
+        return EJoinStats.joinTuple("left outer join",left,person.asJoinable("to"),"to.id=" + left.getName() + ".to_person_id");
+    }
+    public EJoinStats<Invoice,Person,Tuple2<Invoice,Person>> joinInvoiceTo(EJoinable<Invoice> left)  {
+        return EJoinStats.joinTuple("left outer join",left,person.asJoinable("to"),"to.id=" + left.getName() + ".to_person_id");
+    }*/
+
+
 
     static public void main(String...args){
         DbInst db = new DbInst();
@@ -81,7 +95,11 @@ public class DbInst extends Db {
         System.out.println("START *********************");
         PList<Tuple2<Invoice,InvoiceLine>> s = db.joinInvoiceLines.select().getList();
         s.forEach(System.out::println);
-        s.groupByOrdered(t -> t._1).map(t -> t._1.withLines(t._2.map(ll -> ll._2).filter(r -> r != null))).forEach(System.out::println);
+
+        db.joinInvoiceFrom(db.joinInvoiceLines.asJoinable()).select().getList().forEach(System.out::println);
+
+
+        //s.groupByOrdered(t -> t._1).map(t -> t._1.withLines(t._2.map(ll -> ll._2).filter(r -> r != null))).forEach(System.out::println);
 
 
     }

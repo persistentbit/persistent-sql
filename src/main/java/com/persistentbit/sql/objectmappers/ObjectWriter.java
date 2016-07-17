@@ -6,5 +6,5 @@ package com.persistentbit.sql.objectmappers;
  */
 @FunctionalInterface
 public interface ObjectWriter {
-    void write(Object obj, ObjectWriter masterWriter, WritableRow result);
+    void write(String fieldName,Object obj, ObjectWriter masterWriter, WritableRow result);
 }

@@ -5,8 +5,7 @@ import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.lenses.Lens;
 import com.persistentbit.core.lenses.LensImpl;
 import com.persistentbit.core.properties.FieldNames;
-
-import java.util.Objects;
+import com.persistentbit.sql.references.LongRef;
 
 /**
  * User: petermuys
@@ -17,16 +16,16 @@ import java.util.Objects;
 public class Invoice {
     private final int id;
     private final String number;
-    private int fromPersonId;
-    private int toPersonId;
+    private LongRef<Person> fromPersonId;
+    private LongRef<Person> toPersonId;
 	private PList<InvoiceLine> lines;
 
 
-	public Invoice(String number, int fromPersonId, int toPersonId){
+	public Invoice(String number, LongRef<Person> fromPersonId, LongRef<Person> toPersonId){
     	this(0,number,fromPersonId,toPersonId,PList.empty());
 	}
 	@FieldNames(names = {"id","number","fromPersonId","toPersonId","lines"})
-    public Invoice(int id, String number, int fromPersonId, int toPersonId,PList<InvoiceLine> lines) {
+    public Invoice(int id, String number, LongRef<Person> fromPersonId, LongRef<Person> toPersonId,PList<InvoiceLine> lines) {
         this.id = id;
         this.number = number;
         this.fromPersonId = fromPersonId;
@@ -75,8 +74,8 @@ public class Invoice {
 		if(o instanceof Invoice ==false) { return false; }
 		Invoice other = (Invoice)o;
 		if(number.equals(other.number) == false){ return false; }
-		if(toPersonId == other.toPersonId == false){ return false; }
-		if(fromPersonId == other.fromPersonId == false){ return false; }
+		if(toPersonId.equals(other.toPersonId) == false){ return false; }
+		if(fromPersonId.equals(other.fromPersonId) == false){ return false; }
 		if(id == other.id == false){ return false; }
 		if(lines.equals(other.lines) == false){ return false; }
 		return true;
@@ -86,8 +85,8 @@ public class Invoice {
 	public int hashCode(){
 		int result=0;
 		result = 31 * result + number.hashCode();
-		result = 31 * result + Integer.hashCode(toPersonId);
-		result = 31 * result + Integer.hashCode(fromPersonId);
+		result = 31 * result + toPersonId.hashCode();
+		result = 31 * result + fromPersonId.hashCode();
 		result = 31 * result + Integer.hashCode(id);
 		result = 31 * result + lines.hashCode();
 		return result;

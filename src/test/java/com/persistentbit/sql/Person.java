@@ -2,8 +2,9 @@ package com.persistentbit.sql;
 
 import com.persistentbit.core.codegen.CaseClass;
 import com.persistentbit.core.codegen.GenNoLens;
-import com.persistentbit.core.codegen.GenNoWith;
 import com.persistentbit.core.properties.FieldNames;
+import com.persistentbit.sql.references.LongRef;
+import com.persistentbit.sql.references.LongRefValue;
 
 /**
  * User: petermuys
@@ -22,6 +23,10 @@ public class Person {
         this.userName = userName;
         this.password = password;
     }
+
+    public LongRef<Person> getRef() {
+    	return new LongRefValue(this.getId(),this);
+	}
 
     public Person withName(String name){
         return new Person(id,name,password);

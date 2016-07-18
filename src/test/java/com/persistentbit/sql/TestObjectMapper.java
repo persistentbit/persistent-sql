@@ -14,9 +14,16 @@ public class TestObjectMapper {
         Person p = new Person(1,"user","pwd");
         ObjectRowMapper mapper = new ObjectRowMapper();
         mapper.createDefault(Person.class).addAllFields().rename("userName","user_name");
+        mapper.createDefault(Invoice.class).addAllFieldsExcept("lines");
         InMemoryRow row = new InMemoryRow();
         mapper.write(p,row);
         System.out.println(row);
         System.out.println(mapper.read(Person.class,row));
+
+        Invoice in = new Invoice("1234",p.getRef(),p.getRef());
+        row = new InMemoryRow();
+        mapper.write(in,row);
+        System.out.println(row);
+        System.out.println(mapper.read(Invoice.class,row));
     }
 }

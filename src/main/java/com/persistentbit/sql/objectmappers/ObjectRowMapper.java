@@ -1,6 +1,7 @@
 package com.persistentbit.sql.objectmappers;
 
 import com.persistentbit.core.collections.PMap;
+import com.persistentbit.sql.references.RefObjectReaderWriter;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -43,7 +44,10 @@ public class ObjectRowMapper {
             registerReader(cls,rw);
             registerWriter(cls,rw);
         }
+        RefObjectReaderWriter.register(this);
     }
+
+
 
 
 

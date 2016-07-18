@@ -1,5 +1,6 @@
 package com.persistentbit.sql;
 
+import com.persistentbit.core.Tuple2;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.statement.Db;
 import com.persistentbit.sql.statement.EJoinStats;
@@ -61,8 +62,8 @@ public class DbInst extends Db {
 
         Person muys = db.person.insert(new Person(0,"petermuys","pwd"));
         Person axxes = db.person.insert(new Person(0,"axxes","pwd"));
-        Invoice in = db.invoice.insert(new Invoice("2016-01",(int)muys.getId(),(int)axxes.getId()));
-        Invoice in2 = db.invoice.insert(new Invoice("2016-02",(int)muys.getId(),(int)axxes.getId()));
+        Invoice in = db.invoice.insert(new Invoice("2016-01",muys.getRef(),axxes.getRef()));
+        Invoice in2 = db.invoice.insert(new Invoice("2016-02",muys.getRef(),axxes.getRef()));
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken januari"));
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken februari"));
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken maart"));
@@ -74,7 +75,11 @@ public class DbInst extends Db {
                 .leftOuterJoin(db.person.asJoinable("toPerson"),"toPerson.id=inv.to_person_id")
          ;
 
-        join.select("where line.id is not null").getList().forEach(System.out::println);
+        join.select("where line.id is not null").getList().groupBy(l -> l.head()).mapKeyValues(t -> {
+            Invoice i = (Invoice)t._1;
+            i = i.withLines(t._2.map(vlist -> (InvoiceLine)vlist.get(0)).plist());
+            return Tuple2.of(i,i);
+        }).forEach(System.out::println);
 
         System.out.println("START *********************");
         //PList<Tuple2<Invoice,InvoiceLine>> s = db.joinInvoiceLines.select().getList();

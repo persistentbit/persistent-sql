@@ -7,7 +7,6 @@ import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.utils.ImTools;
 
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * An implementation of an {@link ObjectWriter} that uses reflection to write an object to a database table row.<br>
@@ -18,12 +17,11 @@ public class DefaultObjectWriter implements ObjectWriter{
     private final ImTools im;
 
 
-    private final Predicate<Class>    canWriteToRow;
     private PMap<String,ObjectWriter> fieldWriters = PMap.empty();
 
-    public DefaultObjectWriter(Class cls,Predicate<Class> canWriteToRow){
+    public DefaultObjectWriter(Class cls){
         this.im = ImTools.get(cls);
-        this.canWriteToRow = canWriteToRow;
+
     }
 
     @Override

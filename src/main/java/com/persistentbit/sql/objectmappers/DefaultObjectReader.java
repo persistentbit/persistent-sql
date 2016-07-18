@@ -7,7 +7,6 @@ import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.utils.ImTools;
 
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * An implementation of an {@link ObjectReader} that uses reflection to read an object from a database table row.<br>
@@ -17,11 +16,10 @@ import java.util.function.Predicate;
 public class DefaultObjectReader implements ObjectReader{
     private final ImTools im;
     private PMap<String,ObjectReader> fieldReaders = PMap.empty();
-    private final Predicate<Class> canWriteToRow;
 
-    public DefaultObjectReader(Class cls,Predicate<Class> canWriteToRow){
+
+    public DefaultObjectReader(Class cls){
         im = ImTools.get(cls);
-        this.canWriteToRow = canWriteToRow;
     }
 
     @Override

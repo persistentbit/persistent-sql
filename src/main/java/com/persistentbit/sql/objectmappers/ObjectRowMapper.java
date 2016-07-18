@@ -2,11 +2,9 @@ package com.persistentbit.sql.objectmappers;
 
 import com.persistentbit.core.collections.PMap;
 
-import java.time.temporal.Temporal;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
@@ -21,40 +19,32 @@ import java.util.logging.Logger;
 public class ObjectRowMapper {
     static private final Logger log = Logger.getLogger(ObjectRowMapper.class.getName());
 
-    /**
-     * Default predicate to decide if a given class can be mapped to a column in a Row.
-     */
-    static public final Predicate<Class> defaultCanWriteInRowPredicate = cls ->  cls.equals(String.class) ||
-            cls.equals(Boolean.class) ||
-            cls.isPrimitive() ||
-            Number.class.isAssignableFrom(cls) ||
-            Temporal.class.isAssignableFrom(cls) ||
-            Date.class.isAssignableFrom(cls);
+
 
 
     private PMap<Class,ObjectReader> readers = PMap.empty();
     private PMap<Class,ObjectWriter> writers = PMap.empty();
 
 
-    private final Predicate<Class>  canWriteInRow;
 
 
-    /**
-     * Default mapper using the default predicate to decide if a given class can be mapped to a column in a Row.
-     * @see #defaultCanWriteInRowPredicate
-     */
-    public ObjectRowMapper() {
-        this(defaultCanWriteInRowPredicate);
-    }
+
+
 
     /**
      * Create a new mapper.
-     * @param canWriteInRow    Predicate to decide if a given class can be mapped to ca column in a row
-     * @see #defaultCanWriteInRowPredicate
      */
-    public ObjectRowMapper(Predicate<Class> canWriteInRow){
-        this.canWriteInRow = canWriteInRow;
+    public ObjectRowMapper(){
+        for(Class cls :Arrays.asList(Integer.class,int.class,Short.class,short.class,Long.class,long.class,
+                float.class,Float.class, double.class,Double.class,
+                String.class,boolean.class,Boolean.class,Byte.class,byte.class,char.class,Character.class
+        )){
+            ValueObjectReaderWriter rw = new ValueObjectReaderWriter(cls);
+            registerReader(cls,rw);
+            registerWriter(cls,rw);
+        }
     }
+
 
 
     private final ObjectWriter  thisAsObjectWriter = new ObjectWriter() {
@@ -163,7 +153,7 @@ public class ObjectRowMapper {
      * @return The default writer
      */
     public DefaultObjectWriter createDefaultWriter(Class cls){
-        DefaultObjectWriter writer = new DefaultObjectWriter(cls,canWriteInRow);
+        DefaultObjectWriter writer = new DefaultObjectWriter(cls);
         registerWriter(cls,writer);
         return writer;
     }
@@ -174,7 +164,7 @@ public class ObjectRowMapper {
      * @return The default reader
      */
     public DefaultObjectReader createDefaultReader(Class cls){
-        DefaultObjectReader reader = new DefaultObjectReader(cls,canWriteInRow);
+        DefaultObjectReader reader = new DefaultObjectReader(cls);
         registerReader(cls,reader);
         return reader;
     }

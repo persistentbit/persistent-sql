@@ -64,7 +64,12 @@ public class DefaultObjectWriter implements ObjectWriter{
         fieldWriters = fieldWriters.put(fieldName, new ObjectWriter() {
             @Override
             public void write(String name,Object obj, ObjectWriter masterWriter, WritableRow result) {
-                orgWriter.write(propertyName,obj, masterWriter, result);
+                orgWriter.write(propertyName,obj, masterWriter, new WritableRow() {
+                    @Override
+                    public WritableRow write(String name, Object value) {
+                        return result.write(propertyName,value);
+                    }
+                });
             }
         });
         return this;

@@ -11,67 +11,79 @@ import java.util.function.Function;
 /**
  * An implementation of an {@link ObjectReader} that uses reflection to read an object from a database table row.<br>
  * Internally, {@link ImTools} is used to get all the properties from an Object.<br>
+ *
  * @see ObjectRowMapper
  */
-public class DefaultObjectReader implements ObjectReader{
+public class DefaultObjectReader implements ObjectReader {
     private final ImTools im;
-    private PMap<String,ObjectReader> fieldReaders = PMap.empty();
+    private PMap<String, ObjectReader> fieldReaders = PMap.empty();
 
 
-    public DefaultObjectReader(Class cls){
+    public DefaultObjectReader(Class cls) {
         im = ImTools.get(cls);
     }
 
+
     @Override
-    public Object read(String name, Function<Class,ObjectReader> readerSupplier, ReadableRow properties) {
+    public String toString() {
+        return "DefaultObjectReader[" + im.getObjectClass().getSimpleName() + ", " + fieldReaders + "]";
+    }
 
-        PMap<String,Object> map = fieldReaders.mapKeyValues(t ->
+    @Override
+    public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
 
-            Tuple2.of(t._1,read(t._1,readerSupplier,properties))
+        PMap<String, Object> map = fieldReaders.mapKeyValues(t ->
+
+                Tuple2.of(t._1, t._2.read(t._1, readerSupplier, properties))
         );
-        if(map.values().find(v -> v!= null).isPresent() == false){
+        if (map.values().find(v -> v != null).isPresent() == false) {
             //Not 1 property is set, assuming this is a null value
             return null;
         }
         return im.createNew(map);
     }
 
-    private Object mapProperty(Class type, Object value){
-        if(value == null){
+    private Object mapProperty(Class type, Object value) {
+        if (value == null) {
             return null;
         }
-        if(type.equals(Integer.class) || type.equals(int.class)){
-            return ((Number)value).intValue();
+        if (type.equals(Integer.class) || type.equals(int.class)) {
+            return ((Number) value).intValue();
 
         }
-        if(type.equals(Long.class) || type.equals(long.class)){
-            return ((Number)value).longValue();
+        if (type.equals(Long.class) || type.equals(long.class)) {
+            return ((Number) value).longValue();
 
         }
         return value;
     }
 
 
-    public DefaultObjectReader addAllFields(){
+    public DefaultObjectReader addAllFields() {
         return addAllFieldsExcept();
     }
 
-    public DefaultObjectReader addAllFieldsExcept(String...fieldNames){
-        PSet<String> exclude= PStream.from(fieldNames).pset();
+    public DefaultObjectReader addAllFieldsExcept(String... fieldNames) {
+        PSet<String> exclude = PStream.from(fieldNames).pset();
         PStream<ImTools.Getter> getters = im.getFieldGetters();
         fieldReaders = fieldReaders.plusAll(getters.filter(g -> exclude.contains(g.propertyName) == false).map(g ->
-                Tuple2.of(g.propertyName,new ObjectReader(){
-                @Override
-                public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
-                    return readerSupplier.apply(g.field.getType()).read(g.propertyName,readerSupplier,properties);
-                }
-            })
+                Tuple2.of(g.propertyName, new ObjectReader() {
+                    @Override
+                    public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+                        return readerSupplier.apply(g.field.getType()).read(g.propertyName, readerSupplier, properties);
+                    }
+
+                    @Override
+                    public String toString() {
+                        return "FieldReader[" + im.getObjectClass().getSimpleName() + ",  " + g.field.getType().getSimpleName() + "." + g.propertyName + "]";
+                    }
+                })
 
         ));
         return this;
     }
 
-    public DefaultObjectReader rename(String fieldName, String propertyName){
+    public DefaultObjectReader rename(String fieldName, String propertyName) {
         ObjectReader orgReader = getObjectReader(fieldName);
         fieldReaders = fieldReaders.put(fieldName, new ObjectReader() {
             @Override
@@ -80,31 +92,39 @@ public class DefaultObjectReader implements ObjectReader{
             }
 
             @Override
-            public Object read(String name,Function<Class, ObjectReader> masterReader, ReadableRow properties) {
-                return orgReader.read(propertyName,masterReader,properties);
+            public Object read(String name, Function<Class, ObjectReader> masterReader, ReadableRow properties) {
+                return orgReader.read(propertyName, masterReader, new ReadableRow() {
+                    @Override
+                    public <T> T read(Class<T> cls, String name) {
+                        if(name.equals(fieldName)){
+                            name = propertyName;
+                        }
+                        return properties.read(cls,name);
+                    }
+                });
             }
         });
         return this;
     }
 
-    public DefaultObjectReader mapToField(String fieldName, Function<Object,Object> fromPropertyToField){
+    public DefaultObjectReader mapToField(String fieldName, Function<Object, Object> fromPropertyToField) {
         ObjectReader orgReader = getObjectReader(fieldName);
         fieldReaders = fieldReaders.put(fieldName, new ObjectReader() {
             @Override
-            public Object read(String name,Function<Class, ObjectReader> masterReader, ReadableRow properties) {
-                return fromPropertyToField.apply(orgReader.read(fieldName,masterReader,properties));
+            public Object read(String name, Function<Class, ObjectReader> masterReader, ReadableRow properties) {
+                return fromPropertyToField.apply(orgReader.read(fieldName, masterReader, properties));
             }
         });
         return this;
     }
 
-    public DefaultObjectReader  prefix(String fieldName, String propertyPrefix){
+    public DefaultObjectReader prefix(String fieldName, String propertyPrefix) {
         ObjectReader orgReader = getObjectReader(fieldName);
 
         fieldReaders = fieldReaders.put(fieldName, new ObjectReader() {
             @Override
-            public Object read(String name,Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
-                return orgReader.read(name, readerSupplier, new ReadableRow(){
+            public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+                return orgReader.read(name, readerSupplier, new ReadableRow() {
                     @Override
                     public <T> T read(Class<T> cls, String name) {
                         return properties.read(cls, propertyPrefix + name);
@@ -117,15 +137,15 @@ public class DefaultObjectReader implements ObjectReader{
 
     private ObjectReader getObjectReader(String fieldName) {
         ObjectReader orgReader = fieldReaders.get(fieldName);
-        if(orgReader == null){
+        if (orgReader == null) {
             throw new IllegalArgumentException("Can't find field '" + fieldName + "'. Add the fields first with addAllFields() or addAllFieldsExcept()");
         }
         return orgReader;
     }
 
 
-    public DefaultObjectReader setFieldReader(String name, ObjectReader fieldReader){
-        fieldReaders = fieldReaders.put(name,fieldReader);
+    public DefaultObjectReader setFieldReader(String name, ObjectReader fieldReader) {
+        fieldReaders = fieldReaders.put(name, fieldReader);
         return this;
     }
 }

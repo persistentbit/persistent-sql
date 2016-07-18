@@ -95,7 +95,8 @@ public class ETableStats<T>{
 
         @Override
         public <T> T read(Class<T> cls, String name) {
-            return (T)args.find(a -> a._1.equalsIgnoreCase(name)).map(a -> a._2).orElse(null);
+            return ReadableRow.check(cls,name,(T)args.find(a -> a._1.equalsIgnoreCase(name)).map(a -> a._2).orElse(null));
+
         }
 
         public Optional<T> forId(Object id){
@@ -210,9 +211,11 @@ public class ETableStats<T>{
                     @Override
                     public <T> T read(Class<T>cls,String name) {
                         if (tableDef.get().getAutoGenCols().find(tc -> tc.getName().equalsIgnoreCase(name)).isPresent()) {
-                            return (T)autoGenObj;
+                            T result = (T)autoGenObj;
+                            return ReadableRow.checkAndConvert(cls,name,result);
                         }
                         return row.read(cls,name);
+
                     }
                 };
                 return (T) mapper.read(mappedClass, newRec);

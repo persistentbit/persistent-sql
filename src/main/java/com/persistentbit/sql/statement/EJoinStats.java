@@ -92,7 +92,11 @@ public class EJoinStats<L, R, T> {
 
         @Override
         public <T> T read(Class<T>cls, String name) {
-            return (T)args.find(a -> a._1.equalsIgnoreCase(name)).map(a -> a._2).orElse(null);
+            T result =(T)args.find(a -> a._1.equalsIgnoreCase(name)).map(a -> a._2).orElse(null);
+            if(result == null || result.getClass().equals(cls)){
+                return result;
+            }
+            throw new RuntimeException("Expected " + cls.getName() + ", got " + result.getClass() + " for property '" + name + "' with value " + result);
         }
 
 

@@ -99,7 +99,8 @@ public class DefaultObjectReader implements ObjectReader {
                         if(name.equals(fieldName)){
                             name = propertyName;
                         }
-                        return properties.read(cls,name);
+                        return ReadableRow.check(cls,name,properties.read(cls,name));
+
                     }
                 });
             }
@@ -127,7 +128,11 @@ public class DefaultObjectReader implements ObjectReader {
                 return orgReader.read(name, readerSupplier, new ReadableRow() {
                     @Override
                     public <T> T read(Class<T> cls, String name) {
-                        return properties.read(cls, propertyPrefix + name);
+                        T result=  properties.read(cls, propertyPrefix + name);
+                        if(result == null || result.getClass().equals(cls)){
+                            return result;
+                        }
+                        throw new RuntimeException("Expected " + cls.getName() + ", got " + result.getClass() + " for property '" + name + "' with value " + result);
                     }
                 });
             }

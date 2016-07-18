@@ -25,8 +25,8 @@ public interface Record extends ReadableRow{
 
 
     @Override
-    default <T> T read(Class<T> cls, String name) {
-        return (T)getObject(name);
+    default <T> T read(Class<T> cls, String name){
+        return ReadableRow.checkAndConvert(cls,name,(T)getObject(name));
     }
 
     default PMap<String,Object> getAll(){
@@ -37,35 +37,7 @@ public interface Record extends ReadableRow{
         return new RecordSubSet(name+"_",this);
     }
 
-    /*
-    default Record lazyMapSubRecord(String subName, Function<Record,?> mapped){
-        final String lowName = subName.toLowerCase();
-        return new Record(){
-            @Override
-            public boolean hasName(String name) {
-                if(name.equals(lowName)){
-                    return true;
-                }
-                if(name.startsWith(lowName)){
-                    return false;
-                }
-                return Record.this.hasName(name);
-            }
 
-            @Override
-            public PStream<String> getNames() {
-                return Record.this.getNames().filter(n -> n.startsWith(lowName)== false).plus(lowName);
-            }
-
-            @Override
-            public Object getObject(String naam) {
-                if(lowName.equals(naam.toLowerCase())){
-                    return mapped.apply(new RecordSubSet(subName+"_",Record.this));
-                }
-                return Record.this.getObject(naam);
-            }
-        };
-    }*/
 
     default Number getNumber(String naam) {
         return (Number) getObject(naam);

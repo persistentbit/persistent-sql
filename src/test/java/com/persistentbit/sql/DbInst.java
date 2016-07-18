@@ -2,6 +2,7 @@ package com.persistentbit.sql;
 
 import com.persistentbit.core.Tuple2;
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.statement.Db;
 import com.persistentbit.sql.statement.EJoinStats;
 import com.persistentbit.sql.statement.EJoinable;
@@ -60,20 +61,20 @@ public class DbInst extends Db {
 
     static public void main(String...args){
         DbInst db = new DbInst();
-        /*PStream.sequence(0).limit(10).forEach(i -> {
-            System.out.println(db.person().insert(new Person(0,"mup" + i,"pwd")));
+        PStream.sequence(0).limit(10).forEach(i -> {
+            System.out.println(db.person.insert(new Person(0,"mup" + i,"pwd")));
         });
-        db.person().select().getList().forEach(System.out::println);
-        System.out.println(db.person().select().forId(7));
-        System.out.println(db.person().select("where t.user_name = :username").arg("username","mup5").getOne());
-        db.person().update(db.person().select().forId(8).get().withName("Peter Muys"));
+        db.person.select().getList().forEach(System.out::println);
+        System.out.println(db.person.select().forId(7));
+        System.out.println(db.person.select("where t.user_name = :username").arg("username","mup5").getOne());
+        db.person.update(db.person.select().forId(8).get().withName("Peter Muys"));
 
 
-        db.person().deleteForId(2);
-        db.person().delete(db.person().select().forId(4).get());
-        db.person().select().getList().forEach(System.out::println);
-        System.out.println("Delete all: " + db.person().deleteAll());
-        */
+        db.person.deleteForId(2);
+        db.person.delete(db.person.select().forId(4).get());
+        db.person.select().getList().forEach(System.out::println);
+        System.out.println("Delete all: " + db.person.deleteAll());
+
 
         Person muys = db.person.insert(new Person(0,"petermuys","pwd"));
         Person axxes = db.person.insert(new Person(0,"axxes","pwd"));

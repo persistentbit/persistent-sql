@@ -13,7 +13,8 @@ public class InMemoryRow implements WritableRow,ReadableRow {
     private PMap<String,Tuple2<String,Object>>  all = PMap.empty();
     @Override
     public <T> T read(Class<T> cls, String name) {
-        return (T)all.getOrDefault(name.toLowerCase(),nullTuple)._2;
+        return  ReadableRow.check(cls,name,(T)all.getOrDefault(name.toLowerCase(),nullTuple)._2);
+
     }
 
     @Override

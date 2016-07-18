@@ -12,8 +12,8 @@ public class InMemoryRow implements WritableRow,ReadableRow {
     static private final Tuple2<String,Object> nullTuple = Tuple2.of(null,null);
     private PMap<String,Tuple2<String,Object>>  all = PMap.empty();
     @Override
-    public Object read(String name) {
-        return all.getOrDefault(name.toLowerCase(),nullTuple)._2;
+    public <T> T read(Class<T> cls, String name) {
+        return (T)all.getOrDefault(name.toLowerCase(),nullTuple)._2;
     }
 
     @Override

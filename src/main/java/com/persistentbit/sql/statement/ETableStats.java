@@ -61,7 +61,7 @@ public class ETableStats<T>{
 
             @Override
             public T mapRow(Record row) {
-                return mapper.read(mappedClass,row.getSubRecord(name));
+                return mapper.read(name,mappedClass,row.getSubRecord(name));
             }
 
             @Override
@@ -94,8 +94,8 @@ public class ETableStats<T>{
         }
 
         @Override
-        public Object read(String name) {
-            return args.find(a -> a._1.equalsIgnoreCase(name)).map(a -> a._2).orElse(null);
+        public <T> T read(Class<T> cls, String name) {
+            return (T)args.find(a -> a._1.equalsIgnoreCase(name)).map(a -> a._2).orElse(null);
         }
 
         public Optional<T> forId(Object id){
@@ -141,7 +141,7 @@ public class ETableStats<T>{
     public int delete(T obj){
         InMemoryRow row = new InMemoryRow();
         mapper.write(obj,row);
-        return deleteForId(row.read(tableDef.get().getIdCols().head().getName()));
+        return deleteForId(row.read(null,tableDef.get().getIdCols().head().getName()));
     }
 
     public int deleteForId(Object id){
@@ -208,11 +208,11 @@ public class ETableStats<T>{
                 //Create a row mapper for the auto generated Id's
                 ReadableRow newRec = new ReadableRow() {
                     @Override
-                    public Object read(String name) {
+                    public <T> T read(Class<T>cls,String name) {
                         if (tableDef.get().getAutoGenCols().find(tc -> tc.getName().equalsIgnoreCase(name)).isPresent()) {
-                            return autoGenObj;
+                            return (T)autoGenObj;
                         }
-                        return row.read(name);
+                        return row.read(cls,name);
                     }
                 };
                 return (T) mapper.read(mappedClass, newRec);

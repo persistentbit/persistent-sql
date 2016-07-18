@@ -2,7 +2,6 @@ package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
-import com.persistentbit.core.function.NamedSupplier;
 import com.persistentbit.sql.objectmappers.ReadableRow;
 
 import java.lang.reflect.Field;
@@ -26,8 +25,8 @@ public interface Record extends ReadableRow{
 
 
     @Override
-    default Object read(String name) {
-        return getObject(name);
+    default <T> T read(Class<T> cls, String name) {
+        return (T)getObject(name);
     }
 
     default PMap<String,Object> getAll(){

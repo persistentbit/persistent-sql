@@ -1,19 +1,11 @@
 package com.persistentbit.sql;
 
-import com.persistentbit.core.Lazy;
 import com.persistentbit.core.Tuple2;
 import com.persistentbit.core.collections.PList;
-import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.statement.Db;
 import com.persistentbit.sql.statement.EJoinStats;
 import com.persistentbit.sql.statement.EJoinable;
 import com.persistentbit.sql.statement.ETableStats;
-
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Connection;
-import java.util.function.Supplier;
 
 /**
  * User: petermuys
@@ -96,7 +88,7 @@ public class DbInst extends Db {
         PList<Tuple2<Invoice,InvoiceLine>> s = db.joinInvoiceLines.select().getList();
         s.forEach(System.out::println);
 
-        db.joinInvoiceFrom(db.joinInvoiceLines.asJoinable()).select().getList().forEach(System.out::println);
+        //db.joinInvoiceFrom(db.joinInvoiceLines.asJoinable()).select().getList().forEach(System.out::println);
 
 
         //s.groupByOrdered(t -> t._1).map(t -> t._1.withLines(t._2.map(ll -> ll._2).filter(r -> r != null))).forEach(System.out::println);

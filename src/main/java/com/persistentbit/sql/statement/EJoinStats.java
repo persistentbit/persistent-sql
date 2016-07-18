@@ -8,11 +8,8 @@ import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.connect.SQLRunner;
 import com.persistentbit.sql.objectmappers.ReadableRow;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -94,8 +91,8 @@ public class EJoinStats<L, R, T> {
         }
 
         @Override
-        public Object read(String name) {
-            return args.find(a -> a._1.equalsIgnoreCase(name)).map(a -> a._2).orElse(null);
+        public <T> T read(Class<T>cls, String name) {
+            return (T)args.find(a -> a._1.equalsIgnoreCase(name)).map(a -> a._2).orElse(null);
         }
 
 

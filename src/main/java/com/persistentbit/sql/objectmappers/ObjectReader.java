@@ -13,5 +13,12 @@ import java.util.function.Function;
  */
 @FunctionalInterface
 public interface ObjectReader {
-    Object read(Function<Class, ObjectReader> readerSupplier, ReadableRow properties);
+    /**
+     * Read an object from a readable row
+     * @param name The name of the value
+     * @param readerSupplier Supplier of Objectreaders for classes
+     * @param properties The row of properties
+     * @return The value
+     */
+    Object read(String name, Function<Class,ObjectReader> readerSupplier, ReadableRow properties);
 }

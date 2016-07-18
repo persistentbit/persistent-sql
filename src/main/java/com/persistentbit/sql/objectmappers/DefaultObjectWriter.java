@@ -27,13 +27,13 @@ public class DefaultObjectWriter implements ObjectWriter{
     }
 
     @Override
-    public void write(Object obj, ObjectWriter masterWriter, WritableRow result) {
+    public void write(String name,Object obj, ObjectWriter masterWriter, WritableRow result) {
         if(obj == null){
             return;
         }
         fieldWriters.forEach(t -> {
             Object fieldValue = im.get(obj,t._1);
-            t._2.write(fieldValue,masterWriter,result);
+            t._2.write(t._1,fieldValue,masterWriter,result);
         });
     }
 
@@ -44,37 +44,15 @@ public class DefaultObjectWriter implements ObjectWriter{
     public DefaultObjectWriter addAllFieldsExcept(String...fieldNames){
         PSet<String>  exclude= PStream.from(fieldNames).pset();
         PStream<ImTools.Getter> getters = im.getFieldGetters();
-        fieldWriters = fieldWriters.plusAll(getters.filter(g -> exclude.contains(g.propertyName) == false).map(g -> {
-            ObjectWriter fw;
-            if(canWriteToRow.test(g.field.getType())){
-                fw = new ObjectWriter() {
-                    @Override
-                    public void write(Object obj, ObjectWriter masterWriter, WritableRow result) {
-                        result.write(g.propertyName,obj);
-                    }
+        fieldWriters = fieldWriters.plusAll(getters.filter(g -> exclude.contains(g.propertyName) == false).map(g ->
+            Tuple2.of(g.propertyName,new ObjectWriter(){
+                @Override
+                public void write(String fieldName, Object obj, ObjectWriter masterWriter, WritableRow result) {
+                    masterWriter.write(g.propertyName,obj,masterWriter,result);
+                }
+            })
 
-                    @Override
-                    public String toString() {
-                        return "FieldValueWriter(field = " + g.propertyName+")";
-                    }
-                };
-
-            } else {
-                fw = new ObjectWriter(){
-                    @Override
-                    public void write(Object obj, ObjectWriter masterWriter, WritableRow result) {
-                        masterWriter.write(obj,masterWriter,result);
-                    }
-
-                    @Override
-                    public String toString() {
-                        return "FieldObjectWriter(" + g.propertyName + ")";
-                    }
-                };
-
-            }
-            return new Tuple2<>(g.propertyName,fw);
-        }));
+        ));
         return this;
     }
 
@@ -87,17 +65,8 @@ public class DefaultObjectWriter implements ObjectWriter{
         ObjectWriter orgWriter = getObjectWriter(fieldName);
         fieldWriters = fieldWriters.put(fieldName, new ObjectWriter() {
             @Override
-            public void write(Object obj, ObjectWriter masterWriter, WritableRow result) {
-                orgWriter.write(obj, masterWriter, new WritableRow() {
-                    @Override
-                    public WritableRow write(String name, Object value) {
-                        if(name.equalsIgnoreCase(fieldName)){
-                            name = propertyName;
-                        }
-                        result.write(name,value);
-                        return this;
-                    }
-                });
+            public void write(String name,Object obj, ObjectWriter masterWriter, WritableRow result) {
+                orgWriter.write(propertyName,obj, masterWriter, result);
             }
         });
         return this;
@@ -116,8 +85,8 @@ public class DefaultObjectWriter implements ObjectWriter{
         ObjectWriter orgWriter = getObjectWriter(fieldName);
         fieldWriters = fieldWriters.put(fieldName, new ObjectWriter() {
             @Override
-            public void write(Object obj, ObjectWriter masterWriter, WritableRow result) {
-                orgWriter.write(obj, masterWriter, new WritableRow() {
+            public void write(String name,Object obj, ObjectWriter masterWriter, WritableRow result) {
+                orgWriter.write(name,obj, masterWriter, new WritableRow() {
                     @Override
                     public WritableRow write(String name, Object value) {
                         result.write(name,fromFieldToProperty.apply(value));
@@ -133,8 +102,8 @@ public class DefaultObjectWriter implements ObjectWriter{
         ObjectWriter orgWriter = getObjectWriter(fieldName);
         fieldWriters = fieldWriters.put(fieldName, new ObjectWriter() {
             @Override
-            public void write(Object obj, ObjectWriter masterWriter, WritableRow result) {
-                orgWriter.write(obj, masterWriter, new WritableRow() {
+            public void write(String name,Object obj, ObjectWriter masterWriter, WritableRow result) {
+                orgWriter.write(name,obj, masterWriter, new WritableRow() {
                     @Override
                     public WritableRow write(String name, Object value) {
                         result.write(propertyPrefix+name,value);

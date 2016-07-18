@@ -2,7 +2,6 @@ package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
-import com.persistentbit.core.function.NamedSupplier;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.dbdef.TableDef;
 import com.persistentbit.sql.objectmappers.ReadableRow;
@@ -64,7 +63,7 @@ public class EStatementPreparer {
             PreparedStatement s = autGenKeys ? c.prepareStatement(js, Statement.RETURN_GENERATED_KEYS)  : c.prepareStatement(js);
             argNames.zipWithIndex().forEach(n -> {
                 try {
-                    s.setObject(n._1+1,args.read(n._2));
+                    s.setObject(n._1+1,args.read(null,n._2));
                 } catch (SQLException e) {
                     throw new PersistSqlException(e);
                 }

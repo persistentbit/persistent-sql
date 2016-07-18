@@ -59,8 +59,8 @@ public class ObjectRowMapper {
 
     private final ObjectWriter  thisAsObjectWriter = new ObjectWriter() {
         @Override
-        public void write(Object obj, ObjectWriter masterWriter, WritableRow result) {
-            ObjectRowMapper.this.write(obj,result);
+        public void write(String name,Object obj, ObjectWriter masterWriter, WritableRow result) {
+            ObjectRowMapper.this.write(name,obj,result);
         }
     };
     private final Function<Class,ObjectReader> thisAsReaderSupplier = cls ->  {
@@ -77,14 +77,50 @@ public class ObjectRowMapper {
      * Create a new Object of the provided Class, initialized using the provider row.<br>
      * If there is no registered ObjectReader, then a default one will be registered.
      *
+     * @param name The name of the root object.
+     * @param cls The class of the object to read. This determines the ObjectReader that is used to map the row
+     * @param row The row with data
+     * @return The mapped Object from the row or null if all properties in the row are null
+     * @see DefaultObjectReader
+     */
+    public <T> T read(String name,Class<T> cls, ReadableRow row){
+
+        return (T)thisAsReaderSupplier.apply(cls).read(name,thisAsReaderSupplier,row);
+    }
+
+    /**
+     * Create a new Object of the provided Class, initialized using the provider row.<br>
+     * If there is no registered ObjectReader, then a default one will be registered.
+     *
      * @param cls The class of the object to read. This determines the ObjectReader that is used to map the row
      * @param row The row with data
      * @return The mapped Object from the row or null if all properties in the row are null
      * @see DefaultObjectReader
      */
     public <T> T read(Class<T> cls, ReadableRow row){
+        return this.read("root",cls,row);
+    }
 
-        return (T)thisAsReaderSupplier.apply(cls).read(thisAsReaderSupplier,row);
+    /**
+     * Writes the provided Object to the WritableRow using a registered {@link ObjectWriter} for the objects class.<br>
+     * If there is no registered ObjectWriter then a default one will be created that uses reflection.<br>
+     * If the provided object is null then nothing will be written.<br>
+     * @param name The name of the root object
+     * @param obj The object to write in the row
+     * @param result The row to write to
+     * @see DefaultObjectWriter
+     */
+    public void write(String name,Object obj,WritableRow result){
+        if(obj == null){
+            return;
+        }
+        Class cls = obj.getClass();
+        ObjectWriter writer = writers.get(cls);
+        if(writer == null){
+            log.fine("No writer found for class " + cls  + " creating a default one");
+            writer = createDefaultWriter(cls).addAllFields();
+        }
+        writer.write(name,obj,thisAsObjectWriter,result);
     }
 
     /**
@@ -95,17 +131,8 @@ public class ObjectRowMapper {
      * @param result The row to write to
      * @see DefaultObjectWriter
      */
-    public void write(Object obj,WritableRow result){
-        if(obj == null){
-            return;
-        }
-        Class cls = obj.getClass();
-        ObjectWriter writer = writers.get(cls);
-        if(writer == null){
-            log.fine("No writer found for class " + cls  + " creating a default one");
-            writer = createDefaultWriter(cls).addAllFields();
-        }
-        writer.write(obj,thisAsObjectWriter,result);
+    public void write(Object obj,WritableRow result) {
+        write("root",obj,result);
     }
 
     /**

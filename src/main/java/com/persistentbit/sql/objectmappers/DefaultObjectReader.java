@@ -25,9 +25,12 @@ public class DefaultObjectReader implements ObjectReader{
     }
 
     @Override
-    public Object read(Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+    public Object read(String name, Function<Class,ObjectReader> readerSupplier, ReadableRow properties) {
 
-        PMap<String,Object> map = fieldReaders.mapKeyValues(t -> Tuple2.of(t._1,t._2.read(readerSupplier,properties)));
+        PMap<String,Object> map = fieldReaders.mapKeyValues(t ->
+
+            Tuple2.of(t._1,read(t._1,readerSupplier,properties))
+        );
         if(map.values().find(v -> v!= null).isPresent() == false){
             //Not 1 property is set, assuming this is a null value
             return null;
@@ -58,36 +61,15 @@ public class DefaultObjectReader implements ObjectReader{
     public DefaultObjectReader addAllFieldsExcept(String...fieldNames){
         PSet<String> exclude= PStream.from(fieldNames).pset();
         PStream<ImTools.Getter> getters = im.getFieldGetters();
-        fieldReaders = fieldReaders.plusAll(getters.filter(g -> exclude.contains(g.propertyName) == false).map(g -> {
-            ObjectReader fw;
-            Class fieldClass = g.field.getType();
-            if(canWriteToRow.test(fieldClass)){
-                fw = new ObjectReader() {
-                    @Override
-                    public Object read(Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
-                        return mapProperty(fieldClass,properties.read(g.propertyName));
-                    }
+        fieldReaders = fieldReaders.plusAll(getters.filter(g -> exclude.contains(g.propertyName) == false).map(g ->
+                Tuple2.of(g.propertyName,new ObjectReader(){
+                @Override
+                public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+                    return readerSupplier.apply(g.field.getType()).read(g.propertyName,readerSupplier,properties);
+                }
+            })
 
-                    @Override
-                    public String toString() {
-                        return "ValueReader(cls=" + fieldClass.getSimpleName() + ", name=" + g.propertyName + ")";
-                    }
-                };
-            } else {
-                fw = new ObjectReader() {
-                    @Override
-                    public Object read(Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
-                        return readerSupplier.apply(fieldClass).read(readerSupplier,properties);
-                    }
-
-                    @Override
-                    public String toString() {
-                        return "ObjectReader(cls=" + fieldClass + ")";
-                    }
-                };
-            }
-            return new Tuple2<>(g.propertyName,fw);
-        }));
+        ));
         return this;
     }
 
@@ -100,14 +82,8 @@ public class DefaultObjectReader implements ObjectReader{
             }
 
             @Override
-            public Object read(Function<Class, ObjectReader> masterReader, ReadableRow properties) {
-                return orgReader.read(masterReader, name -> {
-                    if(name.equalsIgnoreCase(fieldName)){
-                        name = propertyName;
-                    }
-                    return properties.read(name);
-                });
-
+            public Object read(String name,Function<Class, ObjectReader> masterReader, ReadableRow properties) {
+                return orgReader.read(propertyName,masterReader,properties);
             }
         });
         return this;
@@ -117,8 +93,8 @@ public class DefaultObjectReader implements ObjectReader{
         ObjectReader orgReader = getObjectReader(fieldName);
         fieldReaders = fieldReaders.put(fieldName, new ObjectReader() {
             @Override
-            public Object read(Function<Class, ObjectReader> masterReader, ReadableRow properties) {
-                return fromPropertyToField.apply(orgReader.read(masterReader,properties));
+            public Object read(String name,Function<Class, ObjectReader> masterReader, ReadableRow properties) {
+                return fromPropertyToField.apply(orgReader.read(fieldName,masterReader,properties));
             }
         });
         return this;
@@ -126,11 +102,15 @@ public class DefaultObjectReader implements ObjectReader{
 
     public DefaultObjectReader  prefix(String fieldName, String propertyPrefix){
         ObjectReader orgReader = getObjectReader(fieldName);
+
         fieldReaders = fieldReaders.put(fieldName, new ObjectReader() {
             @Override
-            public Object read(Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
-                return orgReader.read(readerSupplier, name -> {
-                    return properties.read(propertyPrefix+name);
+            public Object read(String name,Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+                return orgReader.read(name, readerSupplier, new ReadableRow(){
+                    @Override
+                    public <T> T read(Class<T> cls, String name) {
+                        return properties.read(cls, propertyPrefix + name);
+                    }
                 });
             }
         });

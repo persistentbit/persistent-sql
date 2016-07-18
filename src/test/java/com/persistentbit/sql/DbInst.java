@@ -1,11 +1,8 @@
 package com.persistentbit.sql;
 
-import com.persistentbit.core.Tuple2;
-import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.statement.Db;
 import com.persistentbit.sql.statement.EJoinStats;
-import com.persistentbit.sql.statement.EJoinable;
 import com.persistentbit.sql.statement.ETableStats;
 
 /**
@@ -42,20 +39,6 @@ public class DbInst extends Db {
     public ETableStats<InvoiceLine> invoiceLine = tableStats(InvoiceLine.class,"INVOICE_LINE");
 
 
-    public EJoinStats<Invoice,InvoiceLine,Tuple2<Invoice,InvoiceLine>> joinInvoiceLines =
-        EJoinStats.joinTuple("left outer join", invoice.asJoinable("inv"),invoiceLine.asJoinable("line"),"line.invoice_id=inv.id");
-
-
-    public EJoinStats<Invoice,Person,Tuple2<Invoice,Person>> joinInvoiceFrom(EJoinable<Invoice> left)  {
-        return EJoinStats.joinTuple("left outer join",left,person.asJoinable("from"),"from.id=" + left.getName() + ".from_person_id");
-    }
-
-    /*public EJoinStats<Invoice,Person,Tuple2<Invoice,Person>> joinInvoiceTo(EJoinable<Invoice> left)  {
-        return EJoinStats.joinTuple("left outer join",left,person.asJoinable("to"),"to.id=" + left.getName() + ".to_person_id");
-    }
-    public EJoinStats<Invoice,Person,Tuple2<Invoice,Person>> joinInvoiceTo(EJoinable<Invoice> left)  {
-        return EJoinStats.joinTuple("left outer join",left,person.asJoinable("to"),"to.id=" + left.getName() + ".to_person_id");
-    }*/
 
 
 
@@ -85,9 +68,17 @@ public class DbInst extends Db {
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken maart"));
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken april"));
 
+        EJoinStats join = db.invoice.asJoinable("inv")
+                .leftOuterJoin(db.invoiceLine.asJoinable("line"),"line.invoice_id=inv.id")
+                .leftOuterJoin(db.person.asJoinable("fPerson"),"fPerson.id=inv.from_person_id")
+                .leftOuterJoin(db.person.asJoinable("toPerson"),"toPerson.id=inv.to_person_id")
+         ;
+
+        join.select("where line.id is not null").getList().forEach(System.out::println);
+
         System.out.println("START *********************");
-        PList<Tuple2<Invoice,InvoiceLine>> s = db.joinInvoiceLines.select().getList();
-        s.forEach(System.out::println);
+        //PList<Tuple2<Invoice,InvoiceLine>> s = db.joinInvoiceLines.select().getList();
+        //s.forEach(System.out::println);
 
         //db.joinInvoiceFrom(db.joinInvoiceLines.asJoinable()).select().getList().forEach(System.out::println);
 

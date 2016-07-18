@@ -1,7 +1,6 @@
 package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.Immutable;
-import com.persistentbit.core.Tuple2;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
@@ -16,39 +15,40 @@ import java.util.function.Function;
  * Created by petermuys on 16/07/16.
  */
 @Immutable
-public class EJoinStats<L, R, T> {
-    private final Function<Tuple2<L, R>, T> resultConverter;
-    private final EJoinable<L> left;
-    private final EJoinable<R> right;
-    private final String joinSQL;
-    private final String joinType;
+public class EJoinStats {
 
+    static private class JoinElement{
+        public EJoinable joinable;
+        public String joinType;
+        public String joinSQL;
 
-    static public <L, R> EJoinStats<L, R, Tuple2<L, R>> joinTuple(String joinType, EJoinable<L> left, EJoinable<R> right, String joinSQL) {
-        return new EJoinStats<L, R, Tuple2<L, R>>(joinType, left, right, joinSQL, t -> t);
+        public JoinElement(EJoinable joinable, String joinType, String joinSQL) {
+            this.joinable = joinable;
+            this.joinType = joinType;
+            this.joinSQL = joinSQL;
+        }
     }
-    static public <L, R, T > EJoinStats<L, R, T> join(String joinType, EJoinable<L> left, EJoinable<R> right, String joinSQL,Function<Tuple2<L,R>,T> mapper) {
-        return new EJoinStats<L, R, T>(joinType, left, right, joinSQL, mapper);
+    private final EJoinable left;
+    private final PList<JoinElement> elements;
+
+
+
+    public EJoinStats(EJoinable left, EJoinable right, String joinType,String joinSql){
+        this(left,PList.val(new JoinElement(right,joinType,joinSql)));
     }
 
-    private EJoinStats(String joinType, EJoinable<L> left, EJoinable<R> right, String joinSQL, Function<Tuple2<L, R>, T> resultConverter) {
-        this.joinType = joinType;
-        this.resultConverter = resultConverter;
-        this.left = left;
-        this.right = right;
-        this.joinSQL = joinSQL;
+    private EJoinStats(EJoinable left, PList<JoinElement> elements) {
+        this.left  = left;
+        this.elements = elements;
     }
 
-    public EJoinable<T> asJoinable() {
-        return new EJoinable<T>() {
+
+    public EJoinable asJoinable() {
+        return new EJoinable() {
+
             @Override
             public String getName() {
                 return left.getName();
-            }
-
-            @Override
-            public String getSelectPart() {
-                return left.getSelectPart() + ", " + right.getSelectPart();
             }
 
             @Override
@@ -56,15 +56,20 @@ public class EJoinStats<L, R, T> {
                 return left.getTableName();
             }
 
+
             @Override
-            public String getOwnJoins() {
-                return joinSQL;
+            public String getSelectPart() {
+                return left.getSelectPart() + ", " + elements.map(e-> e.joinable.getSelectPart()).toString(", ");
             }
 
             @Override
-            public T mapRow(Record row) {
-                Tuple2<L, R> t = Tuple2.of(left.mapRow(row), right.mapRow(row));
-                return resultConverter.apply(t);
+            public String getOwnJoins() {
+                return elements.map(e-> e.joinable.getOwnJoins()).toString(" ");
+            }
+
+            @Override
+            public PList<Object> mapRow(Record row) {
+                return PList.empty().plusAll(left.mapRow(row)).plusAll(elements.map(e->e.joinable.mapRow(row)));
             }
 
             @Override
@@ -79,6 +84,21 @@ public class EJoinStats<L, R, T> {
         };
     }
 
+    public EJoinStats  fullOuterJoin(EJoinable other,String joinSql){
+        return join("FULL OUTER JOIN",other,joinSql);
+    }
+    public EJoinStats  leftOuterJoin(EJoinable other,String joinSql){
+        return join("LEFT OUTER JOIN",other,joinSql);
+    }
+    public EJoinStats  rightOuterJoin(EJoinable other,String joinSql){
+        return join("RIGHT OUTER JOIN",other,joinSql);
+    }
+    public EJoinStats  innerJoin(EJoinable other,String joinSql){
+        return join("INNER JOIN",other,joinSql);
+    }
+    public EJoinStats join(String joinType,EJoinable other,String joinSql){
+        return new EJoinStats(left,elements.plus(new JoinElement(other,joinType,joinSql)));
+    }
 
     public class SelectBuilder implements SqlArguments<SelectBuilder>, ReadableRow {
         private PMap<String, Object> args = PMap.empty();
@@ -92,11 +112,8 @@ public class EJoinStats<L, R, T> {
 
         @Override
         public <T> T read(Class<T>cls, String name) {
-            T result =(T)args.find(a -> a._1.equalsIgnoreCase(name)).map(a -> a._2).orElse(null);
-            if(result == null || result.getClass().equals(cls)){
-                return result;
-            }
-            throw new RuntimeException("Expected " + cls.getName() + ", got " + result.getClass() + " for property '" + name + "' with value " + result);
+            return ReadableRow.check(cls,name,(T)args.find(a -> a._1.equalsIgnoreCase(name)).map(a -> a._2).orElse(null));
+
         }
 
 
@@ -105,34 +122,30 @@ public class EJoinStats<L, R, T> {
             return this;
         }
 
-        public Optional<T> getOne() {
+        public Optional<PList<Object>> getOne() {
             return left.getRunner().run(c -> {
                 return visit(v -> v.headOpt());
             });
         }
 
-        public PList<T> getList() {
+        public PList<PList<Object>> getList() {
             return visit(s -> s.plist());
         }
 
 
 
-        private <X> X visit(Function<PStream<T>,X> visitor) {
+        private <X> X visit(Function<PStream<PList<Object>>,X> visitor) {
             return left.getRunner().run(c -> {
-                String sql = "SELECT " + left.getSelectPart() + "," + right.getSelectPart() + " FROM :" + left.getTableName() + ".as." + left.getName()
-                        + " " + joinType + " :" + right.getTableName() + ".as." + right.getName() + " ON " + joinSQL + right.getOwnJoins() + sqlRest;
+
+                String sql = "SELECT " + left.getSelectPart() + "," + elements.map(e-> e.joinable.getSelectPart()).toString(", ") + " FROM :" + left.getTableName() + ".as." + left.getName()
+                        + " " + elements.map(e -> e.joinType + " :" + e.joinable.getTableName() + ".as." + e.joinable.getName() + " ON " + e.joinSQL + e.joinable.getOwnJoins()).toString(" " ) + " " + sqlRest;
 
                 try (PreparedStatement stat = left.getStatementPreparer().prepare(c, sql, SelectBuilder.this)) {
 
                     ResultSetRecordStream rs = new ResultSetRecordStream(stat.executeQuery());
-
-
-                    PStream<T> trs = rs.map(r -> {
-                        L leftValue = left.mapRow(r);
-                        R rightValue = right.mapRow(r);
-                        return Tuple2.of(leftValue,rightValue);
-                    }).map(resultConverter);
-
+                    PStream<PList<Object>> trs = rs.map(r ->
+                        PList.empty().plus(left.mapRow(r)).flattenPlusAll(elements.map(e -> e.joinable.mapRow(r))).plist()
+                    );
                     return visitor.apply(trs);
                 }
             });
@@ -144,6 +157,9 @@ public class EJoinStats<L, R, T> {
 
     public SelectBuilder select() {
         return new SelectBuilder();
+    }
+    public SelectBuilder select(String sqlRest){
+        return select().sqlRest(sqlRest);
     }
 
 }

@@ -42,8 +42,8 @@ public class ETableStats<T>{
         return tableDef.get().getTableName();
     }
 
-    public EJoinable<T> asJoinable(String name){
-        return new EJoinable<T>() {
+    public EJoinable asJoinable(String name){
+        return new EJoinable() {
             @Override
             public String getName() {
                 return name;
@@ -60,8 +60,8 @@ public class ETableStats<T>{
             }
 
             @Override
-            public T mapRow(Record row) {
-                return mapper.read(name,mappedClass,row.getSubRecord(name));
+            public PList<Object> mapRow(Record row) {
+                return PList.empty().plus(mapper.read(name,mappedClass,row.getSubRecord(name)));
             }
 
             @Override

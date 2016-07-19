@@ -84,12 +84,19 @@ public class EJoinStats {
 
             @Override
             public String getOwnJoins() {
-                return elements.map(e-> e.joinable.getOwnJoins()).toString(" ");
+                //return elements.map(e-> e.joinable.getOwnJoins()).toString(" ");
+                return " " + elements.map(e -> e.joinType + " :" + e.joinable.getTableName() + ".as." + e.joinable.getName() + " ON " + e.joinSQL + e.joinable.getOwnJoins()).toString(" " );
             }
 
             @Override
-            public PList<Object> mapRow(Record row) {
-                return PList.empty().plusAll(left.mapRow(row)).plusAll(elements.map(e->e.joinable.mapRow(row)));
+            public PList<Object> mapRow(Record r) {
+                //return PList.empty().plusAll(left.mapRow(row)).plusAll(elements.map(e->e.joinable.mapRow(row)));
+                PList<Object> all = PList.empty().plus(left.mapRow(r).head());
+                for(JoinElement je : elements){
+                    all = all.plusAll(je.joinable.mapRow(r));
+                    all = je.mapper.apply(all);
+                }
+                return all;
             }
 
             @Override

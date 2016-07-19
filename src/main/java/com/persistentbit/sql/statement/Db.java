@@ -38,7 +38,7 @@ public class Db {
         this.runner = runner;
         this.rowMapper = rowMapper;
         this.tableDefSupplier = tableDefSupplier;
-        this.dbType = runner.run(c -> {return new DbTypeRegistry().getDbType(c).get();});
+        this.dbType = runner.run(c -> {return new DbTypeRegistry().getDbType(c);});
     }
 
     public SQLTransactionRunner getRunner() {
@@ -54,7 +54,7 @@ public class Db {
     }
 
     public <T> ETableStats tableStats(Class<T> objectClass, String tableName){
-        return new ETableStats(runner,tableName,objectClass,tableDefSupplier,rowMapper);
+        return new ETableStats(runner,tableName,objectClass,tableDefSupplier,rowMapper,dbType);
     }
 
     public <T> ETableStats tableStats(Class<T> objectClass){

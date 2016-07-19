@@ -28,15 +28,24 @@ public class DbTypeRegistry {
         reg = reg.plusAll(PStream.from(types).map(t -> Tuple2.of(t.getDatabaseName(),t)));
         return this;
     }
-    public Optional<DbType>   getDbType(Connection c){
+
+    public DbType getDbType(Connection c) {
+        return getDbTypeOpt(c).orElse(new DbUnknownType());
+    }
+
+    public DbType getDbType(DatabaseMetaData md){
+        return getDbTypeOpt(md).orElse(new DbUnknownType());
+    }
+
+    public Optional<DbType>   getDbTypeOpt(Connection c){
         try {
-            return getDbType(c.getMetaData());
+            return getDbTypeOpt(c.getMetaData());
         } catch (SQLException e) {
            throw new PersistSqlException(e);
         }
     }
 
-    public Optional<DbType> getDbType(DatabaseMetaData md){
+    public Optional<DbType> getDbTypeOpt(DatabaseMetaData md){
         try {
             DbType res = reg.get(md.getDatabaseProductName());
             if(res == null){

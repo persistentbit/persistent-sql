@@ -6,6 +6,7 @@ import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.utils.ImTools;
 import com.persistentbit.sql.statement.annotations.DbIgnore;
+import com.persistentbit.sql.statement.annotations.DbPostfix;
 import com.persistentbit.sql.statement.annotations.DbPrefix;
 import com.persistentbit.sql.statement.annotations.DbRename;
 
@@ -62,6 +63,10 @@ public class DefaultObjectWriter implements ObjectWriter{
             DbPrefix prefix = g.field.getAnnotation(DbPrefix.class);
             if(prefix != null){
                 prefix(g.propertyName,prefix.value());
+            }
+            DbPostfix postfix = g.field.getAnnotation(DbPostfix.class);
+            if(postfix!=null){
+                postfix(g.propertyName,postfix.value());
             }
         });
         return this;
@@ -123,6 +128,23 @@ public class DefaultObjectWriter implements ObjectWriter{
                     @Override
                     public WritableRow write(String name, Object value) {
                         result.write(propertyPrefix+name,value);
+                        return this;
+                    }
+                });
+            }
+        });
+        return this;
+    }
+
+    public DefaultObjectWriter  postfix(String fieldName, String propertyPostfix){
+        ObjectWriter orgWriter = getObjectWriter(fieldName);
+        fieldWriters = fieldWriters.put(fieldName, new ObjectWriter() {
+            @Override
+            public void write(String name,Object obj, ObjectWriter masterWriter, WritableRow result) {
+                orgWriter.write(name,obj, masterWriter, new WritableRow() {
+                    @Override
+                    public WritableRow write(String name, Object value) {
+                        result.write(name + propertyPostfix,value);
                         return this;
                     }
                 });

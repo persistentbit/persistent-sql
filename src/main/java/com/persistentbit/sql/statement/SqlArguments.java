@@ -1,22 +1,21 @@
 package com.persistentbit.sql.statement;
 
-import com.persistentbit.core.function.NamedConsumer;
-import com.persistentbit.sql.objectmappers.WritableRow;
-
 /**
+ * Interface that defines an object that can be used to add SQL query arguments as name,value pairs.<br>
  * @author Peter Muys
  * @since 4/07/2016
  */
-public interface SqlArguments<B extends SqlArguments<B>> extends WritableRow{
+public interface SqlArguments<B extends SqlArguments<B>>{
 
 
-    @Override
-    default WritableRow write(String name, Object value) {
-        arg(name,value);
-        return this;
-    }
-
+    /**
+     * Add a named argument.
+     * @param name The name
+     * @param value The value
+     * @return me, myself and I
+     */
     B arg(String name, Object value);
+
 
     default B arg(String n1, Object o1, String n2, Object o2){
         return arg(n1,o1).arg(n2,o2);

@@ -38,7 +38,7 @@ public class ObjectRowMapper {
     public ObjectRowMapper(){
         for(Class cls :Arrays.asList(Integer.class,int.class,Short.class,short.class,Long.class,long.class,
                 float.class,Float.class, double.class,Double.class,
-                String.class,boolean.class,Boolean.class,Byte.class,byte.class,char.class,Character.class
+                String.class,boolean.class,Boolean.class,Byte.class,byte.class,char.class,Character.class,java.util.Date.class,java.sql.Date.class,java.sql.Timestamp.class
         )){
             ValueObjectReaderWriter rw = new ValueObjectReaderWriter(cls);
             registerReader(cls,rw);

@@ -35,6 +35,20 @@ public class DefaultObjectReaderWriter {
     }
 
     /**
+     * Postfix the row column names with the given postfix on reading and writing<br>
+     * Warning:There should already be a field mapper registered. See {@link #addAllFields()}<br>
+     * @param fieldName The Object property name
+     * @param postfix The postfix string
+     * @return me,myself and I
+     *
+     */
+    public DefaultObjectReaderWriter postfix(String fieldName, String postfix){
+        reader.postfix(fieldName,postfix);
+        writer.postfix(fieldName,postfix);
+        return this;
+    }
+
+    /**
      * Renames the row column for a field.<br>
      * Warning: The field should be writable to the row (like Strings, numbers,booleans...)<br>
      * Warning:There should already be a field mapper registered. See {@link #addAllFields()}<br>

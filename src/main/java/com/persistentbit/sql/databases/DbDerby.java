@@ -10,12 +10,12 @@ public class DbDerby extends AbstractDbType{
     }
 
     @Override
-    public String sqlWithLimit(int limit, String sql) {
+    public String sqlWithLimit(long limit, String sql) {
         return sql + " FETCH NEXT " + limit + " ROWS ONLY ";
     }
 
     @Override
-    public String sqlWithLimitAndOffset(int limit, int offset, String sql) {
+    public String sqlWithLimitAndOffset(long limit, long offset, String sql) {
         return sqlWithLimit(limit,sql + " OFFSET " + offset + " ROWS ");
     }
 
@@ -27,7 +27,7 @@ public class DbDerby extends AbstractDbType{
         return "jdbc:derby:" + filePath.replace('\\','/') + ";create=true";
     }
 
-    static String getDriverClassName( ){
+    static public String getDriverClassName( ){
         return "org.apache.derby.jdbc.EmbeddedDriver";
     }
 

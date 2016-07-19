@@ -69,6 +69,14 @@ public interface ReadableRow {
             Number num = (Number)result;
             return (T)Double.valueOf(num.doubleValue());
         }
+        if(cls.equals(boolean.class)){
+            return (T)((Boolean)result);
+        }
+        if(cls.equals(java.util.Date.class)){
+            if(java.util.Date.class.isAssignableFrom(cls)){
+                return (T)result;
+            }
+        }
         throw new RuntimeException("Expected " + cls.getName() + ", got " + result.getClass() + " for property '" + name + "' with value " + result);
     }
 

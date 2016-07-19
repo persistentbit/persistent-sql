@@ -6,6 +6,7 @@ import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.utils.ImTools;
 import com.persistentbit.sql.statement.annotations.DbIgnore;
+import com.persistentbit.sql.statement.annotations.DbPostfix;
 import com.persistentbit.sql.statement.annotations.DbPrefix;
 import com.persistentbit.sql.statement.annotations.DbRename;
 
@@ -92,6 +93,10 @@ public class DefaultObjectReader implements ObjectReader {
             if(prefix != null){
                 prefix(g.propertyName,prefix.value());
             }
+            DbPostfix postfix = g.field.getAnnotation(DbPostfix.class);
+            if(postfix != null){
+                postfix(g.propertyName,postfix.value());
+            }
         });
         return this;
     }
@@ -142,6 +147,23 @@ public class DefaultObjectReader implements ObjectReader {
                     @Override
                     public <T> T read(Class<T> cls, String name) {
                         return ReadableRow.check(cls,name,(T)properties.read(cls, propertyPrefix + name));
+
+                    }
+                });
+            }
+        });
+        return this;
+    }
+    public DefaultObjectReader postfix(String fieldName, String propertyPostfix) {
+        ObjectReader orgReader = getObjectReader(fieldName);
+
+        fieldReaders = fieldReaders.put(fieldName, new ObjectReader() {
+            @Override
+            public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+                return orgReader.read(name, readerSupplier, new ReadableRow() {
+                    @Override
+                    public <T> T read(Class<T> cls, String name) {
+                        return ReadableRow.check(cls,name,(T)properties.read(cls, name + propertyPostfix));
 
                     }
                 });

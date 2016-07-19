@@ -6,8 +6,6 @@ import com.persistentbit.sql.statement.Db;
 import com.persistentbit.sql.statement.EJoinStats;
 import com.persistentbit.sql.statement.ETableStats;
 
-import java.sql.DatabaseMetaData;
-
 /**
  * User: petermuys
  * Date: 16/07/16
@@ -47,12 +45,7 @@ public class DbInst extends Db {
 
     static public void main(String...args){
         DbInst db = new DbInst();
-        db.runner.run(c -> {
-            DatabaseMetaData md = c.getMetaData();
-            System.out.println(md.getDatabaseProductName());
-            System.out.println(md.getDatabaseMajorVersion());
-            System.out.println(md.getDatabaseMinorVersion());
-        });
+
 
         PStream.sequence(0).limit(10).forEach(i -> {
             System.out.println(db.person.insert(new Person(0,"mup" + i,"pwd")));
@@ -69,6 +62,10 @@ public class DbInst extends Db {
         db.person.deleteForId(2);
         db.person.delete(db.person.select().forId(4).get());
         db.person.select().getList().forEach(System.out::println);
+
+        System.out.println("With limit/offset");
+        db.person.select().limitAndOffset(3,0).getList().forEach(System.out::println);
+
         System.out.println("Delete all: " + db.person.deleteAll());
 
 

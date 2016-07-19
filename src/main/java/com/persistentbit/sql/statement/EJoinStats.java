@@ -21,11 +21,13 @@ public class EJoinStats {
         public EJoinable joinable;
         public String joinType;
         public String joinSQL;
+        public Function<PList<Object>,PList<Object>> mapper;
 
-        public JoinElement(EJoinable joinable, String joinType, String joinSQL) {
+        public JoinElement(EJoinable joinable, String joinType, String joinSQL,Function<PList<Object>,PList<Object>> mapper) {
             this.joinable = joinable;
             this.joinType = joinType;
             this.joinSQL = joinSQL;
+            this.mapper = mapper;
         }
     }
     private final EJoinable left;
@@ -34,8 +36,13 @@ public class EJoinStats {
 
 
     public EJoinStats(EJoinable left, EJoinable right, String joinType,String joinSql){
-        this(left,PList.val(new JoinElement(right,joinType,joinSql)));
+        this(left,right,joinType,joinSql,t->t);
     }
+
+    public EJoinStats(EJoinable left, EJoinable right, String joinType,String joinSql,Function<PList<Object>,PList<Object>>mapper){
+        this(left,PList.val(new JoinElement(right,joinType,joinSql,mapper)));
+    }
+
 
     private EJoinStats(EJoinable left, PList<JoinElement> elements) {
         this.left  = left;
@@ -85,19 +92,31 @@ public class EJoinStats {
     }
 
     public EJoinStats  fullOuterJoin(EJoinable other,String joinSql){
-        return join("FULL OUTER JOIN",other,joinSql);
+        return join("FULL OUTER JOIN",other,joinSql,t->t);
     }
     public EJoinStats  leftOuterJoin(EJoinable other,String joinSql){
-        return join("LEFT OUTER JOIN",other,joinSql);
+        return join("LEFT OUTER JOIN",other,joinSql,t->t);
     }
     public EJoinStats  rightOuterJoin(EJoinable other,String joinSql){
-        return join("RIGHT OUTER JOIN",other,joinSql);
+        return join("RIGHT OUTER JOIN",other,joinSql,t->t);
     }
     public EJoinStats  innerJoin(EJoinable other,String joinSql){
-        return join("INNER JOIN",other,joinSql);
+        return join("INNER JOIN",other,joinSql,t->t);
     }
-    public EJoinStats join(String joinType,EJoinable other,String joinSql){
-        return new EJoinStats(left,elements.plus(new JoinElement(other,joinType,joinSql)));
+    public EJoinStats  fullOuterJoin(EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
+        return join("FULL OUTER JOIN",other,joinSql,mapper);
+    }
+    public EJoinStats  leftOuterJoin(EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
+        return join("LEFT OUTER JOIN",other,joinSql,mapper);
+    }
+    public EJoinStats  rightOuterJoin(EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
+        return join("RIGHT OUTER JOIN",other,joinSql,mapper);
+    }
+    public EJoinStats  innerJoin(EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
+        return join("INNER JOIN",other,joinSql,mapper);
+    }
+    public EJoinStats join(String joinType,EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
+        return new EJoinStats(left,elements.plus(new JoinElement(other,joinType,joinSql,mapper)));
     }
 
     public class SelectBuilder implements SqlArguments<SelectBuilder>, ReadableRow {

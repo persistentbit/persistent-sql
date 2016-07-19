@@ -1,10 +1,12 @@
 package com.persistentbit.sql;
 
-import com.persistentbit.core.Tuple2;
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.statement.Db;
 import com.persistentbit.sql.statement.EJoinStats;
 import com.persistentbit.sql.statement.ETableStats;
+
+import java.sql.DatabaseMetaData;
 
 /**
  * User: petermuys
@@ -45,9 +47,19 @@ public class DbInst extends Db {
 
     static public void main(String...args){
         DbInst db = new DbInst();
+        db.runner.run(c -> {
+            DatabaseMetaData md = c.getMetaData();
+            System.out.println(md.getDatabaseProductName());
+            System.out.println(md.getDatabaseMajorVersion());
+            System.out.println(md.getDatabaseMinorVersion());
+        });
+
         PStream.sequence(0).limit(10).forEach(i -> {
             System.out.println(db.person.insert(new Person(0,"mup" + i,"pwd")));
         });
+
+
+
         db.person.select().getList().forEach(System.out::println);
         System.out.println(db.person.select().forId(7));
         System.out.println(db.person.select("where t.user_name = :username").arg("username","mup5").getOne());
@@ -69,16 +81,15 @@ public class DbInst extends Db {
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken maart"));
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken april"));
 
-        EJoinStats join = db.invoice.asJoinable("inv")
+        EJoinStats join = db.invoice.startJoin("inv")
+                .leftOuterJoin(db.person.asJoinable("fPerson"),"fPerson.id=inv.from_person_id").mapLastItems((Invoice i, Person p)-> i.withFromPerson(p))
+                .leftOuterJoin(db.person.asJoinable("toPerson"),"toPerson.id=inv.to_person_id").mapLastItems((Invoice i, Person p) -> i.withToPerson(p))
                 .leftOuterJoin(db.invoiceLine.asJoinable("line"),"line.invoice_id=inv.id")
-                .leftOuterJoin(db.person.asJoinable("fPerson"),"fPerson.id=inv.from_person_id")
-                .leftOuterJoin(db.person.asJoinable("toPerson"),"toPerson.id=inv.to_person_id")
-         ;
+         .get();
 
-        join.select("where line.id is not null").getList().groupBy(l -> l.head()).mapKeyValues(t -> {
+        join.select("where line.id is not null or true").getList().groupByOrdered(l -> l.head(),l -> l.lastOpt().orElse(null)).map(t -> {
             Invoice i = (Invoice)t._1;
-            i = i.withLines(t._2.map(vlist -> (InvoiceLine)vlist.get(0)).plist());
-            return Tuple2.of(i,i);
+            return i.withLines((PList)(t._2).filter( p -> p != null));
         }).forEach(System.out::println);
 
         System.out.println("START *********************");

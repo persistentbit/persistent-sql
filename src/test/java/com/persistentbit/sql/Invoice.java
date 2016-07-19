@@ -6,6 +6,7 @@ import com.persistentbit.core.lenses.Lens;
 import com.persistentbit.core.lenses.LensImpl;
 import com.persistentbit.core.properties.FieldNames;
 import com.persistentbit.sql.references.LongRef;
+import com.persistentbit.sql.references.LongRefValue;
 
 /**
  * User: petermuys
@@ -63,6 +64,14 @@ public class Invoice {
 
 	public Invoice withLines(PList<InvoiceLine> lines){
 		return new Invoice(this.id, this.number, this.fromPersonId, this.toPersonId, lines);
+	}
+
+	public Invoice withFromPerson(Person p){
+		return new Invoice(this.id, this.number, new LongRefValue(p.getId(),p), this.toPersonId, this.lines);
+	}
+
+	public Invoice withToPerson(Person p){
+		return new Invoice(this.id, this.number, this.fromPersonId, new LongRefValue(p.getId(),p), this.lines);
 	}
 
 

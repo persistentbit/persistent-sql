@@ -42,6 +42,10 @@ public class ETableStats<T>{
         return tableDef.get().getTableName();
     }
 
+    public EJoinStats startJoin(String name){
+        return new EJoinStats(asJoinable(name));
+    }
+
     public EJoinable asJoinable(String name){
         return new EJoinable() {
             @Override
@@ -80,7 +84,6 @@ public class ETableStats<T>{
             }
         };
     }
-
 
 
     public class SelectBuilder implements SqlArguments<SelectBuilder>,ReadableRow{

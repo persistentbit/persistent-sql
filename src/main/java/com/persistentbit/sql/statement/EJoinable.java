@@ -17,20 +17,5 @@ public interface EJoinable {
     EStatementPreparer  getStatementPreparer();
 
 
-    default EJoinStats  fullOuterJoin(EJoinable other,String joinSql){
-        return join("FULL OUTER JOIN",other,joinSql);
-    }
-    default EJoinStats  leftOuterJoin(EJoinable other,String joinSql){
-        return join("LEFT OUTER JOIN",other,joinSql);
-    }
-    default EJoinStats  rightOuterJoin(EJoinable other,String joinSql){
-        return join("RIGHT OUTER JOIN",other,joinSql);
-    }
-    default EJoinStats  innerJoin(EJoinable other,String joinSql){
-        return join("INNER JOIN",other,joinSql);
-    }
-    default EJoinStats join(String joinType,EJoinable other,String joinSql){
-        return new EJoinStats(this,other,joinType,joinSql);
-    }
 
 }

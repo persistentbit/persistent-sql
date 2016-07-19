@@ -4,11 +4,13 @@ import com.persistentbit.core.Immutable;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.connect.SQLRunner;
 import com.persistentbit.sql.objectmappers.ReadableRow;
 
 import java.sql.PreparedStatement;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -18,16 +20,19 @@ import java.util.function.Function;
 public class EJoinStats {
 
     static private class JoinElement{
-        public EJoinable joinable;
-        public String joinType;
-        public String joinSQL;
-        public Function<PList<Object>,PList<Object>> mapper;
+        public final EJoinable joinable;
+        public final String joinType;
+        public final String joinSQL;
+        public final Function<PList<Object>,PList<Object>> mapper;
 
         public JoinElement(EJoinable joinable, String joinType, String joinSQL,Function<PList<Object>,PList<Object>> mapper) {
             this.joinable = joinable;
             this.joinType = joinType;
             this.joinSQL = joinSQL;
             this.mapper = mapper;
+        }
+        public JoinElement withMapper(Function<PList<Object>,PList<Object>> mapper){
+            return new JoinElement(joinable,joinType,joinSQL, mapper);
         }
     }
     private final EJoinable left;
@@ -43,6 +48,9 @@ public class EJoinStats {
         this(left,PList.val(new JoinElement(right,joinType,joinSql,mapper)));
     }
 
+    public EJoinStats(EJoinable left){
+        this(left,PList.empty());
+    }
 
     private EJoinStats(EJoinable left, PList<JoinElement> elements) {
         this.left  = left;
@@ -91,32 +99,68 @@ public class EJoinStats {
         };
     }
 
-    public EJoinStats  fullOuterJoin(EJoinable other,String joinSql){
+    public class EJoinStatJoin{
+        private JoinElement element;
+        private EJoinStatJoin(JoinElement element){
+            this.element = element;
+        }
+
+        public <X,Y> EJoinStatJoin    mapLastItems(BiFunction<X,Y,Object> mapper){
+            Function<PList<Object>,PList<Object>> fullMapper = list -> {
+                try {
+
+                    Y right = (Y) list.lastOpt().orElse(null);
+                    PList<Object> res = list.dropLast();
+                    X left = (X) res.lastOpt().orElse(null);
+                    res = res.dropLast();
+                    Object value = mapper.apply(left, right);
+                    return res.plus(value);
+                }catch(Exception e){
+                    throw new PersistSqlException(e);
+                }
+            };
+            JoinElement el = element.withMapper(fullMapper);
+            return new EJoinStats(left,elements.replaceFirst(element,el)).getJoin(el);
+        }
+
+        public EJoinStats get(){
+            return EJoinStats.this;
+        }
+        public EJoinStatJoin  fullOuterJoin(EJoinable other,String joinSql){
+            return EJoinStats.this.fullOuterJoin(other,joinSql);
+        }
+        public EJoinStatJoin  leftOuterJoin(EJoinable other,String joinSql){
+            return EJoinStats.this.leftOuterJoin(other,joinSql);
+        }
+        public EJoinStatJoin  rightOuterJoin(EJoinable other,String joinSql){
+            return EJoinStats.this.rightOuterJoin(other,joinSql);
+        }
+        public EJoinStatJoin  innerJoin(EJoinable other,String joinSql){
+            return EJoinStats.this.innerJoin(other,joinSql);
+        }
+    }
+
+    private EJoinStatJoin getJoin(JoinElement el){
+        return new EJoinStatJoin(el);
+    }
+
+
+    public EJoinStatJoin  fullOuterJoin(EJoinable other,String joinSql){
         return join("FULL OUTER JOIN",other,joinSql,t->t);
     }
-    public EJoinStats  leftOuterJoin(EJoinable other,String joinSql){
+    public EJoinStatJoin  leftOuterJoin(EJoinable other,String joinSql){
         return join("LEFT OUTER JOIN",other,joinSql,t->t);
     }
-    public EJoinStats  rightOuterJoin(EJoinable other,String joinSql){
+    public EJoinStatJoin  rightOuterJoin(EJoinable other,String joinSql){
         return join("RIGHT OUTER JOIN",other,joinSql,t->t);
     }
-    public EJoinStats  innerJoin(EJoinable other,String joinSql){
+    public EJoinStatJoin  innerJoin(EJoinable other,String joinSql){
         return join("INNER JOIN",other,joinSql,t->t);
     }
-    public EJoinStats  fullOuterJoin(EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
-        return join("FULL OUTER JOIN",other,joinSql,mapper);
-    }
-    public EJoinStats  leftOuterJoin(EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
-        return join("LEFT OUTER JOIN",other,joinSql,mapper);
-    }
-    public EJoinStats  rightOuterJoin(EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
-        return join("RIGHT OUTER JOIN",other,joinSql,mapper);
-    }
-    public EJoinStats  innerJoin(EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
-        return join("INNER JOIN",other,joinSql,mapper);
-    }
-    public EJoinStats join(String joinType,EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
-        return new EJoinStats(left,elements.plus(new JoinElement(other,joinType,joinSql,mapper)));
+
+    public EJoinStatJoin join(String joinType,EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
+        JoinElement el = new JoinElement(other,joinType,joinSql,mapper);
+        return new EJoinStats(left,elements.plus(el)).getJoin(el);
     }
 
     public class SelectBuilder implements SqlArguments<SelectBuilder>, ReadableRow {
@@ -162,9 +206,14 @@ public class EJoinStats {
                 try (PreparedStatement stat = left.getStatementPreparer().prepare(c, sql, SelectBuilder.this)) {
 
                     ResultSetRecordStream rs = new ResultSetRecordStream(stat.executeQuery());
-                    PStream<PList<Object>> trs = rs.map(r ->
-                        PList.empty().plus(left.mapRow(r)).flattenPlusAll(elements.map(e -> e.joinable.mapRow(r))).plist()
-                    );
+                    PStream<PList<Object>> trs = rs.map(r -> {
+                        PList<Object> all = PList.empty().plus(left.mapRow(r).head());
+                        for(JoinElement je : elements){
+                            all = all.plusAll(je.joinable.mapRow(r));
+                            all = je.mapper.apply(all);
+                        }
+                        return all;
+                    });
                     return visitor.apply(trs);
                 }
             });

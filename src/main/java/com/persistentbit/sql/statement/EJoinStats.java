@@ -24,15 +24,20 @@ public class EJoinStats {
         public final String joinType;
         public final String joinSQL;
         public final Function<PList<Object>,PList<Object>> mapper;
+        public final boolean select;
 
-        public JoinElement(EJoinable joinable, String joinType, String joinSQL,Function<PList<Object>,PList<Object>> mapper) {
+        public JoinElement(EJoinable joinable, String joinType, String joinSQL,Function<PList<Object>,PList<Object>> mapper,boolean select) {
             this.joinable = joinable;
             this.joinType = joinType;
             this.joinSQL = joinSQL;
             this.mapper = mapper;
+            this.select = select;
         }
         public JoinElement withMapper(Function<PList<Object>,PList<Object>> mapper){
-            return new JoinElement(joinable,joinType,joinSQL, mapper);
+            return new JoinElement(joinable,joinType,joinSQL, mapper,select);
+        }
+        public JoinElement withSelect(boolean select) {
+            return new JoinElement(joinable,joinType,joinSQL,mapper,select);
         }
     }
     private final EJoinable left;
@@ -45,7 +50,7 @@ public class EJoinStats {
     }
 
     public EJoinStats(EJoinable left, EJoinable right, String joinType,String joinSql,Function<PList<Object>,PList<Object>>mapper){
-        this(left,PList.val(new JoinElement(right,joinType,joinSql,mapper)));
+        this(left,PList.val(new JoinElement(right,joinType,joinSql,mapper,true)));
     }
 
     public EJoinStats(EJoinable left){
@@ -159,7 +164,7 @@ public class EJoinStats {
     }
 
     public EJoinStatJoin join(String joinType,EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
-        JoinElement el = new JoinElement(other,joinType,joinSql,mapper);
+        JoinElement el = new JoinElement(other,joinType,joinSql,mapper,true);
         return new EJoinStats(left,elements.plus(el)).getJoin(el);
     }
 

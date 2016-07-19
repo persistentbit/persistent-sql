@@ -5,6 +5,9 @@ import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.utils.ImTools;
+import com.persistentbit.sql.statement.annotations.DbIgnore;
+import com.persistentbit.sql.statement.annotations.DbPrefix;
+import com.persistentbit.sql.statement.annotations.DbRename;
 
 import java.util.function.Function;
 
@@ -66,7 +69,7 @@ public class DefaultObjectReader implements ObjectReader {
     public DefaultObjectReader addAllFieldsExcept(String... fieldNames) {
         PSet<String> exclude = PStream.from(fieldNames).pset();
         PStream<ImTools.Getter> getters = im.getFieldGetters();
-        fieldReaders = fieldReaders.plusAll(getters.filter(g -> exclude.contains(g.propertyName) == false).map(g ->
+        fieldReaders = fieldReaders.plusAll(getters.filter(g -> exclude.contains(g.propertyName) == false && g.field.getAnnotation(DbIgnore.class)==null).map(g ->
                 Tuple2.of(g.propertyName, new ObjectReader() {
                     @Override
                     public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
@@ -80,6 +83,16 @@ public class DefaultObjectReader implements ObjectReader {
                 })
 
         ));
+        getters.forEach(g -> {
+            DbRename ren = g.field.getAnnotation(DbRename.class);
+            if(ren != null){
+                rename(g.propertyName,ren.value());
+            }
+            DbPrefix prefix = g.field.getAnnotation(DbPrefix.class);
+            if(prefix != null){
+                prefix(g.propertyName,prefix.value());
+            }
+        });
         return this;
     }
 

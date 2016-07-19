@@ -5,6 +5,8 @@ import com.persistentbit.core.codegen.GenNoLens;
 import com.persistentbit.core.properties.FieldNames;
 import com.persistentbit.sql.references.LongRef;
 import com.persistentbit.sql.references.LongRefValue;
+import com.persistentbit.sql.statement.annotations.DbRename;
+import com.persistentbit.sql.statement.annotations.DbTableName;
 
 /**
  * User: petermuys
@@ -12,9 +14,11 @@ import com.persistentbit.sql.references.LongRefValue;
  * Time: 19:28
  */
 @CaseClass @GenNoLens
+@DbTableName("PERSON")
 public class Person {
     private final long id;
-    private final String userName;
+    @DbRename("user_name")
+	private final String userName;
     private final String password;
 
     @FieldNames(names={"id","userName","password"})

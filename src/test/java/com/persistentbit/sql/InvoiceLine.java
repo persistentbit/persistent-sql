@@ -3,6 +3,8 @@ package com.persistentbit.sql;
 import com.persistentbit.core.codegen.CaseClass;
 import com.persistentbit.core.codegen.GenNoLens;
 import com.persistentbit.core.properties.FieldNames;
+import com.persistentbit.sql.statement.annotations.DbRename;
+import com.persistentbit.sql.statement.annotations.DbTableName;
 
 /**
  * User: petermuys
@@ -10,9 +12,10 @@ import com.persistentbit.core.properties.FieldNames;
  * Time: 11:35
  */
 @CaseClass @GenNoLens
+@DbTableName("INVOICE_LINE")
 public class InvoiceLine {
     private final int id;
-    private final int invoiceId;
+    @DbRename("invoice_id") private final int invoiceId;
     private final String product;
 
     @FieldNames(names = {"id","invoiceId","product"})

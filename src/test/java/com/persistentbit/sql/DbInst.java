@@ -21,25 +21,25 @@ public class DbInst extends Db {
     public DbInst() {
         super(new InMemConnectionProvider());
         new TestDbUpdate.TestUpdater(runner).update();
-        rowMapper.createDefault(Person.class)
+        /*rowMapper.createDefault(Person.class)
                 .addAllFields()
                 .rename("userName","USER_NAME")
-        ;
-        rowMapper.createDefault(Invoice.class)
+        ;*/
+        /*rowMapper.createDefault(Invoice.class)
                 .addAllFieldsExcept("lines")
                 .rename("number","invoice_nummer")
                 .rename("fromPersonId","from_person_id")
-                .rename("toPersonId","to_person_id");
-        rowMapper.createDefault(InvoiceLine.class)
+                .rename("toPersonId","to_person_id");*/
+        /*rowMapper.createDefault(InvoiceLine.class)
                 .addAllFields()
-                .rename("invoiceId","invoice_id");
+                .rename("invoiceId","invoice_id");*/
 
     }
 
-    public  ETableStats<Person> person = tableStats(Person.class,"PERSON");
-    public  ETableStats<Invoice> invoice = tableStats(Invoice.class,"INVOICE");
+    public  ETableStats<Person> person = tableStats(Person.class);
+    public  ETableStats<Invoice> invoice = tableStats(Invoice.class);
 
-    public ETableStats<InvoiceLine> invoiceLine = tableStats(InvoiceLine.class,"INVOICE_LINE");
+    public ETableStats<InvoiceLine> invoiceLine = tableStats(InvoiceLine.class);
 
 
 
@@ -85,6 +85,7 @@ public class DbInst extends Db {
                 .leftOuterJoin(db.person.asJoinable("fPerson"),"fPerson.id=inv.from_person_id").mapLastItems((Invoice i, Person p)-> i.withFromPerson(p))
                 .leftOuterJoin(db.person.asJoinable("toPerson"),"toPerson.id=inv.to_person_id").mapLastItems((Invoice i, Person p) -> i.withToPerson(p))
                 .leftOuterJoin(db.invoiceLine.asJoinable("line"),"line.invoice_id=inv.id")
+
          .get();
 
         join.select("where line.id is not null or true").getList().groupByOrdered(l -> l.head(),l -> l.lastOpt().orElse(null)).map(t -> {

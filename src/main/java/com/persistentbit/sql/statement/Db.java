@@ -4,6 +4,7 @@ import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.databases.DbTypeRegistry;
 import com.persistentbit.sql.dbdef.TableDefSupplierImpl;
 import com.persistentbit.sql.objectmappers.ObjectRowMapper;
+import com.persistentbit.sql.statement.annotations.DbTableName;
 import com.persistentbit.sql.transactions.SQLTransactionRunner;
 
 import java.sql.Connection;
@@ -54,6 +55,15 @@ public class Db {
 
     public <T> ETableStats tableStats(Class<T> objectClass, String tableName){
         return new ETableStats(runner,tableName,objectClass,tableDefSupplier,rowMapper);
+    }
+
+    public <T> ETableStats tableStats(Class<T> objectClass){
+        String name = objectClass.getSimpleName();
+        DbTableName tn = objectClass.getAnnotation(DbTableName.class);
+        if(tn != null){
+            name= tn.value();
+        }
+        return tableStats(objectClass,name);
     }
 
     public EStat    stat() {

@@ -7,19 +7,22 @@ import com.persistentbit.core.lenses.LensImpl;
 import com.persistentbit.core.properties.FieldNames;
 import com.persistentbit.sql.references.LongRef;
 import com.persistentbit.sql.references.LongRefValue;
+import com.persistentbit.sql.statement.annotations.DbIgnore;
+import com.persistentbit.sql.statement.annotations.DbRename;
+import com.persistentbit.sql.statement.annotations.DbTableName;
 
 /**
  * User: petermuys
  * Date: 17/07/16
  * Time: 11:25
  */
-@CaseClass
+@CaseClass @DbTableName("INVOICE")
 public class Invoice {
     private final int id;
-    private final String number;
-    private LongRef<Person> fromPersonId;
-    private LongRef<Person> toPersonId;
-	private PList<InvoiceLine> lines;
+    @DbRename("invoice_nummer") private final String number;
+    @DbRename("from_person_id")private LongRef<Person> fromPersonId;
+	@DbRename("to_person_id")private LongRef<Person> toPersonId;
+	@DbIgnore private PList<InvoiceLine> lines;
 
 
 	public Invoice(String number, LongRef<Person> fromPersonId, LongRef<Person> toPersonId){

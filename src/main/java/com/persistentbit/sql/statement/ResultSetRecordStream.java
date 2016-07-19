@@ -1,8 +1,6 @@
 package com.persistentbit.sql.statement;
 
-import com.persistentbit.core.Lazy;
 import com.persistentbit.core.collections.PMap;
-import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.collections.PStreamLazy;
 import com.persistentbit.sql.PersistSqlException;
 
@@ -41,6 +39,10 @@ public class ResultSetRecordStream extends PStreamLazy<Record>{
         this.isIterating =true;
     }
 
+    @Override
+    public String toString() {
+        return "ResultSetRecordStream[" + fieldNameIndexes.keys().toString(",") + "]";
+    }
 
     @Override
     public Iterator<Record> iterator() {
@@ -55,7 +57,6 @@ public class ResultSetRecordStream extends PStreamLazy<Record>{
             public boolean hasNext() {
                 try {
                     if(first){
-                        System.out.println("STARTING ITERATION");
                         first = false;
                     }
                     boolean next = rs.next();

@@ -60,6 +60,7 @@ public class EStatementPreparer {
                 (a,b)->a+b).get();
 
         try {
+            log.fine(js);
             PreparedStatement s = autGenKeys ? c.prepareStatement(js, Statement.RETURN_GENERATED_KEYS)  : c.prepareStatement(js);
             argNames.zipWithIndex().forEach(n -> {
                 try {

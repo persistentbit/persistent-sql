@@ -91,7 +91,7 @@ public class EJoinStats {
             @Override
             public PList<Object> mapRow(Record r) {
                 //return PList.empty().plusAll(left.mapRow(row)).plusAll(elements.map(e->e.joinable.mapRow(row)));
-                PList<Object> all = PList.empty().plus(left.mapRow(r).head());
+                PList<Object> all = PList.empty().plus(left.mapRow(r).headOpt().orElse(null));
                 for(JoinElement je : elements){
                     all = all.plusAll(je.joinable.mapRow(r));
                     all = je.mapper.apply(all);
@@ -150,6 +150,10 @@ public class EJoinStats {
         public EJoinStatJoin  innerJoin(EJoinable other,String joinSql){
             return EJoinStats.this.innerJoin(other,joinSql);
         }
+
+        public EJoinStatJoin merge(EJoinStats other){
+            return EJoinStats.this.merge(other);
+        }
     }
 
     private EJoinStatJoin getJoin(JoinElement el){
@@ -173,6 +177,14 @@ public class EJoinStats {
     public EJoinStatJoin join(String joinType,EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
         JoinElement el = new JoinElement(other,joinType,joinSql,mapper,true);
         return new EJoinStats(left,elements.plus(el)).getJoin(el);
+    }
+
+    public EJoinStatJoin merge(EJoinStats other){
+        if(other.left.getName().equals(left.getName()) &&
+                other.left.getTableName().equals(left.getTableName())){
+            return new EJoinStats(this.left,this.elements.plusAll(other.elements)).getJoin(other.elements.lastOpt().orElse(this.elements.lastOpt().get()));
+        }
+        throw new RuntimeException("Not Yet implemented");
     }
 
     public class SelectBuilder implements SqlArguments<SelectBuilder>, ReadableRow {
@@ -205,6 +217,9 @@ public class EJoinStats {
 
         public PList<PList<Object>> getList() {
             return visit(s -> s.plist());
+        }
+        public PList<Object>    getListOne() {
+            return visit(s -> s.headOpt().orElse(null));
         }
 
 

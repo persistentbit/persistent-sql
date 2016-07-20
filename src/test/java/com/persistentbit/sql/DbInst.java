@@ -1,8 +1,8 @@
 package com.persistentbit.sql;
 
-import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.statement.Db;
+import com.persistentbit.sql.statement.EJoinBuilder;
 import com.persistentbit.sql.statement.EJoinStats;
 import com.persistentbit.sql.statement.ETableStats;
 
@@ -78,17 +78,24 @@ public class DbInst extends Db {
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken maart"));
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken april"));
 
-        EJoinStats join = db.invoice.startJoin("inv")
-                .leftOuterJoin(db.person.asJoinable("fPerson"),"fPerson.id=inv.from_person_id").mapLastItems((Invoice i, Person p)-> i.withFromPerson(p))
-                .leftOuterJoin(db.person.asJoinable("toPerson"),"toPerson.id=inv.to_person_id").mapLastItems((Invoice i, Person p) -> i.withToPerson(p))
-                .leftOuterJoin(db.invoiceLine.asJoinable("line"),"line.invoice_id=inv.id")
+        EJoinStats<Invoice> j1 = db.invoice.startJoin("inv");
+        EJoinBuilder j2 =j1.leftJoin(db.person.asJoinable("toPerson"));
+        EJoinStats<Invoice> res = db.invoice.startJoin("inv")
+                .leftJoin(db.person.asJoinable("toPerson")).on("inv.to_person_id=toPerson.id").map((Invoice i,Person p)-> i.withToPerson(p))
+                .leftJoin(db.person.asJoinable("fromPerson")).on("inv.from_person_id=fromPerson.id").map((Invoice i, Person p)-> i.withFromPerson(p))
+        ;
 
-         .get();
 
-        join.select("where line.id is not null or true").getList().groupByOrdered(l -> l.head(),l -> l.lastOpt().orElse(null)).map(t -> {
+        //EJoinStats<Invoice> j2 = j1.leftJoin(db.person.asJoinable("toPerson")).on("toPerson.id=inv.to_person_id");
+        //EJoinStats<Tuple2<Invoice,InvoiceLine>> join = db.invoice.startJoin("inv")
+        //        .leftJoin(db.person.asJoinable("fPerson")).on("fPerson.id=inv.from_person_id").<Invoice,Person>map((i,p)->i.withFromPerson(p))//.map(i -> i)//.map((i,p)-> i.withFromPersion(p))//.map((Invoice i, Person p) -> i.withFromPerson(p));
+                //.leftJoin(db.person.asJoinable("toPerson")).on("toPerson.id=inv.to_person_id").map((i,p) -> i.withToPerson(p))
+                //.leftJoin(db.invoiceLine.asJoinable("line")).on("line.invoice_id=inv.id").mapTuple();
+
+        /*join.select("where line.id is not null or true").getList().groupByOrdered(l -> l.head(),l -> l.lastOpt().orElse(null)).map(t -> {
             Invoice i = (Invoice)t._1;
             return i.withLines((PList)(t._2).filter( p -> p != null));
-        }).forEach(System.out::println);
+        }).forEach(System.out::println);*/
 
         System.out.println("START *********************");
         //PList<Tuple2<Invoice,InvoiceLine>> s = db.joinInvoiceLines.select().getList();

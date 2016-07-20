@@ -96,8 +96,8 @@ public class ETableStats<T>{
      * @param name Table instance name to use
      * @return EJoinable instance of this
      */
-    public EJoinable asJoinable(String name){
-        return new EJoinable() {
+    public EJoinable<T> asJoinable(String name){
+        return new EJoinable<T>() {
             @Override
             public String getName() {
                 return name;
@@ -114,8 +114,8 @@ public class ETableStats<T>{
             }
 
             @Override
-            public PList<Object> mapRow(Record row) {
-                return PList.empty().plus(mapper.read(name,mappedClass,row.getSubRecord(name)));
+            public T mapRow(Record row) {
+                return mapper.read(name,mappedClass,row.getSubRecord(name));
             }
 
             @Override
@@ -131,6 +131,11 @@ public class ETableStats<T>{
             @Override
             public EStatementPreparer getStatementPreparer() {
                 return statementPreparer;
+            }
+
+            @Override
+            public DbType getDbType() {
+                return dbType;
             }
         };
     }

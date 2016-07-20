@@ -4,8 +4,8 @@ import com.persistentbit.core.Immutable;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
-import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.connect.SQLRunner;
+import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.objectmappers.ReadableRow;
 
 import java.sql.PreparedStatement;
@@ -17,54 +17,43 @@ import java.util.function.Function;
  * Created by petermuys on 16/07/16.
  */
 @Immutable
-public class EJoinStats {
+public class EJoinStats<R> {
 
-    static private class JoinElement{
+    static class JoinElement{
         public final EJoinable joinable;
         public final String joinType;
         public final String joinSQL;
-        public final Function<PList<Object>,PList<Object>> mapper;
+        public final BiFunction<Object,Object,Object> mapper;
         public final boolean select;
 
-        public JoinElement(EJoinable joinable, String joinType, String joinSQL,Function<PList<Object>,PList<Object>> mapper,boolean select) {
+        public JoinElement(EJoinable joinable, String joinType, String joinSQL,BiFunction<Object,Object,Object> mapper,boolean select) {
             this.joinable = joinable;
             this.joinType = joinType;
             this.joinSQL = joinSQL;
             this.mapper = mapper;
             this.select = select;
         }
-        public JoinElement withMapper(Function<PList<Object>,PList<Object>> mapper){
-            return new JoinElement(joinable,joinType,joinSQL, mapper,select);
-        }
-        public JoinElement withSelect(boolean select) {
-            return new JoinElement(joinable,joinType,joinSQL,mapper,select);
-        }
+
     }
-    private final EJoinable left;
-    private final PList<JoinElement> elements;
+    final EJoinable left;
+    final PList<JoinElement> elements;
 
 
 
-    public EJoinStats(EJoinable left, EJoinable right, String joinType,String joinSql){
-        this(left,right,joinType,joinSql,t->t);
-    }
 
-    public EJoinStats(EJoinable left, EJoinable right, String joinType,String joinSql,Function<PList<Object>,PList<Object>>mapper){
-        this(left,PList.val(new JoinElement(right,joinType,joinSql,mapper,true)));
-    }
-
-    public EJoinStats(EJoinable left){
+    public EJoinStats(EJoinable<R> left){
         this(left,PList.empty());
     }
 
-    private EJoinStats(EJoinable left, PList<JoinElement> elements) {
+    EJoinStats(EJoinable left, PList<JoinElement> elements) {
         this.left  = left;
         this.elements = elements;
     }
 
 
-    public EJoinable asJoinable() {
-        return new EJoinable() {
+
+    public EJoinable<R> asJoinable() {
+        return new EJoinable<R>() {
 
             @Override
             public String getName() {
@@ -89,14 +78,13 @@ public class EJoinStats {
             }
 
             @Override
-            public PList<Object> mapRow(Record r) {
-                //return PList.empty().plusAll(left.mapRow(row)).plusAll(elements.map(e->e.joinable.mapRow(row)));
-                PList<Object> all = PList.empty().plus(left.mapRow(r).headOpt().orElse(null));
+            public R mapRow(Record r) {
+                Object prev = left.mapRow(r);
                 for(JoinElement je : elements){
-                    all = all.plusAll(je.joinable.mapRow(r));
-                    all = je.mapper.apply(all);
+                    Object right =  je.joinable.mapRow(r);
+                    prev = je.mapper.apply(prev,right);
                 }
-                return all;
+                return (R)prev;
             }
 
             @Override
@@ -108,88 +96,73 @@ public class EJoinStats {
             public EStatementPreparer getStatementPreparer() {
                 return left.getStatementPreparer();
             }
+
+            @Override
+            public DbType getDbType() {
+                return left.getDbType();
+            }
         };
     }
 
-    public class EJoinStatJoin{
-        private JoinElement element;
-        private EJoinStatJoin(JoinElement element){
-            this.element = element;
-        }
 
-        public <X,Y> EJoinStatJoin    mapLastItems(BiFunction<X,Y,Object> mapper){
-            Function<PList<Object>,PList<Object>> fullMapper = list -> {
-                try {
 
-                    Y right = (Y) list.lastOpt().orElse(null);
-                    PList<Object> res = list.dropLast();
-                    X left = (X) res.lastOpt().orElse(null);
-                    res = res.dropLast();
-                    Object value = mapper.apply(left, right);
-                    return res.plus(value);
-                }catch(Exception e){
-                    throw new PersistSqlException(e);
-                }
-            };
-            JoinElement el = element.withMapper(fullMapper);
-            return new EJoinStats(left,elements.replaceFirst(element,el)).getJoin(el);
-        }
-
-        public EJoinStats get(){
-            return EJoinStats.this;
-        }
-        public EJoinStatJoin  fullOuterJoin(EJoinable other,String joinSql){
-            return EJoinStats.this.fullOuterJoin(other,joinSql);
-        }
-        public EJoinStatJoin  leftOuterJoin(EJoinable other,String joinSql){
-            return EJoinStats.this.leftOuterJoin(other,joinSql);
-        }
-        public EJoinStatJoin  rightOuterJoin(EJoinable other,String joinSql){
-            return EJoinStats.this.rightOuterJoin(other,joinSql);
-        }
-        public EJoinStatJoin  innerJoin(EJoinable other,String joinSql){
-            return EJoinStats.this.innerJoin(other,joinSql);
-        }
-
-        public EJoinStatJoin merge(EJoinStats other){
-            return EJoinStats.this.merge(other);
-        }
+    public EJoinBuilder leftJoin(ETableStats table,String as){
+        return leftJoin(table.asJoinable(as));
+    }
+    public EJoinBuilder rightJoin(ETableStats table,String as){
+        return rightJoin(table.asJoinable(as));
+    }
+    public EJoinBuilder innerJoin(ETableStats table,String as){
+        return innerJoin(table.asJoinable(as));
+    }
+    public EJoinBuilder fullOuterJoin(ETableStats table,String as){
+        return fullOuterJoin(table.asJoinable(as));
     }
 
-    private EJoinStatJoin getJoin(JoinElement el){
-        return new EJoinStatJoin(el);
+    public EJoinBuilder leftJoin(EJoinable joinable){
+        return new EJoinBuilder(this,joinable,"LEFT OUTER JOIN");
+    }
+    public EJoinBuilder rightJoin(EJoinable joinable){
+        return new EJoinBuilder(this,joinable,"RIGHT OUTER JOIN");
+    }
+
+    public EJoinBuilder innerJoin(EJoinable joinable){
+        return new EJoinBuilder(this,joinable,"INNER JOIN");
+    }
+    public EJoinBuilder fullOuterJoin(EJoinable joinable){
+        return new EJoinBuilder(this,joinable,"FULL OUTER JOIN");
+    }
+
+    public EJoinBuilder leftJoin(EJoinStats<R> join){
+        return leftJoin(join.asJoinable());
+    }
+    public EJoinBuilder rightJoin(EJoinStats<R> join){
+        return rightJoin(join.asJoinable());
+    }
+    public EJoinBuilder innerJoin(EJoinStats<R> join){
+        return innerJoin(join.asJoinable());
+    }
+    public EJoinBuilder fullOuterJoin(EJoinStats<R> join){
+        return fullOuterJoin(join.asJoinable());
     }
 
 
-    public EJoinStatJoin  fullOuterJoin(EJoinable other,String joinSql){
-        return join("FULL OUTER JOIN",other,joinSql,t->t);
-    }
-    public EJoinStatJoin  leftOuterJoin(EJoinable other,String joinSql){
-        return join("LEFT OUTER JOIN",other,joinSql,t->t);
-    }
-    public EJoinStatJoin  rightOuterJoin(EJoinable other,String joinSql){
-        return join("RIGHT OUTER JOIN",other,joinSql,t->t);
-    }
-    public EJoinStatJoin  innerJoin(EJoinable other,String joinSql){
-        return join("INNER JOIN",other,joinSql,t->t);
-    }
 
-    public EJoinStatJoin join(String joinType,EJoinable other,String joinSql,Function<PList<Object>,PList<Object>>mapper){
-        JoinElement el = new JoinElement(other,joinType,joinSql,mapper,true);
-        return new EJoinStats(left,elements.plus(el)).getJoin(el);
-    }
-
-    public EJoinStatJoin merge(EJoinStats other){
+    public EJoinStats<R> merge(EJoinStats<R> other){
         if(other.left.getName().equals(left.getName()) &&
                 other.left.getTableName().equals(left.getTableName())){
-            return new EJoinStats(this.left,this.elements.plusAll(other.elements)).getJoin(other.elements.lastOpt().orElse(this.elements.lastOpt().get()));
+            return new EJoinStats(this.left,this.elements.plusAll(other.elements));
         }
+
         throw new RuntimeException("Not Yet implemented");
     }
+
 
     public class SelectBuilder implements SqlArguments<SelectBuilder>, ReadableRow {
         private PMap<String, Object> args = PMap.empty();
         private String sqlRest = "";
+        private Long limit = null;
+        private Long offset = null;
 
         @Override
         public SelectBuilder arg(String name, Object value) {
@@ -209,37 +182,62 @@ public class EJoinStats {
             return this;
         }
 
-        public Optional<PList<Object>> getOne() {
+        public Optional<R> getOne() {
             return left.getRunner().run(c -> {
                 return visit(v -> v.headOpt());
             });
         }
 
-        public PList<PList<Object>> getList() {
+        public PList<R> getList() {
             return visit(s -> s.plist());
         }
-        public PList<Object>    getListOne() {
-            return visit(s -> s.headOpt().orElse(null));
+
+
+        /**
+         * Change to SQL select to limit the number of rows selected
+         * @param limit Maximum number of rows to select
+         * @return This select builder
+         */
+        public SelectBuilder limit(long limit){
+            this.limit = limit;
+            return this;
         }
 
+        /**
+         * Change to SQL select to limit the number of rows selected and from what row to start
+         * @param limit Maximum number of rows to select
+         * @param offset index of the first row returned (starting from 0)
+         * @return This select builder
+         */
+        public SelectBuilder limitAndOffset(long limit,long offset){
+            this.limit = limit;
+            this.offset = offset;
+            return this;
+        }
 
-
-        private <X> X visit(Function<PStream<PList<Object>>,X> visitor) {
+        private <X> X visit(Function<PStream<R>,X> visitor) {
             return left.getRunner().run(c -> {
 
                 String sql = "SELECT " + left.getSelectPart() + "," + elements.map(e-> e.joinable.getSelectPart()).toString(", ") + " FROM :" + left.getTableName() + ".as." + left.getName()
                         + " " + elements.map(e -> e.joinType + " :" + e.joinable.getTableName() + ".as." + e.joinable.getName() + " ON " + e.joinSQL + e.joinable.getOwnJoins()).toString(" " ) + " " + sqlRest;
 
+                if(limit != null){
+                    if(offset != null){
+                        sql = left.getDbType().sqlWithLimitAndOffset(limit,offset,sql);
+                    } else {
+                        sql = left.getDbType().sqlWithLimit(limit,sql);
+                    }
+                }
                 try (PreparedStatement stat = left.getStatementPreparer().prepare(c, sql, SelectBuilder.this)) {
 
                     ResultSetRecordStream rs = new ResultSetRecordStream(stat.executeQuery());
-                    PStream<PList<Object>> trs = rs.map(r -> {
-                        PList<Object> all = PList.empty().plus(left.mapRow(r).head());
+                    PStream<R> trs = rs.map(r -> {
+                        Object prev = left.mapRow(r);
                         for(JoinElement je : elements){
-                            all = all.plusAll(je.joinable.mapRow(r));
-                            all = je.mapper.apply(all);
+                            Object right =  je.joinable.mapRow(r);
+                            prev = je.mapper.apply(prev,right);
                         }
-                        return all;
+                        return (R)prev;
                     });
                     return visitor.apply(trs);
                 }

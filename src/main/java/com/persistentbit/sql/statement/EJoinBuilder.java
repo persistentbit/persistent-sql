@@ -24,7 +24,7 @@ public class EJoinBuilder{
         public  <L,R,T> EJoinStats<T> map(BiFunction<L,R,T> mapper) {
 
             EJoinStats.JoinElement el = new EJoinStats.JoinElement(joinable,joinType,joinSql,(BiFunction)mapper,true);
-            return new EJoinStats(root.left,root.elements.plus(el));
+            return new EJoinStats(root.left,root.elements.plus(el),root.extraMappers);
         }
         public <L,R> EJoinStats<Tuple2<L,R>> mapTuple(){
             return map((l,r)-> new Tuple2<L,R>((L)l,(R)r));

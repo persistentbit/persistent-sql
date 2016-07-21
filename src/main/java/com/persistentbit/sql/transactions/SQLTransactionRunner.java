@@ -2,6 +2,7 @@ package com.persistentbit.sql.transactions;
 
 
 
+import com.persistentbit.core.Pair;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.connect.ConnectionWrapper;
 import com.persistentbit.sql.connect.SQLRunner;
@@ -9,8 +10,10 @@ import com.persistentbit.sql.connect.SQLRunner;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -23,8 +26,9 @@ public class SQLTransactionRunner implements SQLRunner {
     static private final Logger log = Logger.getLogger(SQLTransactionRunner.class.getName());
 
     private final Supplier<Connection>   connectionSupplier;
+    private AtomicLong  nextTransactionId = new AtomicLong(0);
 
-    private ThreadLocal<Connection> currentConnection = new ThreadLocal<>();
+    private ThreadLocal<Pair<Long,Connection>> currentConnection = new ThreadLocal<>();
 
     public SQLTransactionRunner(Supplier<Connection> connectionSupplier){
         this.connectionSupplier = connectionSupplier;
@@ -46,7 +50,7 @@ public class SQLTransactionRunner implements SQLRunner {
     public <T> T run(SqlCodeWithResult<T> code) {
         return doRun(() -> {
             try {
-                return code.run(currentConnection.get());
+                return code.run(currentConnection.get()._2);
             }catch(SQLException e){
                 throw new PersistSqlException(e);
             }
@@ -58,7 +62,7 @@ public class SQLTransactionRunner implements SQLRunner {
 
         doRun(() -> {
             try {
-                code.run(currentConnection.get());
+                code.run(currentConnection.get()._2);
             }catch(SQLException e){
                 throw new PersistSqlException(e);
             }
@@ -74,7 +78,7 @@ public class SQLTransactionRunner implements SQLRunner {
 
 
     public void runNew(SqlCode code){
-        Connection prev = currentConnection.get();
+        Pair<Long,Connection> prev = currentConnection.get();
         try {
             currentConnection.remove();
             run(code);
@@ -84,7 +88,7 @@ public class SQLTransactionRunner implements SQLRunner {
     }
 
     public <R> R runNew(SqlCodeWithResult<R> code){
-        Connection prev = currentConnection.get();
+        Pair<Long,Connection> prev = currentConnection.get();
         try {
             currentConnection.remove();
             return run(code);
@@ -94,21 +98,33 @@ public class SQLTransactionRunner implements SQLRunner {
     }
 
 
+    public Optional<Long> currentTransactionId() {
+        Pair<Long,Connection> con = currentConnection.get();
+        if(con == null){
+            return Optional.empty();
+        }
+        return Optional.of(con._1);
+    }
 
+
+    private long createNewTransactionId(){
+        long result = nextTransactionId.incrementAndGet();
+        return (Thread.currentThread().getId()<< 32) + result;
+    }
 
 
     private <R> R doRun(Callable<R> code){
         boolean isNewConnection = false;
         if(currentConnection.get() == null){
-            currentConnection.set(connectionSupplier.get());
+            currentConnection.set(new Pair(createNewTransactionId(),connectionSupplier.get()));
             try {
-                currentConnection.get().setAutoCommit(false);
+                currentConnection.get()._2.setAutoCommit(false);
                 isNewConnection = true;
             }catch (SQLException sql){
                 throw new TransactionsException("Error while creating a new jdbc connection",sql);
             }
         }
-        Connection con = currentConnection.get();
+        Connection con = currentConnection.get()._2;
         try{
             R result = code.call();
             con.commit();

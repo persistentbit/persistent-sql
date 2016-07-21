@@ -1,6 +1,7 @@
 package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.Lazy;
+import com.persistentbit.core.collections.IPList;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
@@ -9,6 +10,7 @@ import com.persistentbit.sql.connect.SQLRunner;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.dbdef.TableColDef;
 import com.persistentbit.sql.dbdef.TableDef;
+import com.persistentbit.sql.lazy.LazyPStream;
 import com.persistentbit.sql.objectmappers.InMemoryRow;
 import com.persistentbit.sql.objectmappers.ObjectRowMapper;
 import com.persistentbit.sql.objectmappers.ReadableRow;
@@ -150,6 +152,18 @@ public class ETableStats<T>{
         private Long limit;
         private Long offset;
 
+
+        public SelectBuilder() {
+
+        }
+
+        public SelectBuilder(PMap<String, Object> args, String sqlRest, Long limit, Long offset) {
+            this.args = args;
+            this.sqlRest = sqlRest;
+            this.limit = limit;
+            this.offset = offset;
+        }
+
         @Override
         public SelectBuilder arg(String name, Object value) {
             args = args.put(name,value);
@@ -195,6 +209,18 @@ public class ETableStats<T>{
         public PList<T>    getList() {
             return visit(s -> s.plist());
         }
+
+        /**
+         * Create a PStream that is loaded the first time it is accessed.
+         * @return The Lazy Loading PStream
+         */
+        public LazyPStream<T> lazyLoading() {
+            SelectBuilder copy = new SelectBuilder(args,sqlRest,limit,offset);
+            return new LazyPStream<>(() -> copy.getList());
+        }
+
+
+
 
         /**
          * Change to SQL select to limit the number of rows selected
@@ -250,6 +276,7 @@ public class ETableStats<T>{
 
 
     }
+
 
     /**
      * Create a new SQL select builder

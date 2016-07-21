@@ -2,6 +2,7 @@ package com.persistentbit.sql;
 
 import com.persistentbit.core.codegen.CaseClass;
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.lenses.Lens;
 import com.persistentbit.core.lenses.LensImpl;
 import com.persistentbit.core.properties.FieldNames;
@@ -22,14 +23,14 @@ public class Invoice {
     @DbRename("invoice_nummer") private final String number;
     @DbRename("from_person_id")private LongRef<Person> fromPersonId;
 	@DbRename("to_person_id")private LongRef<Person> toPersonId;
-	@DbIgnore private PList<InvoiceLine> lines;
+	@DbIgnore private PStream<InvoiceLine> lines;
 
 
 	public Invoice(String number, LongRef<Person> fromPersonId, LongRef<Person> toPersonId){
     	this(0,number,fromPersonId,toPersonId,PList.empty());
 	}
 	@FieldNames(names = {"id","number","fromPersonId","toPersonId","lines"})
-    public Invoice(int id, String number, LongRef<Person> fromPersonId, LongRef<Person> toPersonId,PList<InvoiceLine> lines) {
+    public Invoice(int id, String number, LongRef<Person> fromPersonId, LongRef<Person> toPersonId,PStream<InvoiceLine> lines) {
         this.id = id;
         this.number = number;
         this.fromPersonId = fromPersonId;
@@ -65,7 +66,7 @@ public class Invoice {
 
 	public String getNumber(){ return number; }
 
-	public Invoice withLines(PList<InvoiceLine> lines){
+	public Invoice withLines(PStream<InvoiceLine> lines){
 		return new Invoice(this.id, this.number, this.fromPersonId, this.toPersonId, lines);
 	}
 
@@ -77,8 +78,11 @@ public class Invoice {
 		return new Invoice(this.id, this.number, this.fromPersonId, new LongRefValue(p.getId(),p), this.lines);
 	}
 
+	public PStream<InvoiceLine> getLines() {
+		return lines;
+	}
 
-	static public final Lens<Invoice,String> _number = new LensImpl<Invoice,String>(obj-> obj.getNumber(),(obj,value)-> obj.withNumber(value));
+	static public final Lens<Invoice,String> _number = new LensImpl<Invoice,String>(obj-> obj.getNumber(),(obj, value)-> obj.withNumber(value));
 
 	@Override
 	public boolean equals(Object o){

@@ -1,5 +1,6 @@
 package com.persistentbit.sql;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.statement.Db;
 import com.persistentbit.sql.statement.EJoinBuilder;
@@ -78,12 +79,21 @@ public class DbInst extends Db {
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken maart"));
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken april"));
 
-        EJoinStats<Invoice> j1 = db.invoice.startJoin("inv");
-        EJoinBuilder j2 =j1.leftJoin(db.person.asJoinable("toPerson"));
-        EJoinStats<Invoice> res = db.invoice.startJoin("inv")
-                .leftJoin(db.person.asJoinable("toPerson")).on("inv.to_person_id=toPerson.id").map((Invoice i,Person p)-> i.withToPerson(p))
-                .leftJoin(db.person.asJoinable("fromPerson")).on("inv.from_person_id=fromPerson.id").map((Invoice i, Person p)-> i.withFromPerson(p))
+
+        EJoinStats<Invoice> invoiceLoader = db.invoice.startJoin("inv")
+                .leftJoin(db.person,"toPerson").on("inv.to_person_id=toPerson.id").map((Invoice i,Person p)-> i.withToPerson(p))
+                .leftJoin(db.person,"fromPerson").on("inv.from_person_id=fromPerson.id").map((Invoice i, Person p)-> i.withFromPerson(p))
+                .extraMapping(i -> i.withLines(db.invoiceLine.select("where invoice_id=:invoiceId").arg("invoiceId",i.getId()).lazyLoading()))
         ;
+
+        PList<Invoice> invoices = invoiceLoader.select().getList();
+
+        invoices.forEach(i -> {
+            System.out.println(i);
+            i.getLines().forEach(l -> {
+                System.out.println("\t" + l);
+            });
+        });
 
 
         //EJoinStats<Invoice> j2 = j1.leftJoin(db.person.asJoinable("toPerson")).on("toPerson.id=inv.to_person_id");

@@ -6,6 +6,7 @@ import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.connect.SQLRunner;
 import com.persistentbit.sql.databases.DbType;
+import com.persistentbit.sql.lazy.LazyPStream;
 import com.persistentbit.sql.objectmappers.ReadableRow;
 
 import java.sql.PreparedStatement;
@@ -37,17 +38,18 @@ public class EJoinStats<R> {
     }
     final EJoinable left;
     final PList<JoinElement> elements;
-
+    final PList<Function> extraMappers;
 
 
 
     public EJoinStats(EJoinable<R> left){
-        this(left,PList.empty());
+        this(left,PList.empty(),PList.empty());
     }
 
-    EJoinStats(EJoinable left, PList<JoinElement> elements) {
+    EJoinStats(EJoinable left, PList<JoinElement> elements,PList<Function> extraMappers) {
         this.left  = left;
         this.elements = elements;
+        this.extraMappers = extraMappers;
     }
 
 
@@ -84,6 +86,9 @@ public class EJoinStats<R> {
                     Object right =  je.joinable.mapRow(r);
                     prev = je.mapper.apply(prev,right);
                 }
+                for(Function mapper : extraMappers){
+                    prev = mapper.apply(prev);
+                }
                 return (R)prev;
             }
 
@@ -102,6 +107,10 @@ public class EJoinStats<R> {
                 return left.getDbType();
             }
         };
+    }
+
+    public <X> EJoinStats<X> extraMapping(Function<R,X> mapper){
+        return new EJoinStats<X>(left,elements,extraMappers.plus(mapper));
     }
 
 
@@ -151,7 +160,7 @@ public class EJoinStats<R> {
     public EJoinStats<R> merge(EJoinStats<R> other){
         if(other.left.getName().equals(left.getName()) &&
                 other.left.getTableName().equals(left.getTableName())){
-            return new EJoinStats(this.left,this.elements.plusAll(other.elements));
+            return new EJoinStats(this.left,this.elements.plusAll(other.elements),this.extraMappers.plusAll(other.extraMappers));
         }
 
         throw new RuntimeException("Not Yet implemented");
@@ -163,6 +172,16 @@ public class EJoinStats<R> {
         private String sqlRest = "";
         private Long limit = null;
         private Long offset = null;
+
+        public SelectBuilder() {
+        }
+
+        public SelectBuilder(PMap<String, Object> args, String sqlRest, Long limit, Long offset) {
+            this.args = args;
+            this.sqlRest = sqlRest;
+            this.limit = limit;
+            this.offset = offset;
+        }
 
         @Override
         public SelectBuilder arg(String name, Object value) {
@@ -190,6 +209,15 @@ public class EJoinStats<R> {
 
         public PList<R> getList() {
             return visit(s -> s.plist());
+        }
+
+        /**
+         * Create a PStream that is loaded the first time it is accessed.
+         * @return The Lazy Loading PStream
+         */
+        public <T> LazyPStream<T> lazyLoading() {
+            SelectBuilder copy = new SelectBuilder(args,sqlRest,limit,offset);
+            return new LazyPStream<T>(() -> (PStream<T>)copy.getList());
         }
 
 
@@ -236,6 +264,9 @@ public class EJoinStats<R> {
                         for(JoinElement je : elements){
                             Object right =  je.joinable.mapRow(r);
                             prev = je.mapper.apply(prev,right);
+                        }
+                        for(Function mapper : extraMappers){
+                            prev = mapper.apply(prev);
                         }
                         return (R)prev;
                     });

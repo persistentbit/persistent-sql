@@ -1,7 +1,6 @@
 package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.Lazy;
-import com.persistentbit.core.collections.IPList;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
@@ -15,7 +14,7 @@ import com.persistentbit.sql.lazy.LazyPStream;
 import com.persistentbit.sql.objectmappers.InMemoryRow;
 import com.persistentbit.sql.objectmappers.ObjectRowMapper;
 import com.persistentbit.sql.objectmappers.ReadableRow;
-import com.persistentbit.sql.references.RefId;
+import com.persistentbit.core.references.RefId;
 import com.persistentbit.sql.statement.annotations.DbTableName;
 
 import java.sql.PreparedStatement;

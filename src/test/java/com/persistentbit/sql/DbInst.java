@@ -73,8 +73,8 @@ public class DbInst extends Db {
 
         Person muys = db.person.insert(new Person(0,"petermuys","pwd"));
         Person axxes = db.person.insert(new Person(0,"axxes","pwd"));
-        Invoice in = db.invoice.insert(new Invoice("2016-01",muys.getRef(),axxes.getRef()));
-        Invoice in2 = db.invoice.insert(new Invoice("2016-02",muys.getRef(),axxes.getRef()));
+        Invoice in = db.invoice.insert(new Invoice("2016-01",muys.getIdRef(),axxes.getIdRef()));
+        Invoice in2 = db.invoice.insert(new Invoice("2016-02",muys.getIdRef(),axxes.getIdRef()));
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken januari"));
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken februari"));
         db.invoiceLine.insert(new InvoiceLine(0,in.getId(),"Werken maart"));
@@ -82,7 +82,7 @@ public class DbInst extends Db {
 
 
         EJoinStats<Invoice> invoiceLoader = db.invoice.startJoin("inv")
-                .leftJoin(db.person,"toPerson").on("inv.to_person_id=toPerson.id").map((Invoice i,Person p)-> i.withToPerson(p.getRef()))
+                .leftJoin(db.person,"toPerson").on("inv.to_person_id=toPerson.id").map((Invoice i,Person p)-> i.withToPerson(p.getValueRef()))
                 //.leftJoin(db.person,"fromPerson").on("inv.from_person_id=fromPerson.id").map((Invoice i, Person p)-> i.withFromPerson(p))
                 .extraMapping(i -> i.withLines(db.invoiceLine.select("where invoice_id=:invoiceId").arg("invoiceId",i.getId()).lazyLoading()))
                 .extraMapping(i -> i.withFromPerson(db.personAll.select().lazyLoadingRef(i.getFromPersonId().getId())))

@@ -20,7 +20,7 @@ public class TestObjectMapper {
         System.out.println(row);
         System.out.println(mapper.read(Person.class,row));
 
-        Invoice in = new Invoice("1234",p.getRef(),p.getRef());
+        Invoice in = new Invoice("1234",p.getIdRef(),p.getIdRef());
         row = new InMemoryRow();
         mapper.write(in,row);
         System.out.println(row);

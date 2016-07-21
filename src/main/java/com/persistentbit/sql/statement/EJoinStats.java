@@ -11,7 +11,7 @@ import com.persistentbit.sql.dbdef.TableDef;
 import com.persistentbit.sql.lazy.LazyLoadingRef;
 import com.persistentbit.sql.lazy.LazyPStream;
 import com.persistentbit.sql.objectmappers.ReadableRow;
-import com.persistentbit.sql.references.RefId;
+import com.persistentbit.core.references.RefId;
 
 import java.sql.PreparedStatement;
 import java.util.Optional;

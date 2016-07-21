@@ -7,16 +7,14 @@ import com.persistentbit.core.lenses.Lens;
 import com.persistentbit.core.lenses.LensImpl;
 import com.persistentbit.core.properties.FieldNames;
 
-import com.persistentbit.core.utils.ImTools;
+import com.persistentbit.core.references.WithReferenceable;
 import com.persistentbit.sql.objectmappers.InMemoryRow;
 import com.persistentbit.sql.objectmappers.ObjectRowMapper;
-import com.persistentbit.sql.references.Ref;
-import com.persistentbit.sql.references.RefId;
+import com.persistentbit.core.references.Ref;
+import com.persistentbit.core.references.RefId;
 import com.persistentbit.sql.statement.annotations.DbIgnore;
 import com.persistentbit.sql.statement.annotations.DbRename;
 import com.persistentbit.sql.statement.annotations.DbTableName;
-
-import java.lang.reflect.Type;
 
 /**
  * User: petermuys
@@ -24,7 +22,7 @@ import java.lang.reflect.Type;
  * Time: 11:25
  */
 @CaseClass @DbTableName("INVOICE")
-public class Invoice {
+public class Invoice implements WithReferenceable<Invoice,Integer>{
     private final int id;
     @DbRename("invoice_nummer") private final String number;
     @DbRename("from_person_id")private Ref<Person,Long> fromPersonId;
@@ -70,7 +68,7 @@ public class Invoice {
 		return new Invoice(value, this.number, this.fromPersonId, this.toPersonId, this.lines);
 	} 
 
-	public int getId(){ return id; }
+	public Integer getId(){ return id; }
 
 	static public final Lens<Invoice,Integer> _id = new LensImpl<Invoice,Integer>(obj-> obj.getId(),(obj,value)-> obj.withId(value));
 

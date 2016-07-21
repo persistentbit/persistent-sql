@@ -1,5 +1,7 @@
 package com.persistentbit.sql.references;
 
+import com.persistentbit.core.references.Ref;
+import com.persistentbit.core.references.RefId;
 import com.persistentbit.core.utils.ReflectionUtils;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.objectmappers.ObjectReader;

@@ -3,10 +3,10 @@ package com.persistentbit.sql;
 import com.persistentbit.core.codegen.CaseClass;
 import com.persistentbit.core.codegen.GenNoLens;
 import com.persistentbit.core.properties.FieldNames;
-import com.persistentbit.core.utils.ImTools;
-import com.persistentbit.sql.references.Ref;
-import com.persistentbit.sql.references.RefId;
-import com.persistentbit.sql.references.RefValue;
+import com.persistentbit.core.references.Ref;
+import com.persistentbit.core.references.RefId;
+import com.persistentbit.core.references.RefValue;
+import com.persistentbit.core.references.WithReferenceable;
 import com.persistentbit.sql.statement.annotations.DbRename;
 import com.persistentbit.sql.statement.annotations.DbTableName;
 
@@ -17,7 +17,7 @@ import com.persistentbit.sql.statement.annotations.DbTableName;
  */
 @CaseClass @GenNoLens
 @DbTableName("PERSON")
-public class Person {
+public class Person implements WithReferenceable<Person,Long>{
     private final long id;
     @DbRename("user_name")
 	private final String userName;
@@ -30,9 +30,7 @@ public class Person {
         this.password = password;
     }
 
-    public Ref<Person,Long> getRef() {
-    	return new RefValue(new RefId(getId()),this);
-	}
+
 
     public Person withName(String name){
         return new Person(id,name,password);
@@ -52,7 +50,8 @@ public class Person {
 		return new Person(value, this.userName, this.password);
 	} 
 
-	public long getId(){ return id; }
+	@Override
+	public Long getId(){ return id; }
 
 	
 	@Override

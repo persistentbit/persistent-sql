@@ -4,8 +4,8 @@ import com.persistentbit.sql.objectmappers.ObjectReader;
 import com.persistentbit.sql.objectmappers.ObjectWriter;
 import com.persistentbit.sql.objectmappers.ReadableRow;
 import com.persistentbit.sql.objectmappers.WritableRow;
-import com.persistentbit.sql.references.Ref;
-import com.persistentbit.sql.references.RefId;
+import com.persistentbit.core.references.Ref;
+import com.persistentbit.core.references.RefId;
 
 import java.lang.reflect.Type;
 import java.util.Optional;

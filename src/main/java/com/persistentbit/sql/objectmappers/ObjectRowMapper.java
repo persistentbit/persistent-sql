@@ -2,15 +2,14 @@ package com.persistentbit.sql.objectmappers;
 
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.sql.PersistSqlException;
-import com.persistentbit.sql.references.Ref;
-import com.persistentbit.sql.references.RefId;
+import com.persistentbit.core.references.Ref;
+import com.persistentbit.core.references.RefId;
 import com.persistentbit.sql.references.RefObjectReaderWriter;
-import com.persistentbit.sql.references.RefValue;
+import com.persistentbit.core.references.RefValue;
 
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;

@@ -4,10 +4,14 @@ import com.persistentbit.core.Immutable;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.connect.SQLRunner;
 import com.persistentbit.sql.databases.DbType;
+import com.persistentbit.sql.dbdef.TableDef;
+import com.persistentbit.sql.lazy.LazyLoadingRef;
 import com.persistentbit.sql.lazy.LazyPStream;
 import com.persistentbit.sql.objectmappers.ReadableRow;
+import com.persistentbit.sql.references.RefId;
 
 import java.sql.PreparedStatement;
 import java.util.Optional;
@@ -106,6 +110,11 @@ public class EJoinStats<R> {
             public DbType getDbType() {
                 return left.getDbType();
             }
+
+            @Override
+            public TableDef getTableDef() {
+                return left.getTableDef();
+            }
         };
     }
 
@@ -195,6 +204,22 @@ public class EJoinStats<R> {
 
         }
 
+        /**
+         * Select for the root table with the provided id
+         * @param id The id of the root table
+         * @return Optional joined result for the provided id
+         */
+        public Optional<R> forId(Object id){
+            String idName = left.getTableDef().getIdCols().head().getName();
+            sqlRest(" where " + left.getName() + "." +  idName+" = :id");
+            arg("id",id);
+            return getOne();
+        }
+
+        public <ID> LazyLoadingRef<R,ID> lazyLoadingRef(ID id){
+            return new LazyLoadingRef<R, ID>(new RefId<R, ID>(id),() -> forId(id).orElseThrow(() -> new PersistSqlException("Can't get " + left.getTableDef().getTableName() + " with id " + id)));
+        }
+
 
         public SelectBuilder sqlRest(String sql) {
             sqlRest = sql;
@@ -245,8 +270,8 @@ public class EJoinStats<R> {
 
         private <X> X visit(Function<PStream<R>,X> visitor) {
             return left.getRunner().run(c -> {
-
-                String sql = "SELECT " + left.getSelectPart() + "," + elements.map(e-> e.joinable.getSelectPart()).toString(", ") + " FROM :" + left.getTableName() + ".as." + left.getName()
+                String elementsSelect = elements.isEmpty() ? "" : "," + elements.map(e-> e.joinable.getSelectPart()).toString(", ");
+                String sql = "SELECT " + left.getSelectPart() + elementsSelect + " FROM :" + left.getTableName() + ".as." + left.getName()
                         + " " + elements.map(e -> e.joinType + " :" + e.joinable.getTableName() + ".as." + e.joinable.getName() + " ON " + e.joinSQL + e.joinable.getOwnJoins()).toString(" " ) + " " + sqlRest;
 
                 if(limit != null){

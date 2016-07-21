@@ -1,5 +1,6 @@
 package com.persistentbit.sql.objectmappers;
 
+import java.lang.reflect.Type;
 import java.util.function.Function;
 
 /**
@@ -20,5 +21,5 @@ public interface ObjectReader {
      * @param properties The row of properties
      * @return The value
      */
-    Object read(String name, Function<Class,ObjectReader> readerSupplier, ReadableRow properties);
+    Object read(Type typeToRead, String name, Function<Class,ObjectReader> readerSupplier, ReadableRow properties);
 }

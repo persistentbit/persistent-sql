@@ -10,6 +10,7 @@ import com.persistentbit.sql.statement.annotations.DbPostfix;
 import com.persistentbit.sql.statement.annotations.DbPrefix;
 import com.persistentbit.sql.statement.annotations.DbRename;
 
+import java.lang.reflect.Type;
 import java.util.function.Function;
 
 /**
@@ -34,11 +35,11 @@ public class DefaultObjectReader implements ObjectReader {
     }
 
     @Override
-    public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+    public Object read(Type typeToRead, String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
 
         PMap<String, Object> map = fieldReaders.mapKeyValues(t ->
 
-                Tuple2.of(t._1, t._2.read(t._1, readerSupplier, properties))
+                Tuple2.of(t._1, t._2.read(typeToRead, t._1, readerSupplier, properties))
         );
         if (map.values().find(v -> v != null).isPresent() == false) {
             //Not 1 property is set, assuming this is a null value
@@ -73,8 +74,8 @@ public class DefaultObjectReader implements ObjectReader {
         fieldReaders = fieldReaders.plusAll(getters.filter(g -> exclude.contains(g.propertyName) == false && g.field.getAnnotation(DbIgnore.class)==null).map(g ->
                 Tuple2.of(g.propertyName, new ObjectReader() {
                     @Override
-                    public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
-                        return readerSupplier.apply(g.field.getType()).read(g.propertyName, readerSupplier, properties);
+                    public Object read(Type type,String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+                        return readerSupplier.apply(g.field.getType()).read(g.getter.getPropertyType(),g.propertyName, readerSupplier, properties);
                     }
 
                     @Override
@@ -110,8 +111,8 @@ public class DefaultObjectReader implements ObjectReader {
             }
 
             @Override
-            public Object read(String name, Function<Class, ObjectReader> masterReader, ReadableRow properties) {
-                return orgReader.read(propertyName, masterReader, new ReadableRow() {
+            public Object read(Type type,String name, Function<Class, ObjectReader> masterReader, ReadableRow properties) {
+                return orgReader.read(type,propertyName, masterReader, new ReadableRow() {
                     @Override
                     public <T> T read(Class<T> cls, String name) {
                         if(name.equals(fieldName)){
@@ -130,8 +131,8 @@ public class DefaultObjectReader implements ObjectReader {
         ObjectReader orgReader = getObjectReader(fieldName);
         fieldReaders = fieldReaders.put(fieldName, new ObjectReader() {
             @Override
-            public Object read(String name, Function<Class, ObjectReader> masterReader, ReadableRow properties) {
-                return fromPropertyToField.apply(orgReader.read(fieldName, masterReader, properties));
+            public Object read(Type type,String name, Function<Class, ObjectReader> masterReader, ReadableRow properties) {
+                return fromPropertyToField.apply(orgReader.read(type,fieldName, masterReader, properties));
             }
         });
         return this;
@@ -142,8 +143,8 @@ public class DefaultObjectReader implements ObjectReader {
 
         fieldReaders = fieldReaders.put(fieldName, new ObjectReader() {
             @Override
-            public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
-                return orgReader.read(name, readerSupplier, new ReadableRow() {
+            public Object read(Type type,String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+                return orgReader.read(type,name, readerSupplier, new ReadableRow() {
                     @Override
                     public <T> T read(Class<T> cls, String name) {
                         return ReadableRow.check(cls,name,(T)properties.read(cls, propertyPrefix + name));
@@ -159,8 +160,8 @@ public class DefaultObjectReader implements ObjectReader {
 
         fieldReaders = fieldReaders.put(fieldName, new ObjectReader() {
             @Override
-            public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
-                return orgReader.read(name, readerSupplier, new ReadableRow() {
+            public Object read(Type type,String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+                return orgReader.read(type,name, readerSupplier, new ReadableRow() {
                     @Override
                     public <T> T read(Class<T> cls, String name) {
                         return ReadableRow.check(cls,name,(T)properties.read(cls, name + propertyPostfix));

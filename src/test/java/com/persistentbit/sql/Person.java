@@ -3,8 +3,10 @@ package com.persistentbit.sql;
 import com.persistentbit.core.codegen.CaseClass;
 import com.persistentbit.core.codegen.GenNoLens;
 import com.persistentbit.core.properties.FieldNames;
-import com.persistentbit.sql.references.LongRef;
-import com.persistentbit.sql.references.LongRefValue;
+import com.persistentbit.core.utils.ImTools;
+import com.persistentbit.sql.references.Ref;
+import com.persistentbit.sql.references.RefId;
+import com.persistentbit.sql.references.RefValue;
 import com.persistentbit.sql.statement.annotations.DbRename;
 import com.persistentbit.sql.statement.annotations.DbTableName;
 
@@ -28,8 +30,8 @@ public class Person {
         this.password = password;
     }
 
-    public LongRef<Person> getRef() {
-    	return new LongRefValue(this.getId(),this);
+    public Ref<Person,Long> getRef() {
+    	return new RefValue(new RefId(getId()),this);
 	}
 
     public Person withName(String name){
@@ -38,7 +40,7 @@ public class Person {
 
     @Override
     public String toString() {
-        return "TestRecord{" +
+        return "Person{" +
                 "id=" + id +
                 ", userName='" + userName + '\'' +
                 ", password='" + password + '\'' +
@@ -86,5 +88,6 @@ public class Person {
 	} 
 
 	public String getPassword(){ return password; }
+
 
 }

@@ -6,11 +6,17 @@ import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.lenses.Lens;
 import com.persistentbit.core.lenses.LensImpl;
 import com.persistentbit.core.properties.FieldNames;
-import com.persistentbit.sql.references.LongRef;
-import com.persistentbit.sql.references.LongRefValue;
+
+import com.persistentbit.core.utils.ImTools;
+import com.persistentbit.sql.objectmappers.InMemoryRow;
+import com.persistentbit.sql.objectmappers.ObjectRowMapper;
+import com.persistentbit.sql.references.Ref;
+import com.persistentbit.sql.references.RefId;
 import com.persistentbit.sql.statement.annotations.DbIgnore;
 import com.persistentbit.sql.statement.annotations.DbRename;
 import com.persistentbit.sql.statement.annotations.DbTableName;
+
+import java.lang.reflect.Type;
 
 /**
  * User: petermuys
@@ -21,16 +27,16 @@ import com.persistentbit.sql.statement.annotations.DbTableName;
 public class Invoice {
     private final int id;
     @DbRename("invoice_nummer") private final String number;
-    @DbRename("from_person_id")private LongRef<Person> fromPersonId;
-	@DbRename("to_person_id")private LongRef<Person> toPersonId;
+    @DbRename("from_person_id")private Ref<Person,Long> fromPersonId;
+	@DbRename("to_person_id")private Ref<Person,Long> toPersonId;
 	@DbIgnore private PStream<InvoiceLine> lines;
 
 
-	public Invoice(String number, LongRef<Person> fromPersonId, LongRef<Person> toPersonId){
+	public Invoice(String number, Ref<Person,Long> fromPersonId, Ref<Person,Long> toPersonId){
     	this(0,number,fromPersonId,toPersonId,PList.empty());
 	}
 	@FieldNames(names = {"id","number","fromPersonId","toPersonId","lines"})
-    public Invoice(int id, String number, LongRef<Person> fromPersonId, LongRef<Person> toPersonId,PStream<InvoiceLine> lines) {
+    public Invoice(int id, String number, Ref<Person,Long> fromPersonId, Ref<Person,Long> toPersonId,PStream<InvoiceLine> lines) {
         this.id = id;
         this.number = number;
         this.fromPersonId = fromPersonId;
@@ -48,6 +54,14 @@ public class Invoice {
 				", lines= " + lines +
                 '}';
     }
+
+	public Ref<Person, Long> getFromPersonId() {
+		return fromPersonId;
+	}
+
+	public Ref<Person, Long> getToPersonId() {
+		return toPersonId;
+	}
 
 
 	//[[ImmutableCodeBuilder]]
@@ -70,12 +84,12 @@ public class Invoice {
 		return new Invoice(this.id, this.number, this.fromPersonId, this.toPersonId, lines);
 	}
 
-	public Invoice withFromPerson(Person p){
-		return new Invoice(this.id, this.number, new LongRefValue(p.getId(),p), this.toPersonId, this.lines);
+	public Invoice withFromPerson(Ref<Person,Long> p){
+		return new Invoice(this.id, this.number, p, this.toPersonId, this.lines);
 	}
 
-	public Invoice withToPerson(Person p){
-		return new Invoice(this.id, this.number, this.fromPersonId, new LongRefValue(p.getId(),p), this.lines);
+	public Invoice withToPerson(Ref<Person,Long> p){
+		return new Invoice(this.id, this.number, this.fromPersonId, p, this.lines);
 	}
 
 	public PStream<InvoiceLine> getLines() {
@@ -107,5 +121,20 @@ public class Invoice {
 		result = 31 * result + lines.hashCode();
 		return result;
 	}
+	static public void main(String...args){
+		/*ImTools<Invoice> im = ImTools.get(Invoice.class);
+		ImTools.Getter getter = im.getFieldGetters().find(g -> g.propertyName.equals("fromPersonId")).get();
+		Type t = getter.field.getGenericType();*/
 
+		Invoice in = new Invoice("1234",new RefId(100l),null);
+		System.out.println(in);
+		InMemoryRow row = new InMemoryRow() ;
+		ObjectRowMapper mapper = new ObjectRowMapper();
+		mapper.write(in,row);
+		System.out.println(row);
+		in = mapper.read(Invoice.class,row);
+		System.out.println(in);
+
+
+	}
 }

@@ -1,57 +1,45 @@
 package com.persistentbit.sql.references;
 
+import com.persistentbit.core.utils.ReflectionUtils;
 import com.persistentbit.sql.PersistSqlException;
-import com.persistentbit.sql.objectmappers.*;
+import com.persistentbit.sql.objectmappers.ObjectReader;
+import com.persistentbit.sql.objectmappers.ObjectWriter;
+import com.persistentbit.sql.objectmappers.ReadableRow;
+import com.persistentbit.sql.objectmappers.WritableRow;
 
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.function.Function;
 
 /**
- * @author Peter Muys
- * @since 18/07/2016
+ * User: petermuys
+ * Date: 21/07/16
+ * Time: 11:14
  */
-public class RefObjectReaderWriter implements ObjectReader,ObjectWriter{
-    private final Class refClass;
-    private final Class cls;
-    public RefObjectReaderWriter(Class refClass,Class cls){
-        this.refClass = refClass;
-        this.cls = cls;
-
-    }
+public class RefObjectReaderWriter implements ObjectReader,ObjectWriter {
 
     @Override
     public void write(String fieldName, Object obj, ObjectWriter masterWriter, WritableRow result) {
-        if(obj == null){
+        Ref value = (Ref)obj;
+        if(value == null){
             return;
         }
-        Ref ref = (Ref)obj;
-        masterWriter.write(fieldName,((Ref) obj).getId().orElse(null),masterWriter,result);
+        masterWriter.write(fieldName,value.getId(),masterWriter,result);
     }
 
     @Override
-    public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
-        Object id =  readerSupplier.apply(cls).read(name,readerSupplier,properties);
-        if(id == null){
-            return null;
+    public Object read(Type typeToRead, String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+        if(typeToRead instanceof ParameterizedType){
+            ParameterizedType pt = (ParameterizedType)typeToRead;
+            Type[] types = pt.getActualTypeArguments();
+            //Class cls1 = ReflectionUtils.classFromType(types[0]);
+            Class clsID = ReflectionUtils.classFromType(types[1]);
+            Object id = readerSupplier.apply(clsID).read(clsID,name,readerSupplier,properties);
+            if(id == null){
+                return null;
+            }
+            return new RefId(id);
         }
-        try {
-            return refClass.getConstructor(cls).newInstance(id);
-        } catch (NoSuchMethodException|IllegalAccessException|InstantiationException|InvocationTargetException  e) {
-            throw new PersistSqlException("Error creating reference for " + id);
-        }
-
-    }
-
-    static public void register(ObjectRowMapper mapper){
-        register(mapper,IntRef.class,IntRefValue.class,Integer.class);
-        register(mapper,LongRef.class,LongRefValue.class,Long.class);
-        register(mapper,StringRef.class,StringRefValue.class,String.class);
-    }
-
-    static private <T extends RefId> void register(ObjectRowMapper mapper, Class<T> clsRefId,Class<? extends T> clsRefValue, Class idClass ){
-        RefObjectReaderWriter id = new RefObjectReaderWriter(clsRefId,idClass);
-        mapper.registerReader(clsRefId,id).registerWriter(clsRefId,id);
-        mapper.registerReader(clsRefValue,id).registerWriter(clsRefValue,id);
-
+        throw new PersistSqlException("Wrong reference type: " + typeToRead + ", " + typeToRead.getClass());
     }
 }

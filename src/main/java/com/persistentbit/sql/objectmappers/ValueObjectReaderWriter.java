@@ -1,5 +1,6 @@
 package com.persistentbit.sql.objectmappers;
 
+import java.lang.reflect.Type;
 import java.util.function.Function;
 
 /**
@@ -20,7 +21,7 @@ public class ValueObjectReaderWriter implements ObjectReader,ObjectWriter{
     }
 
     @Override
-    public Object read(String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
+    public Object read(Type type, String name, Function<Class, ObjectReader> readerSupplier, ReadableRow properties) {
         return properties.read(cls,name);
     }
 }

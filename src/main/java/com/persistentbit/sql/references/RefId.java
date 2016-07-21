@@ -2,6 +2,7 @@ package com.persistentbit.sql.references;
 
 import com.persistentbit.core.Immutable;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -12,9 +13,8 @@ import java.util.function.Function;
 @Immutable
 public class RefId<R,ID> implements Ref<R,ID>{
     private final ID  id;
-
     public RefId(ID id) {
-        this.id = id;
+        this.id = Objects.requireNonNull(id);
     }
 
     @Override
@@ -23,24 +23,21 @@ public class RefId<R,ID> implements Ref<R,ID>{
     }
 
     @Override
-    public Optional<ID> getId() {
-        return Optional.of(id);
+    public ID getId() {
+        return id;
     }
 
     @Override
-    public Ref<R,ID> asIdRef() {
+    public Ref<R, ID> asIdRef() {
         return this;
     }
+
     @Override
-    public  Ref<R,ID> asValueRef(Function<ID,R> resolver) {
-        return new RefValue(id,getValue(resolver));
+    public Ref<R, ID> asValueRef(R value) {
+        return new RefValue<R,ID>(this,value);
     }
 
 
-    @Override
-    public R getValue(Function<ID,R> resolver) {
-        return resolver.apply(id);
-    }
 
     @Override
     public int hashCode() {
@@ -56,12 +53,12 @@ public class RefId<R,ID> implements Ref<R,ID>{
             return true;
         }
         Ref r = (Ref)obj;
-        return getId().equals(r.asIdRef().getId());
+        return getId().equals(r.getId());
     }
 
 
     @Override
     public String toString() {
-        return "RefId(" + id + ")";
+        return "RefId("  + id + ")";
     }
 }

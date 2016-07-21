@@ -23,6 +23,7 @@ public class LazyPStream<T> extends PStreamDelegate<T> {
     protected synchronized PStream<T> getDelegate() {
         if(delegate == null){
             delegate = supplier.get();
+            supplier = null;
         }
         return delegate;
     }

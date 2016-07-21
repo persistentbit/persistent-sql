@@ -1,8 +1,16 @@
 package com.persistentbit.sql.objectmappers;
 
 import com.persistentbit.core.collections.PMap;
+import com.persistentbit.sql.PersistSqlException;
+import com.persistentbit.sql.references.Ref;
+import com.persistentbit.sql.references.RefId;
 import com.persistentbit.sql.references.RefObjectReaderWriter;
+import com.persistentbit.sql.references.RefValue;
 
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
@@ -16,6 +24,14 @@ import java.util.logging.Logger;
  * install custom mappers.<br>
  * Use {@link #createDefaultReader(Class)}, {@link #createDefaultWriter(Class)} or {@link #createDefault(Class)} to
  * create default reflection based readers that can be easily customized on a per property base.<br>
+ * If the mapper needs to map an unknown Class, it will first look for 2 static methods:
+ * <ul>
+ *     <li>static public {@link ObjectReader} createObjectReader() </li>
+ *     <li>static public {@link ObjectWriter} createObjectWriter() </li>
+ * </ul>
+ * if these are not found, it will create default reader and writers
+ * @see DefaultObjectReader
+ * @see DefaultObjectWriter
  */
 public class ObjectRowMapper {
     static private final Logger log = Logger.getLogger(ObjectRowMapper.class.getName());
@@ -44,7 +60,17 @@ public class ObjectRowMapper {
             registerReader(cls,rw);
             registerWriter(cls,rw);
         }
-        RefObjectReaderWriter.register(this);
+        //RefObjectReaderWriter.register(this);
+        RefObjectReaderWriter refrw = new RefObjectReaderWriter();
+        registerReader(RefId.class,refrw);
+        registerWriter(RefId.class,refrw);
+
+        registerReader(RefValue.class,refrw);
+        registerWriter(RefValue.class,refrw);
+
+        registerReader(Ref.class,refrw);
+        registerWriter(Ref.class,refrw);
+
     }
 
 
@@ -60,8 +86,18 @@ public class ObjectRowMapper {
     private final Function<Class,ObjectReader> thisAsReaderSupplier = cls ->  {
         ObjectReader reader = readers.get(Objects.requireNonNull(cls));
         if(reader == null){
-            log.fine("No reader found for class " + cls  + " creating a default one");
-            reader = createDefaultReader(cls).addAllFields();
+            try {
+                Method m = cls.getMethod("createObjectReader");
+                try {
+                    reader = (ObjectReader)m.invoke(null);
+                } catch (IllegalAccessException|InvocationTargetException e) {
+                    throw new PersistSqlException(e);
+                }
+                registerReader(cls, reader);
+            } catch (NoSuchMethodException e) {
+                log.fine("No reader found for class " + cls  + " creating a default one");
+                reader = createDefaultReader(cls).addAllFields();
+            }
         }
         return reader;
     };
@@ -77,9 +113,9 @@ public class ObjectRowMapper {
      * @return The mapped Object from the row or null if all properties in the row are null
      * @see DefaultObjectReader
      */
-    public <T> T read(String name,Class<T> cls, ReadableRow row){
+    public <T> T read(String name, Class<T> cls, ReadableRow row){
 
-        return (T)thisAsReaderSupplier.apply(cls).read(name,thisAsReaderSupplier,row);
+        return (T)thisAsReaderSupplier.apply(cls).read(cls,name,thisAsReaderSupplier,row);
     }
 
     /**
@@ -111,8 +147,19 @@ public class ObjectRowMapper {
         Class cls = obj.getClass();
         ObjectWriter writer = writers.get(cls);
         if(writer == null){
-            log.fine("No writer found for class " + cls  + " creating a default one");
-            writer = createDefaultWriter(cls).addAllFields();
+
+            try {
+                Method m = cls.getMethod("createObjectWriter");
+                try {
+                    writer = (ObjectWriter)m.invoke(null);
+                } catch (IllegalAccessException|InvocationTargetException e) {
+                    throw new PersistSqlException(e);
+                }
+                registerWriter(cls, writer);
+            } catch (NoSuchMethodException e) {
+                log.fine("No writer found for class " + cls  + " creating a default one");
+                writer = createDefaultWriter(cls).addAllFields();
+            }
         }
         writer.write(name,obj,thisAsObjectWriter,result);
     }

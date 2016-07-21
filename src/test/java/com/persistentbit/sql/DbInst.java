@@ -36,6 +36,7 @@ public class DbInst extends Db {
     }
 
     public  ETableStats<Person> person = tableStats(Person.class);
+    public  EJoinStats<Person> personAll = person.startJoin("p");
     public  ETableStats<Invoice> invoice = tableStats(Invoice.class);
 
     public ETableStats<InvoiceLine> invoiceLine = tableStats(InvoiceLine.class);
@@ -81,10 +82,15 @@ public class DbInst extends Db {
 
 
         EJoinStats<Invoice> invoiceLoader = db.invoice.startJoin("inv")
-                .leftJoin(db.person,"toPerson").on("inv.to_person_id=toPerson.id").map((Invoice i,Person p)-> i.withToPerson(p))
-                .leftJoin(db.person,"fromPerson").on("inv.from_person_id=fromPerson.id").map((Invoice i, Person p)-> i.withFromPerson(p))
+                .leftJoin(db.person,"toPerson").on("inv.to_person_id=toPerson.id").map((Invoice i,Person p)-> i.withToPerson(p.getRef()))
+                //.leftJoin(db.person,"fromPerson").on("inv.from_person_id=fromPerson.id").map((Invoice i, Person p)-> i.withFromPerson(p))
                 .extraMapping(i -> i.withLines(db.invoiceLine.select("where invoice_id=:invoiceId").arg("invoiceId",i.getId()).lazyLoading()))
+                .extraMapping(i -> i.withFromPerson(db.personAll.select().lazyLoadingRef(i.getFromPersonId().getId())))
         ;
+
+
+        System.out.println("All Persons: ");
+        db.personAll.select().getList().forEach(System.out::println);
 
         PList<Invoice> invoices = invoiceLoader.select().getList();
 

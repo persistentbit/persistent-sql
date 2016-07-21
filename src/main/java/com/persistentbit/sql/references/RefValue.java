@@ -8,12 +8,13 @@ import java.util.function.Function;
  * @author Peter Muys
  * @since 8/06/2016
  */
-public class RefValue<R,ID> extends RefId<R,ID>{
+public class RefValue<R,ID> implements Ref<R,ID>{
 
+    private final RefId<R,ID> refId;
     private final R value;
 
-    public RefValue(ID id, R value) {
-        super(id);
+    public RefValue(RefId<R,ID> refId, R value) {
+        this.refId = Objects.requireNonNull(refId);
         this.value = Objects.requireNonNull(value);
     }
 
@@ -23,13 +24,18 @@ public class RefValue<R,ID> extends RefId<R,ID>{
     }
 
     @Override
-    public  Ref<R,ID> asValueRef(Function<ID,R> resolver) {
-        return this;
+    public ID getId() {
+        return refId.getId();
     }
 
     @Override
-    public R getValue(Function<ID,R> resolver) {
-        return value;
+    public Ref<R, ID> asIdRef() {
+        return refId;
+    }
+
+    @Override
+    public Ref<R, ID> asValueRef(R value) {
+        return new RefValue<R, ID>(refId,value);
     }
 
 

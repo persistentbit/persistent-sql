@@ -10,10 +10,12 @@ import com.persistentbit.sql.connect.SQLRunner;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.dbdef.TableColDef;
 import com.persistentbit.sql.dbdef.TableDef;
+import com.persistentbit.sql.lazy.LazyLoadingRef;
 import com.persistentbit.sql.lazy.LazyPStream;
 import com.persistentbit.sql.objectmappers.InMemoryRow;
 import com.persistentbit.sql.objectmappers.ObjectRowMapper;
 import com.persistentbit.sql.objectmappers.ReadableRow;
+import com.persistentbit.sql.references.RefId;
 import com.persistentbit.sql.statement.annotations.DbTableName;
 
 import java.sql.PreparedStatement;
@@ -115,6 +117,12 @@ public class ETableStats<T>{
                 return  tableName();
             }
 
+
+            @Override
+            public TableDef getTableDef() {
+                return tableDef.get();
+            }
+
             @Override
             public T mapRow(Record row) {
                 return mapper.read(name,mappedClass,row.getSubRecord(name));
@@ -170,6 +178,9 @@ public class ETableStats<T>{
             return this;
         }
 
+
+
+
         /**
          * Select a record by Id.<br>
          * Only works if the KEY of the table is not more than 1  column
@@ -181,6 +192,10 @@ public class ETableStats<T>{
             sqlRest(" where t." + idName+" = :id");
             arg("id",id);
             return getOne();
+        }
+
+        public <ID> LazyLoadingRef<T,ID> lazyLoadingRef(ID id){
+            return new LazyLoadingRef<T, ID>(new RefId<T, ID>(id),() -> forId(id).orElseThrow(() -> new PersistSqlException("Can't get " + mappedClass.getSimpleName() + " with id " + id)));
         }
 
         /**

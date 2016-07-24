@@ -11,12 +11,12 @@
     <packaging>jar</packaging>
     <name>PERSISTENT-SQL</name>
     <description>Easily work and map SQL in Java</description>
-    <url>https://github.com/petermuys/persistent-sql.git</url>
+    <url>https://github.com/persistentbit/persistent-sql.git</url>
 
     <scm>
-        <url>scm:git:git@github.com:petermuys/persistent-sql.git</url>
-        <connection>scm:git:git@github.com:petermuys/persistent-sql.git</connection>
-        <developerConnection>scm:git:git@github.com:petermuys/persistent-sql.git</developerConnection>
+        <url>scm:git:git@github.com:persistentbit/persistent-sql.git</url>
+        <connection>scm:git:git@github.com:persistentbit/persistent-sql.git</connection>
+        <developerConnection>scm:git:git@github.com:persistentbit/persistent-sql.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
     <inceptionYear>2016</inceptionYear>

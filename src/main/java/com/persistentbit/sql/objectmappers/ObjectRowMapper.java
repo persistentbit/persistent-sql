@@ -109,6 +109,7 @@ public class ObjectRowMapper {
      * @param name The name of the root object.
      * @param cls The class of the object to read. This determines the ObjectReader that is used to map the row
      * @param row The row with data
+     * @param <T> The expected type
      * @return The mapped Object from the row or null if all properties in the row are null
      * @see DefaultObjectReader
      */
@@ -123,6 +124,7 @@ public class ObjectRowMapper {
      *
      * @param cls The class of the object to read. This determines the ObjectReader that is used to map the row
      * @param row The row with data
+     * @param <T> The expected Type
      * @return The mapped Object from the row or null if all properties in the row are null
      * @see DefaultObjectReader
      */

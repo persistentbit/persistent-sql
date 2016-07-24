@@ -238,6 +238,7 @@ public class EJoinStats<R> {
 
         /**
          * Create a PStream that is loaded the first time it is accessed.
+         * @param <T> The expected value
          * @return The Lazy Loading PStream
          */
         public <T> LazyPStream<T> lazyLoading() {

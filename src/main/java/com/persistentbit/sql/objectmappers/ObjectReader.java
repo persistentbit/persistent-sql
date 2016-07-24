@@ -16,6 +16,7 @@ import java.util.function.Function;
 public interface ObjectReader {
     /**
      * Read an object from a readable row
+     * @param typeToRead  The expected Type
      * @param name The name of the value
      * @param readerSupplier Supplier of Objectreaders for classes
      * @param properties The row of properties

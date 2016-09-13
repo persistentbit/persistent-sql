@@ -35,7 +35,7 @@
     </licenses>
     <properties>
         <junit.version>4.12</junit.version>
-        <persistent-core.version>1.1.7</persistent-core.version>
+        <persistent-core.version>1.1.6</persistent-core.version>
     </properties>
 
     <distributionManagement>

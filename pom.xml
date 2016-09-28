@@ -35,7 +35,7 @@
     </licenses>
     <properties>
         <junit.version>4.12</junit.version>
-        <persistent-core.version>1.1.6</persistent-core.version>
+        <substema.version>1.0.0-SNAPSHOT</substema.version>
     </properties>
 
     <distributionManagement>
@@ -52,6 +52,27 @@
     <build>
 
         <plugins>
+            <plugin>
+                <groupId>com.persistentbit</groupId>
+                <artifactId>persistent-sql-maven-plugin</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate-db</goal></goals>
+                        <configuration>
+                            <packages>
+                                <package>com.persistentbit.sql.test.db</package>
+                            </packages>
+                            <resourcesDirectory>src/test/resources</resourcesDirectory>
+                            <outputDirectory>target/generated-test-sources/db</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -120,8 +141,8 @@
         </dependency>
         <dependency>
             <groupId>com.persistentbit</groupId>
-            <artifactId>persistent-core</artifactId>
-            <version>${persistent-core.version}</version>
+            <artifactId>substema</artifactId>
+            <version>${substema.version}</version>
         </dependency>
     </dependencies>
     <profiles>

@@ -5,30 +5,24 @@ import com.persistentbit.core.Nullable;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
-import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.sourcegen.SourceGen;
 import com.persistentbit.core.tokenizer.Token;
 import com.persistentbit.core.utils.builders.NOT;
 import com.persistentbit.core.utils.builders.SET;
 import com.persistentbit.sql.staticsql.ETypeObject;
 import com.persistentbit.sql.staticsql.Expr;
-import com.persistentbit.substema.annotations.Remotable;
-import com.persistentbit.substema.annotations.RemoteCache;
 import com.persistentbit.substema.javagen.GeneratedJava;
 import com.persistentbit.substema.javagen.JavaGenOptions;
-import com.persistentbit.substema.rod.RodParser;
-import com.persistentbit.substema.rod.RodTokenType;
-import com.persistentbit.substema.rod.RodTokenizer;
-import com.persistentbit.substema.rod.values.*;
+import com.persistentbit.substema.compiler.SubstemaParser;
+import com.persistentbit.substema.compiler.SubstemaTokenType;
+import com.persistentbit.substema.compiler.SubstemaTokenizer;
+import com.persistentbit.substema.compiler.values.*;
 
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 /**
  * Created by petermuys on 14/09/16.
@@ -223,10 +217,10 @@ public class DbJavaGen {
         Path path = Paths.get(url.toURI());
         System.out.println("Path  = " + path);
         String rod = new String(Files.readAllBytes(path));
-        RodTokenizer tokenizer = new RodTokenizer();
-        PList<Token<RodTokenType>> tokens = tokenizer.tokenize(rodFileName,rod);
+        SubstemaTokenizer tokenizer = new SubstemaTokenizer();
+        PList<Token<SubstemaTokenType>> tokens = tokenizer.tokenize(rodFileName,rod);
         String packageName  = "com.persistentbit.test";
-        RodParser parser = new RodParser(packageName,tokens);
+        SubstemaParser parser = new SubstemaParser(packageName,tokens);
         RSubstema service = parser.parseSubstema();
         System.out.println(service);
         PList<GeneratedJava> gen = DbJavaGen.generate(new JavaGenOptions(),packageName,service);

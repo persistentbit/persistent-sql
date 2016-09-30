@@ -1,8 +1,9 @@
 package com.persistentbit.sql.databases;
 
-import com.persistentbit.core.Tuple2;
+
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.PersistSqlException;
 
 import java.sql.Connection;

@@ -1,9 +1,10 @@
 package com.persistentbit.sql.objectmappers;
 
-import com.persistentbit.core.Tuple2;
+
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.ImTools;
 import com.persistentbit.sql.statement.annotations.DbIgnore;
 import com.persistentbit.sql.statement.annotations.DbPostfix;

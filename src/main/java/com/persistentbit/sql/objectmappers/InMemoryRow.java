@@ -1,7 +1,8 @@
 package com.persistentbit.sql.objectmappers;
 
-import com.persistentbit.core.Tuple2;
+
 import com.persistentbit.core.collections.PMap;
+import com.persistentbit.core.tuples.Tuple2;
 
 /**
  * In in memory implementation of a readable and writable database row

@@ -1,6 +1,8 @@
 package com.persistentbit.sql.statement;
 
-import com.persistentbit.core.Tuple2;
+
+
+import com.persistentbit.core.tuples.Tuple2;
 
 import java.util.function.BiFunction;
 

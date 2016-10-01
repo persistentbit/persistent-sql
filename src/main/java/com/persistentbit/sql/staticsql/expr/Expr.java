@@ -1,4 +1,4 @@
-package com.persistentbit.sql.staticsql;
+package com.persistentbit.sql.staticsql.expr;
 
 /**
  * @author Peter Muys
@@ -12,4 +12,7 @@ public interface Expr<S>{
     static ETypeString  val(String value){
         return new ExprConstString(value);
     }
+
+
+
 }

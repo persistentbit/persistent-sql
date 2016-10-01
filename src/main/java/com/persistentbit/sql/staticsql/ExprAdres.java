@@ -2,7 +2,9 @@ package com.persistentbit.sql.staticsql;
 
 
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.tuples.Tuple2;
+import com.persistentbit.sql.staticsql.expr.*;
 
 import java.util.function.Function;
 
@@ -42,11 +44,15 @@ public class ExprAdres implements ETypeObject<Adres>{/*{
     }
     public ETypeNumber<Integer> id = new ExprPropertyNumber<>(this,"id");
     public ETypeNumber<Integer> huisNummer = new ExprPropertyNumber<>(this,"huisNummer");
-    public ETypeString  straat = new ExprPropertyString(this,"straat");
-
+    public ETypeString straat = new ExprPropertyString(this,"straat");
 
     static public <V1,V2,E1 extends ETypeObject<V1>,E2 extends ETypeObject<V2>> Expr<Tuple2<V1,V2>> view(E1 v1, E2 v2, Function<Tuple2<E1,E2>,ETypeBoolean> joinOn){
         return null;
+    }
+
+    @Override
+    public PList<Expr> _all() {
+        return PList.val(id,huisNummer,straat);
     }
 
     static public void main(String...args){

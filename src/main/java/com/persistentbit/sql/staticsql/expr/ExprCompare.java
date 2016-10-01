@@ -1,4 +1,7 @@
-package com.persistentbit.sql.staticsql;
+package com.persistentbit.sql.staticsql.expr;
+
+import com.persistentbit.sql.staticsql.expr.ETypeBoolean;
+import com.persistentbit.sql.staticsql.expr.Expr;
 
 /**
  * @author Peter Muys

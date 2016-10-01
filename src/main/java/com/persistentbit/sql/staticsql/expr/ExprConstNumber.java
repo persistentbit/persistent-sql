@@ -1,9 +1,11 @@
-package com.persistentbit.sql.staticsql;
+package com.persistentbit.sql.staticsql.expr;
+
+import com.persistentbit.sql.staticsql.expr.ETypeNumber;
 
 /**
  * Created by petermuys on 28/09/16.
  */
-public class ExprConstNumber<N extends Number> implements ETypeNumber<N>{
+public class ExprConstNumber<N extends Number> implements ETypeNumber<N> {
     private final N value;
 
     public ExprConstNumber(N value) {

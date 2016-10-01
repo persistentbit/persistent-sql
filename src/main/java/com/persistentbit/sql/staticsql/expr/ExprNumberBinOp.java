@@ -1,10 +1,12 @@
-package com.persistentbit.sql.staticsql;
+package com.persistentbit.sql.staticsql.expr;
+
+import com.persistentbit.sql.staticsql.expr.ETypeNumber;
 
 /**
  * @author Peter Muys
  * @since 28/09/2016
  */
-public class ExprNumberBinOp<N extends Number> implements ETypeNumber<N>{
+public class ExprNumberBinOp<N extends Number> implements ETypeNumber<N> {
     private ETypeNumber<N> left;
     private ETypeNumber<N> right;
     private String binOp;

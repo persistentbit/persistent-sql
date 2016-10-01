@@ -1,4 +1,6 @@
-package com.persistentbit.sql.staticsql;
+package com.persistentbit.sql.staticsql.expr;
+
+import com.persistentbit.sql.staticsql.expr.ETypeString;
 
 /**
  * Created by petermuys on 28/09/16.

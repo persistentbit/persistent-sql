@@ -7,22 +7,22 @@ import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.sourcegen.SourceGen;
 import com.persistentbit.core.tokenizer.Token;
+import com.persistentbit.core.utils.StringUtils;
 import com.persistentbit.core.utils.builders.NOT;
 import com.persistentbit.core.utils.builders.SET;
-import com.persistentbit.sql.staticsql.ETypeObject;
-import com.persistentbit.sql.staticsql.Expr;
+import com.persistentbit.sql.staticsql.expr.*;
+import com.persistentbit.substema.compiler.*;
 import com.persistentbit.substema.javagen.GeneratedJava;
 import com.persistentbit.substema.javagen.JavaGenOptions;
-import com.persistentbit.substema.compiler.SubstemaParser;
-import com.persistentbit.substema.compiler.SubstemaTokenType;
-import com.persistentbit.substema.compiler.SubstemaTokenizer;
 import com.persistentbit.substema.compiler.values.*;
+import com.persistentbit.substema.javagen.JavaGenUtils;
 
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Created by petermuys on 14/09/16.
@@ -31,33 +31,79 @@ public class DbJavaGen {
 
     private final JavaGenOptions options;
     private final RSubstema service;
+    private final String  packageName;
     private PList<GeneratedJava>    generatedJava = PList.empty();
+    private SubstemaCompiler    compiler;
+    private PSet<RClass> allExternalValueClasses;
 
-    private final String servicePackageName;
 
-    private DbJavaGen(JavaGenOptions options, String packageName, RSubstema service) {
-        this.servicePackageName = packageName;
+    private DbJavaGen(JavaGenOptions options, RSubstema service, SubstemaCompiler compiler) {
         this.options = options;
         this.service = service;
+        this.packageName = service.getPackageName();
+        this.compiler = compiler;
+        this.allExternalValueClasses = findAllExternalValueClasses();
     }
 
-    static public PList<GeneratedJava>  generate(JavaGenOptions options,String packageName,RSubstema service){
-        return new DbJavaGen(options,packageName,service).generateService();
+    static public PList<GeneratedJava>  generate(JavaGenOptions options,RSubstema service,SubstemaCompiler compiler){
+        return new DbJavaGen(options,service,compiler).generateService();
     }
 
     public PList<GeneratedJava> generateService(){
-        //RServiceValidator.validate(service);
         PList<GeneratedJava> result = PList.empty();
-        result = result.plusAll(service.getEnums().map(e -> new Generator().generateEnum(e)));
-        result = result.plusAll(service.getValueClasses().map(vc -> new Generator().generateValueClass(vc)));
 
+        //System.out.println("ALL EXTERNAL: " + allExternalValueClasses);
+        result = result.plusAll(service.getValueClasses().map(vc -> new Generator().generateValueClass(vc)));
+        result = result.plusAll(allExternalValueClasses.map(c -> {
+            RSubstema substema = compiler.compile(c.getPackageName());
+            RValueClass vc = substema.getValueClasses().find(evc -> evc.getTypeSig().getName().equals(c)).get();
+            return new Generator().generateValueClass(vc);
+        }));
+        result = result.plus(new Generator().generateDb(service.getValueClasses()));
         return result.filterNulls().plist();
+    }
+
+    private PSet<RClass> findAllExternalValueClasses() {
+        PSet<RClass> found = PSet.empty();
+        for(RValueClass vc : service.getValueClasses()){
+            found = findExternalValueClasses(found,vc.getTypeSig().getName());
+        }
+        return found;
+    }
+
+    private Optional<RValueClass> getValueClass(RClass cls){
+        return service.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls));
+    }
+
+    private PSet<RClass> findExternalValueClasses(PSet<RClass> found,RClass cls){
+        if(found.contains(cls)){
+            return found;
+        }
+        if(SubstemaUtils.isSubstemaClass(cls)){
+            return found;
+        }
+        RValueClass vc = getValueClass(cls).orElse(null);
+
+
+        if(cls.getPackageName().equals(packageName) == false){
+            found = found.plus(cls);
+        }
+
+        if(vc == null){
+            return found;
+        }
+
+        for(RProperty prop : vc.getProperties()){
+
+            found = found.plusAll(findExternalValueClasses(found,prop.getValueType().getTypeSig().getName()));
+        }
+        return found;
     }
 
     private class Generator extends SourceGen{
         private PSet<RClass>    imports = PSet.empty();
         private SourceGen       header = new SourceGen();
-        private String          packageName;
+
 
         public Generator() {
             header.println("// GENERATED CODE FOR DB TABLE: DO NOT CHANGE!");
@@ -66,10 +112,10 @@ public class DbJavaGen {
 
         public GeneratedJava    toGenJava(RClass cls){
             SourceGen sg = new SourceGen();
-            header.println("package " + servicePackageName + ";");
+            header.println("package " + packageName + ";");
             header.println("");
             sg.add(header);
-            imports.filter(i -> i.getPackageName().equals(servicePackageName) == false).forEach(i -> {
+            imports.filter(i -> i.getPackageName().equals(packageName) == false).forEach(i -> {
                 sg.println("import " + i.getPackageName() + "." + i.getClassName() + ";");
             });
             sg.println("");
@@ -77,13 +123,9 @@ public class DbJavaGen {
             return new GeneratedJava(cls,sg.writeToString());
         }
 
-        public GeneratedJava    generateEnum(REnum e ){
-            bs("public enum " + e.name.getClassName());{
-                println(e.values.toString(","));
-            }be();
-            return toGenJava(e.name.withClassName(e.name.getClassName()+"_"));
-        }
+
         private void addImport(RClass cls){
+
             imports = imports.plus(cls);
         }
         private void addImport(Class<?> cls){
@@ -91,7 +133,7 @@ public class DbJavaGen {
         }
 
         private RClass toExprClass(RClass cls){
-            return cls.withClassName(cls.getClassName()+"_");
+            return cls.withClassName(cls.getClassName()+"_").withPackageName(packageName);
         }
 
         public GeneratedJava    generateValueClass(RValueClass vc){
@@ -109,12 +151,74 @@ public class DbJavaGen {
                     println("this.__parent = parent;");
                 }be();
 
-                vc.getProperties().forEach(p -> {
+                vc.getProperties().forEach(this::generateProperty);
 
-                    //println(toString(p.getValueType(), true) + " " + p.getName() + ";");
-                });
+                println("@Override");
+                addImport(PList.class);
+                bs("public PList<Expr> _all()");{
+                    if(vc.getProperties().isEmpty()){
+                        println("return PList.empty();");
+                    } else {
+                        println("return PList.val(" + vc.getProperties().map(p -> p.getName()).toString(", ") + ");");
+                    }
+                }be();
             }be();
             return toGenJava(cls);
+        }
+
+        public GeneratedJava generateDb(PList<RValueClass> valueClasses) {
+            /*
+            public class Db implements ExprDb<Db> {
+    public Amount_ amount() {
+        return new Amount_(this);
+    }
+}
+             */
+            RClass dbCls = new RClass(packageName,"Db");
+            addImport(dbCls);
+            addImport(ExprDb.class);
+            bs("public class Db implements ExprDb<Db>");{
+                valueClasses.forEach(vc -> {
+                    RClass cls = vc.getTypeSig().getName();
+                    RClass ecls = toExprClass(cls);
+                    addImport(ecls);
+                    println("public " + JavaGenUtils.toString(packageName,ecls) + " " + StringUtils.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils.toString(packageName,ecls) +"(this); }");
+                });
+
+            }be();
+            return toGenJava(dbCls);
+        }
+
+        private void generateProperty(RProperty property){
+
+            String type;
+            String value;
+            RClass cls = property.getValueType().getTypeSig().getName();
+            if(SubstemaUtils.isNumberClass(cls)){
+                addImport(ETypeNumber.class);
+                addImport(ExprPropertyNumber.class);
+                type = "ETypeNumber<" + cls.getClassName() + ">";
+                value = "new ExprPropertyNumber<>(this,\"" + property.getName() + "\");";
+            } else if (cls.equals(SubstemaUtils.booleanRClass)){
+                addImport(ETypeBoolean.class);
+                addImport(ExprPropertyBoolean.class);
+                type = "ETypeBoolean";
+                value = "new ExprPropertyBoolean(this,\"" + property.getName() + "\");";
+            } else if (cls.equals(SubstemaUtils.stringRClass)){
+                addImport(ETypeString.class);
+                addImport(ExprPropertyString.class);
+                type = "ETypeString";
+                value = "new ExprPropertyString(this,\"" + property.getName() + "\");";
+            } else {
+                RClass nc = toExprClass(cls);
+                //addImport(cls);
+                addImport(nc);
+                addImport(ExprProperty.class);
+                type = JavaGenUtils.toString(packageName,nc);
+                value = "new " + type + "(new ExprProperty(this,\"" + property.getName() + "\"));";
+
+            }
+            println("public " + type +" " + property.getName() + " = " + value);
         }
 
         private PList<RProperty>   getRequiredProps(RValueClass vc) {
@@ -208,25 +312,4 @@ public class DbJavaGen {
     }
 
 
-
-
-    static public void main(String...args) throws Exception{
-        String rodFileName= "com.persistentbit.parser.substema";
-        URL url = DbJavaGen.class.getResource("/" + rodFileName);
-        System.out.println("URL: " + url);
-        Path path = Paths.get(url.toURI());
-        System.out.println("Path  = " + path);
-        String rod = new String(Files.readAllBytes(path));
-        SubstemaTokenizer tokenizer = new SubstemaTokenizer();
-        PList<Token<SubstemaTokenType>> tokens = tokenizer.tokenize(rodFileName,rod);
-        String packageName  = "com.persistentbit.test";
-        SubstemaParser parser = new SubstemaParser(packageName,tokens);
-        RSubstema service = parser.parseSubstema();
-        System.out.println(service);
-        PList<GeneratedJava> gen = DbJavaGen.generate(new JavaGenOptions(),packageName,service);
-        gen.forEach(gj -> {
-            System.out.println(gj.code);
-            System.out.println("-----------------------------------");
-        });
-    }
 }

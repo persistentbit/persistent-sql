@@ -52,25 +52,26 @@
     <build>
 
         <plugins>
-            <plugin>
-                <groupId>com.persistentbit</groupId>
-                <artifactId>persistent-sql-maven-plugin</artifactId>
-                <version>1.0.0-SNAPSHOT</version>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals><goal>generate-db</goal></goals>
-                        <configuration>
-                            <packages>
-                                <package>com.persistentbit.sql.test.db</package>
-                            </packages>
-                            <resourcesDirectory>src/test/resources</resourcesDirectory>
-                            <outputDirectory>target/generated-test-sources/db</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
+            <!--
+                        <plugin>
+                            <groupId>com.persistentbit</groupId>
+                            <artifactId>persistent-sql-maven-plugin</artifactId>
+                            <version>1.0.0-SNAPSHOT</version>
+                            <executions>
+                                <execution>
+                                    <phase>generate-sources</phase>
+                                    <goals><goal>generate-db</goal></goals>
+                                    <configuration>
+                                        <packages>
+                                            <package>com.persistentbit.sql.test.db</package>
+                                        </packages>
+                                        <resourcesDirectory>src/test/resources</resourcesDirectory>
+                                        <outputDirectory>target/generated-test-sources/db</outputDirectory>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+            -->
 
 
             <plugin>

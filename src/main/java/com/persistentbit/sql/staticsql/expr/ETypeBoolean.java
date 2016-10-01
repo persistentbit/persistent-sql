@@ -1,4 +1,4 @@
-package com.persistentbit.sql.staticsql;
+package com.persistentbit.sql.staticsql.expr;
 
 /**
  * @author Peter Muys

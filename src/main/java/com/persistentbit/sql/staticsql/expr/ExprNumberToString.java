@@ -17,4 +17,12 @@ public class ExprNumberToString implements ETypeString {
     public String toString() {
         return "((String)" + number + ")";
     }
+    @Override
+    public <R1> R1 accept(ExprVisitor<R1> visitor) {
+        return visitor.visit(this);
+    }
+
+    public ETypeNumber getNumber() {
+        return number;
+    }
 }

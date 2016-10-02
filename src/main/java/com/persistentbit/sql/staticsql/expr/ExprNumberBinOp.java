@@ -21,4 +21,20 @@ public class ExprNumberBinOp<N extends Number> implements ETypeNumber<N> {
     public String toString() {
         return "(" + left.toString() + " " + binOp + " " + right + ")";
     }
+    @Override
+    public <R1> R1 accept(ExprVisitor<R1> visitor) {
+        return visitor.visit(this);
+    }
+
+    public ETypeNumber<N> getLeft() {
+        return left;
+    }
+
+    public ETypeNumber<N> getRight() {
+        return right;
+    }
+
+    public String getBinOp() {
+        return binOp;
+    }
 }

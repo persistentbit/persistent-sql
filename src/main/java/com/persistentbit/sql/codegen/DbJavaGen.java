@@ -7,6 +7,7 @@ import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.sourcegen.SourceGen;
 import com.persistentbit.core.tokenizer.Token;
+import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.StringUtils;
 import com.persistentbit.core.utils.builders.NOT;
 import com.persistentbit.core.utils.builders.SET;
@@ -137,33 +138,77 @@ public class DbJavaGen {
         }
 
         public GeneratedJava    generateValueClass(RValueClass vc){
-            RClass cls = toExprClass(vc.getTypeSig().getName());
+            RClass vcCls = vc.getTypeSig().getName();
+            RClass cls = toExprClass(vcCls);
 
 
-            addImport(vc.getTypeSig().getName());
+            addImport(vcCls);
             addImport(Expr.class);
             addImport(ETypeObject.class);
-            bs("public class " + cls.getClassName() + " implements ETypeObject<" + vc.getTypeSig().getName().getClassName() + ">");
+            bs("public class " + cls.getClassName() + " implements ETypeObject<" + vcCls.getClassName() + ">");
             {
                 println("private final Expr __parent;");
 
+                println("");
                 bs("public " + cls.getClassName() + "(Expr parent)");{
                     println("this.__parent = parent;");
                 }be();
+                println("");
+                println("@Override");
+                println("public Expr getParent() { return this.__parent; }");
 
+                println("");
+                println("@Override");
+                println("public String toString() { return getInstanceName(); }");
+
+                println("");
                 vc.getProperties().forEach(this::generateProperty);
 
+                // ****************** _all()
+                println("");
                 println("@Override");
                 addImport(PList.class);
-                bs("public PList<Expr> _all()");{
+                addImport(Tuple2.class);
+                bs("public PList<Tuple2<String,Expr>> _all()");{
                     if(vc.getProperties().isEmpty()){
                         println("return PList.empty();");
                     } else {
-                        println("return PList.val(" + vc.getProperties().map(p -> p.getName()).toString(", ") + ");");
+                        println("return PList.val(" + vc.getProperties().map(p -> "Tuple2.of(\"" + p.getName()  + "\","  +p.getName() +")").toString(", ") + ");");
                     }
                 }be();
+                // ***************** asValues
+                println("");
+                bs("static public PList<Expr> asValues(Object obj)");{
+                    println(vcCls.getClassName() + " v = (" + vcCls.getClassName() + ")obj;");
+                    println("PList<Expr> r = PList.empty();");
+                    vc.getProperties().forEach(p -> {
+                                println(generateValueExpr(p));
+                            });
+                    println("return r;");
+                }be();
+
             }be();
             return toGenJava(cls);
+        }
+
+        public String generateValueExpr(RProperty p){
+            String type;
+
+            RClass cls = p.getValueType().getTypeSig().getName();
+            String getter = "v.get" + StringUtils.firstUpperCase(p.getName()) + "()";
+            if(p.getValueType().isRequired() == false){
+                getter = getter + ".orElse(null)";
+            }
+            if(SubstemaUtils.isNumberClass(cls)
+                    || cls.equals(SubstemaUtils.booleanRClass)
+                    || cls.equals(SubstemaUtils.stringRClass)
+                    ){
+                return "r = r.plus(Expr.val(" + getter + "));";
+            } else {
+                RClass nc = toExprClass(cls);
+                addImport(nc);
+                return "r = r.plusAll(" + JavaGenUtils.toString(packageName,nc) + ".asValues(" + getter + "));";
+            }
         }
 
         public GeneratedJava generateDb(PList<RValueClass> valueClasses) {

@@ -10,7 +10,7 @@ import com.persistentbit.sql.staticsql.expr.Expr;
 public class ExprCompare<T extends Expr> implements ETypeBoolean {
 
     public enum CompType{
-        eq("=="),lt("<"),gt(">"),ltEq("<="),gtEq(">="),neq("!=");
+        eq("="),lt("<"),gt(">"),ltEq("<="),gtEq(">="),neq("<>");
         private String token;
         CompType(String token){
             this.token = token;
@@ -34,5 +34,21 @@ public class ExprCompare<T extends Expr> implements ETypeBoolean {
     @Override
     public String toString() {
         return left.toString() + compType + right.toString();
+    }
+    @Override
+    public <R1> R1 accept(ExprVisitor<R1> visitor) {
+        return visitor.visit(this);
+    }
+
+    public T getLeft() {
+        return left;
+    }
+
+    public T getRight() {
+        return right;
+    }
+
+    public CompType getCompType() {
+        return compType;
     }
 }

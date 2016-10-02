@@ -18,4 +18,16 @@ public class ExprStringAdd  implements ETypeString {
     public String toString() {
         return left + "+" + right;
     }
+    @Override
+    public <R1> R1 accept(ExprVisitor<R1> visitor) {
+        return visitor.visit(this);
+    }
+
+    public ETypeString getLeft() {
+        return left;
+    }
+
+    public ETypeString getRight() {
+        return right;
+    }
 }

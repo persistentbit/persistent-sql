@@ -15,8 +15,32 @@ public interface DbType{
     String sqlWithLimit(long limit, String sql);
     String sqlWithLimitAndOffset(long limit, long offset, String sql);
 
+    default String numberToString(String number, int charCount){
+        return "CAST(" + number + " AS VARCHAR(" + + charCount + ")";
+    }
 
-    static public void registerDriver(String driverClass){
+    default String concatStrings(String s1, String s2){
+        return "CONCAT(" + s1 + ", " + s2 + ")";
+    }
+
+    default String asLiteralString(String value){
+        StringBuffer res = new StringBuffer();
+        for(int t=0; t<value.length();t++){
+            char c = value.charAt(t);
+            if(c == '\'') {
+                res.append("\'\'");
+            } else if(c == '\"'){
+                res.append("\"\"");
+            } else {
+                res.append(c);
+            }
+        }
+        return "\'" + res.toString() + "\'";
+    }
+
+
+
+    static void registerDriver(String driverClass){
         try {
             Driver driver = (Driver)Class.forName(driverClass).newInstance();
             DriverManager.registerDriver(driver);
@@ -24,4 +48,6 @@ public interface DbType{
             throw new PersistSqlException(e);
         }
     }
+
+
 }

@@ -16,4 +16,12 @@ public class ExprConstString implements ETypeString {
     public String toString() {
         return "\"" + value + "\"";
     }
+    @Override
+    public <R1> R1 accept(ExprVisitor<R1> visitor) {
+        return visitor.visit(this);
+    }
+
+    public String getValue() {
+        return value;
+    }
 }

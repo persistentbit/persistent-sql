@@ -12,4 +12,12 @@ public class ExprBoolean implements ETypeBoolean {
     public ExprBoolean(Boolean value) {
         this.value = value;
     }
+    @Override
+    public <R1> R1 accept(ExprVisitor<R1> visitor) {
+        return visitor.visit(this);
+    }
+
+    public Boolean getValue() {
+        return value;
+    }
 }

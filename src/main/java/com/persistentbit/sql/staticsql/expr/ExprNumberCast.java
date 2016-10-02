@@ -18,4 +18,16 @@ public class ExprNumberCast<F extends Number,T extends Number> implements ETypeN
     public String toString() {
         return "((" + clsTo.getSimpleName() + ")" + from + ")";
     }
+    @Override
+    public <R1> R1 accept(ExprVisitor<R1> visitor) {
+        return visitor.visit(this);
+    }
+
+    public ETypeNumber<F> getFrom() {
+        return from;
+    }
+
+    public Class<? extends Number> getClsTo() {
+        return clsTo;
+    }
 }

@@ -9,6 +9,8 @@ import com.persistentbit.sql.connect.SimpleConnectionProvider;
  * Time: 18:55
  */
 public class InMemConnectionProvider extends PooledConnectionProvider{
+
+
     public InMemConnectionProvider(){
         super(new SimpleConnectionProvider(
                "org.apache.derby.jdbc.EmbeddedDriver",

@@ -19,4 +19,16 @@ public class ExprProperty<T> implements Expr<T> {
     public String toString() {
         return parent.toString() + "." + propertyName;
     }
+    @Override
+    public <R1> R1 accept(ExprVisitor<R1> visitor) {
+        return visitor.visit(this);
+    }
+
+    public Expr getParent() {
+        return parent;
+    }
+
+    public String getPropertyName() {
+        return propertyName;
+    }
 }

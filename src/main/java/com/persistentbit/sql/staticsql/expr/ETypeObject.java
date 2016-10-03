@@ -4,6 +4,7 @@ import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.StringUtils;
 
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -23,7 +24,7 @@ public interface ETypeObject<T> extends Expr<T>{
         return visitor.visit(this);
     }
 
-    Expr getParent();
+    Optional<Expr<?>> getParent();
 
     default String getTableName(){
         return StringUtils.dropLast(getClass().getSimpleName(),1);

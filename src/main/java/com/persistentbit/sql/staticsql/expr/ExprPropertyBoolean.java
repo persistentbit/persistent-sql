@@ -6,6 +6,6 @@ package com.persistentbit.sql.staticsql.expr;
  */
 public class ExprPropertyBoolean extends ExprProperty<Boolean> implements ETypeBoolean {
     public ExprPropertyBoolean(Expr parent, String propertyName) {
-        super(parent,propertyName);
+        super(Boolean.class,parent,propertyName);
     }
 }

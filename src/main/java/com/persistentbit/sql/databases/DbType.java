@@ -24,6 +24,9 @@ public interface DbType{
     }
 
     default String asLiteralString(String value){
+        if(value == null){
+            return null;
+        }
         StringBuffer res = new StringBuffer();
         for(int t=0; t<value.length();t++){
             char c = value.charAt(t);

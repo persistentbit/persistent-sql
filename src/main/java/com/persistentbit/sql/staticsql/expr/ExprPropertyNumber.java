@@ -5,8 +5,8 @@ package com.persistentbit.sql.staticsql.expr;
  * @since 28/09/2016
  */
 public class ExprPropertyNumber<N extends Number> extends ExprProperty<N> implements ETypeNumber<N> {
-    public ExprPropertyNumber(Expr parent, String propertyName) {
-        super(parent,propertyName);
+    public ExprPropertyNumber(Class<N> valueClass,Expr parent, String propertyName) {
+        super(valueClass,parent,propertyName);
     }
 
 

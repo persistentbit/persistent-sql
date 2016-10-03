@@ -9,10 +9,12 @@ import com.persistentbit.sql.staticsql.expr.Expr;
 public class ExprProperty<T> implements Expr<T> {
     private Expr    parent;
     private String  propertyName;
+    private Class<T>  valueClass;
 
-    public ExprProperty(Expr parent, String propertyName) {
+    public ExprProperty(Class<T> valueClass,Expr parent, String propertyName) {
         this.parent = parent;
         this.propertyName = propertyName;
+        this.valueClass = valueClass;
     }
 
     @Override
@@ -30,5 +32,9 @@ public class ExprProperty<T> implements Expr<T> {
 
     public String getPropertyName() {
         return propertyName;
+    }
+
+    public Class<T> getValueClass() {
+        return valueClass;
     }
 }

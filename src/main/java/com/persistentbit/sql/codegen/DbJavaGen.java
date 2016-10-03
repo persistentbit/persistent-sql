@@ -11,7 +11,11 @@ import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.StringUtils;
 import com.persistentbit.core.utils.builders.NOT;
 import com.persistentbit.core.utils.builders.SET;
+import com.persistentbit.sql.databases.DbType;
+import com.persistentbit.sql.staticsql.DbSql;
+import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.*;
+import com.persistentbit.sql.transactions.SQLTransactionRunner;
 import com.persistentbit.substema.compiler.*;
 import com.persistentbit.substema.javagen.GeneratedJava;
 import com.persistentbit.substema.javagen.JavaGenOptions;
@@ -147,15 +151,22 @@ public class DbJavaGen {
             addImport(ETypeObject.class);
             bs("public class " + cls.getClassName() + " implements ETypeObject<" + vcCls.getClassName() + ">");
             {
+                addImport(DbSql.class);
                 println("private final Expr __parent;");
 
                 println("");
                 bs("public " + cls.getClassName() + "(Expr parent)");{
-                    println("this.__parent = parent;");
-                }be();
+                println("this.__parent = parent;");
+            }be();
                 println("");
+                bs("public " + cls.getClassName() + "()");{
+                println("this(null);");
+
+            }be();
+                println("");
+                addImport(Optional.class);
                 println("@Override");
-                println("public Expr getParent() { return this.__parent; }");
+                println("public Optional<Expr<?>> getParent() { return Optional.ofNullable(this.__parent); }");
 
                 println("");
                 println("@Override");
@@ -186,13 +197,48 @@ public class DbJavaGen {
                             });
                     println("return r;");
                 }be();
+                // **************** read
+                addImport(RowReader.class);
+                bs("static public " + vcCls.getClassName() + " read(RowReader rowReader, boolean canBeNull)");{
+                    vc.getProperties().forEach(p -> {
+                        RClass pcls = p.getValueType().getTypeSig().getName();
+
+                        String javaClassName = JavaGenUtils.toString(packageName,pcls);
+                        if(SubstemaUtils.isSubstemaClass(pcls)){
+                            println(javaClassName + " " + p.getName() + " = rowReader.readNext("+ javaClassName + ".class);");
+                        } else {
+                            addImport(pcls);
+                            javaClassName = JavaGenUtils.toString(packageName,pcls.withPackageName(packageName));
+                            RClass nc = toExprClass(pcls);
+                            addImport(nc);
+                            println(javaClassName + " " + p.getName() + " = " + nc.getClassName() + ".read(rowReader, true);");
+                        }
+
+                    });
+                    String allNull = vc.getProperties().map(p -> p.getName() + "==null").toString(" && ");
+                    if(allNull.isEmpty() == false){
+                        println("if(canBeNull && " + allNull+") { return null; }");
+                    } else{
+                        println("if(canBeNull) { return null; }");
+                    }
+                    println("return " + vcCls.getClassName() + ".build(b-> b");
+                    indent();
+                        vc.getProperties().forEach(p -> {
+                            println(".set" + StringUtils.firstUpperCase(p.getName()) + "(" + p.getName() + ")");
+                        });
+                    outdent();
+                    println(");");
+
+                }be();
+
+
 
             }be();
             return toGenJava(cls);
         }
 
         public String generateValueExpr(RProperty p){
-            String type;
+
 
             RClass cls = p.getValueType().getTypeSig().getName();
             String getter = "v.get" + StringUtils.firstUpperCase(p.getName()) + "()";
@@ -212,22 +258,23 @@ public class DbJavaGen {
         }
 
         public GeneratedJava generateDb(PList<RValueClass> valueClasses) {
-            /*
-            public class Db implements ExprDb<Db> {
-    public Amount_ amount() {
-        return new Amount_(this);
-    }
-}
-             */
+
             RClass dbCls = new RClass(packageName,"Db");
             addImport(dbCls);
-            addImport(ExprDb.class);
-            bs("public class Db implements ExprDb<Db>");{
+            //addImport(ExprDb.class);
+            addImport(DbSql.class);
+            addImport(SQLTransactionRunner.class);
+            addImport(DbType.class);
+            bs("public class Db extends DbSql");{
+                bs("public Db(DbType dbType, SQLTransactionRunner trans)");{
+                    println("super(dbType, trans);");
+                }be();
+
                 valueClasses.forEach(vc -> {
                     RClass cls = vc.getTypeSig().getName();
                     RClass ecls = toExprClass(cls);
                     addImport(ecls);
-                    println("public " + JavaGenUtils.toString(packageName,ecls) + " " + StringUtils.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils.toString(packageName,ecls) +"(this); }");
+                    println("public " + JavaGenUtils.toString(packageName,ecls) + " " + StringUtils.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils.toString(packageName,ecls) +"(); }");
                 });
 
             }be();
@@ -243,7 +290,7 @@ public class DbJavaGen {
                 addImport(ETypeNumber.class);
                 addImport(ExprPropertyNumber.class);
                 type = "ETypeNumber<" + cls.getClassName() + ">";
-                value = "new ExprPropertyNumber<>(this,\"" + property.getName() + "\");";
+                value = "new ExprPropertyNumber<>(" + cls.getClassName() + ".class,this,\"" + property.getName() + "\");";
             } else if (cls.equals(SubstemaUtils.booleanRClass)){
                 addImport(ETypeBoolean.class);
                 addImport(ExprPropertyBoolean.class);
@@ -260,42 +307,21 @@ public class DbJavaGen {
                 addImport(nc);
                 addImport(ExprProperty.class);
                 type = JavaGenUtils.toString(packageName,nc);
-                value = "new " + type + "(new ExprProperty(this,\"" + property.getName() + "\"));";
+                String valueClass = cls.getClassName();
+                value = "new " + type + "(new ExprProperty("+ valueClass + ".class,this,\"" + property.getName() + "\"));";
 
             }
             println("public " + type +" " + property.getName() + " = " + value);
         }
 
-        private PList<RProperty>   getRequiredProps(RValueClass vc) {
-            return vc.getProperties().filter(p->p.getDefaultValue().isPresent() == false && p.getValueType().isRequired());
-        }
 
-        private String getBuilderGenerics(RValueClass vc){
-            return getBuilderGenerics(vc,PMap.empty());
-        }
-        private String getBuilderGenerics(RValueClass vc, PMap<String,String> namesReplace){
-            PList<String> requiredProperties = getRequiredProps(vc).zipWithIndex().map(t -> namesReplace.getOpt(t._2.getName()).orElse("_T" + (t._1+1))).plist();
-            if(requiredProperties.isEmpty()==false){
-                addImport(SET.class);
-                addImport(NOT.class);
-            }
-            requiredProperties = requiredProperties.plusAll(vc.getTypeSig().getGenerics().map(g -> g.getName().getClassName()));
-            if(requiredProperties.isEmpty()){
-                return "";
-            }
-            return requiredProperties.toString("<",",",">");
-        }
 
-        private boolean isRequired(RProperty p){
-            return p.getDefaultValue().isPresent() == false && p.getValueType().isRequired();
-        }
+
 
         private String toString(RTypeSig sig){
             return toString(sig,false);
         }
-        private String toPrimString(RTypeSig sig){
-            return toString(sig,true);
-        }
+
 
 
         private String toString(RTypeSig sig,boolean asPrimitive){
@@ -326,32 +352,6 @@ public class DbJavaGen {
             return name + gen;
         }
 
-        private boolean isPrimitive(RTypeSig sig){
-            return toString(sig,true).equals(toString(sig,false)) == false;
-        }
-
-        private String firstUpper(String s){
-            return s.substring(0,1).toUpperCase() + s.substring(1);
-        }
-
-        private String toString(RValueType vt,boolean isFinal){
-            String res = "";
-            String value = vt.isRequired() ? toPrimString(vt.getTypeSig()) : toString(vt.getTypeSig());
-            if(vt.isRequired() == false){
-                addImport(Nullable.class);
-
-                if(options.generateGetters == false){
-                    addImport(Optional.class);
-                    value = "Optional<" + value + ">";
-                } else {
-                    res += "@Nullable ";
-                }
-            }
-            String access =  options.generateGetters ? "private" : "public";
-            access += isFinal ?  " final " : " ";
-            return res + access  + value;
-
-        }
 
 
     }

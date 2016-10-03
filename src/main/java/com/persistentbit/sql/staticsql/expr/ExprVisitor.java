@@ -10,11 +10,14 @@ public interface ExprVisitor<R> {
     R visit(EMapper mapper);
     R visit(ExprProperty v);
     R visit(ExprAndOr v);
-    R visit(ExprDb v);
     R visit(ExprNumberToString v);
     R visit(ExprBoolean v);
     R visit(ETuple2 v);
     R visit(ETuple3 v);
+    R visit(ETuple4 v);
+    R visit(ETuple5 v);
+    R visit(ETuple6 v);
+    R visit(ETuple7 v);
     R visit(ExprConstNumber v);
     R visit(ExprNumberCast v);
     R visit(ETypeObject v);

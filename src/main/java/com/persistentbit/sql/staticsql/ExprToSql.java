@@ -25,7 +25,19 @@ public class ExprToSql implements ExprVisitor<String>{
         return new ExprToSql(instanceName,dbType).visit(e);
     }
 
+    private String visit(Expr expr){
+        return (String)expr.accept(this);
+    }
 
+    @Override
+    public String visit(ExprPropertyDate v) {
+        throw new NotYet();
+    }
+
+    @Override
+    public String visit(ExprPropertyDateTime v) {
+        throw new NotYet();
+    }
 
     @Override
     public String visit(EMapper mapper) {
@@ -62,7 +74,20 @@ public class ExprToSql implements ExprVisitor<String>{
 
     @Override
     public String visit(ExprBoolean v) {
-        return v.getValue() ? "TRUE" : "FALSE";
+        return v.getValue() == null ?  "null" : (v.getValue() ? "TRUE" : "FALSE");
+    }
+
+    @Override
+    public String visit(ExprDate v) {
+        if(v == null){
+            return "null";
+        }
+        return dbType.asLiteralDate(v.getValue());
+    }
+
+    @Override
+    public String visit(ExprDateTime v) {
+        return dbType.asLiteralDateTime(v.getValue());
     }
 
     @Override

@@ -6,6 +6,8 @@ import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.staticsql.expr.*;
 
 import java.lang.reflect.Method;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Created by petermuys on 3/10/16.
@@ -15,7 +17,7 @@ public class ExprRowReader {
 
 
     public <T> T read(Expr<T> expr, RowReader reader){
-        return (T) new Visitor(reader).visit(expr);
+        return (T) new Visitor(reader).visitExpr(expr);
     }
 
     private class Visitor implements ExprVisitor<Object>{
@@ -24,9 +26,26 @@ public class ExprRowReader {
         public Visitor(RowReader reader){
             this.reader = reader;
         }
+
+
+        private Object visitExpr(Expr e){
+            return e.accept(this);
+        }
+
+
+        @Override
+        public Object visit(ExprPropertyDate v) {
+            throw new NotYet();
+        }
+
+        @Override
+        public Object visit(ExprPropertyDateTime v) {
+            throw new NotYet();
+        }
+
         @Override
         public Object visit(EMapper mapper) {
-            return mapper.getMapper().apply(visit(mapper.getExpr()));
+            return mapper.getMapper().apply(visitExpr(mapper.getExpr()));
         }
 
         private Object error(Expr v) {
@@ -78,54 +97,64 @@ public class ExprRowReader {
         }
 
         @Override
+        public Object visit(ExprDate v) {
+            return reader.readNext(LocalDate.class);
+        }
+
+        @Override
+        public Object visit(ExprDateTime v) {
+            return reader.readNext(LocalDateTime.class);
+        }
+
+        @Override
         public Object visit(ETuple2 v) {
-            return new Tuple2(visit(v.getV1()),visit(v.getV2()));
+            return new Tuple2(visitExpr(v.getV1()),visitExpr(v.getV2()));
         }
 
         @Override
         public Object visit(ETuple3 v) {
-            return new Tuple3(visit(v.getV1()),visit(v.getV2()),visit(v.getV3()));
+            return new Tuple3(visitExpr(v.getV1()),visitExpr(v.getV2()),visitExpr(v.getV3()));
         }
         @Override
         public Object visit(ETuple4 v) {
             return new Tuple4(
-                    visit(v.getV1()),
-                    visit(v.getV2()),
-                    visit(v.getV3()),
-                    visit(v.getV4())
+                    visitExpr(v.getV1()),
+                    visitExpr(v.getV2()),
+                    visitExpr(v.getV3()),
+                    visitExpr(v.getV4())
             );
         }
         @Override
         public Object visit(ETuple5 v) {
             return new Tuple5(
-                    visit(v.getV1()),
-                    visit(v.getV2()),
-                    visit(v.getV3()),
-                    visit(v.getV4()),
-                    visit(v.getV5())
+                    visitExpr(v.getV1()),
+                    visitExpr(v.getV2()),
+                    visitExpr(v.getV3()),
+                    visitExpr(v.getV4()),
+                    visitExpr(v.getV5())
             );
         }
         @Override
         public Object visit(ETuple6 v) {
             return new Tuple6(
-                    visit(v.getV1()),
-                    visit(v.getV2()),
-                    visit(v.getV3()),
-                    visit(v.getV4()),
-                    visit(v.getV5()),
-                    visit(v.getV6())
+                    visitExpr(v.getV1()),
+                    visitExpr(v.getV2()),
+                    visitExpr(v.getV3()),
+                    visitExpr(v.getV4()),
+                    visitExpr(v.getV5()),
+                    visitExpr(v.getV6())
             );
         }
         @Override
         public Object visit(ETuple7 v) {
             return new Tuple7(
-                    visit(v.getV1()),
-                    visit(v.getV2()),
-                    visit(v.getV3()),
-                    visit(v.getV4()),
-                    visit(v.getV5()),
-                    visit(v.getV6()),
-                    visit(v.getV7())
+                    visitExpr(v.getV1()),
+                    visitExpr(v.getV2()),
+                    visitExpr(v.getV3()),
+                    visitExpr(v.getV4()),
+                    visitExpr(v.getV5()),
+                    visitExpr(v.getV6()),
+                    visitExpr(v.getV7())
             );
         }
         @Override

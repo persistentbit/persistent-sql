@@ -1,5 +1,9 @@
 package com.persistentbit.sql.databases;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 /**
  * @author Peter Muys
  * @since 19/07/2016
@@ -17,6 +21,16 @@ public class DbDerby extends AbstractDbType{
     @Override
     public String sqlWithLimitAndOffset(long limit, long offset, String sql) {
         return sqlWithLimit(limit,sql + " OFFSET " + offset + " ROWS ");
+    }
+
+    @Override
+    public String asLiteralDate(LocalDate date){
+        return "DATE('" + DateTimeFormatter.ofPattern("yyyy-MM-dd").format(date) + "')";
+    }
+
+    @Override
+    public String asLiteralDateTime(LocalDateTime dateTime){
+        return "TIMESTAMP('" + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.nnnnnn").format(dateTime) + "')";
     }
 
     static public String urlInMemory(String name) {

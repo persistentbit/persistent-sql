@@ -2,6 +2,7 @@ package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PSet;
+import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.staticsql.expr.*;
 
 /**
@@ -17,7 +18,9 @@ public class ExprFindAllUsedTables implements ExprVisitor<PSet<ETypeObject>> {
         return new ExprFindAllUsedTables().visit(e);
     }
 
-
+    private PSet<ETypeObject> visit(Expr expr){
+        return (PSet<ETypeObject>)expr.accept(this);
+    }
 
     @Override
     public PSet<ETypeObject> visit(EMapper mapper) {
@@ -34,7 +37,15 @@ public class ExprFindAllUsedTables implements ExprVisitor<PSet<ETypeObject>> {
         return visit(v.getLeft()).plusAll(visit(v.getRight()));
     }
 
+    @Override
+    public PSet<ETypeObject> visit(ExprPropertyDate v) {
+        throw new NotYet();
+    }
 
+    @Override
+    public PSet<ETypeObject> visit(ExprPropertyDateTime v) {
+        throw new NotYet();
+    }
 
     @Override
     public PSet<ETypeObject> visit(ExprNumberToString v) {
@@ -43,6 +54,16 @@ public class ExprFindAllUsedTables implements ExprVisitor<PSet<ETypeObject>> {
 
     @Override
     public PSet<ETypeObject> visit(ExprBoolean v) {
+        return PSet.empty();
+    }
+
+    @Override
+    public PSet<ETypeObject> visit(ExprDate v) {
+        return PSet.empty();
+    }
+
+    @Override
+    public PSet<ETypeObject> visit(ExprDateTime v) {
         return PSet.empty();
     }
 

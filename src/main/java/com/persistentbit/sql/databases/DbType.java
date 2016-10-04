@@ -5,6 +5,10 @@ import com.persistentbit.sql.PersistSqlException;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * @author Peter Muys
@@ -41,6 +45,13 @@ public interface DbType{
         return "\'" + res.toString() + "\'";
     }
 
+    default String asLiteralDate(LocalDate date){
+        return "DATE '" +DateTimeFormatter.ofPattern("yyyy-MM-dd").format(date) + "'";
+    }
+
+    default String asLiteralDateTime(LocalDateTime dateTime){
+        return "TIMESTAMP '" + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.nnnnnn").format(dateTime) + "'";
+    }
 
 
     static void registerDriver(String driverClass){

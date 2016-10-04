@@ -4,11 +4,13 @@ package com.persistentbit.sql.staticsql.expr;
  * Created by petermuys on 2/10/16.
  */
 public interface ExprVisitor<R> {
-    default R visit(Expr e){
+    /*default R visit(Expr e){
         return (R)e.accept(this);
-    }
+    }*/
     R visit(EMapper mapper);
     R visit(ExprProperty v);
+    R visit(ExprPropertyDate v);
+    R visit(ExprPropertyDateTime v);
     R visit(ExprAndOr v);
     R visit(ExprNumberToString v);
     R visit(ExprBoolean v);
@@ -26,4 +28,7 @@ public interface ExprVisitor<R> {
     R visit(ExprConstString v);
     R visit(ExprNumberBinOp v);
     R visit(EValTable v);
+    R visit(ExprDate v);
+    R visit(ExprDateTime v);
+
 }

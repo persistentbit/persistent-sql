@@ -26,6 +26,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -205,6 +207,14 @@ public class DbJavaGen {
 
                         String javaClassName = JavaGenUtils.toString(packageName,pcls);
                         if(SubstemaUtils.isSubstemaClass(pcls)){
+                            if(pcls.equals(SubstemaUtils.dateTimeRClass)){
+                                addImport(LocalDateTime.class);
+                                javaClassName  = LocalDateTime.class.getSimpleName();
+                            }
+                            if(pcls.equals(SubstemaUtils.dateRClass)){
+                                addImport(LocalDate.class);
+                                javaClassName = LocalDate.class.getSimpleName();
+                            }
                             println(javaClassName + " " + p.getName() + " = rowReader.readNext("+ javaClassName + ".class);");
                         } else {
                             addImport(pcls);
@@ -248,9 +258,13 @@ public class DbJavaGen {
             if(SubstemaUtils.isNumberClass(cls)
                     || cls.equals(SubstemaUtils.booleanRClass)
                     || cls.equals(SubstemaUtils.stringRClass)
+                    || SubstemaUtils.isDateClass(cls)
                     ){
                 return "r = r.plus(Expr.val(" + getter + "));";
-            } else {
+            }else {
+                if(cls.getPackageName().isEmpty()){
+                    throw new SubstemaException("Unknown internal class: "+ cls);
+                }
                 RClass nc = toExprClass(cls);
                 addImport(nc);
                 return "r = r.plusAll(" + JavaGenUtils.toString(packageName,nc) + ".asValues(" + getter + "));";
@@ -301,7 +315,24 @@ public class DbJavaGen {
                 addImport(ExprPropertyString.class);
                 type = "ETypeString";
                 value = "new ExprPropertyString(this,\"" + property.getName() + "\");";
-            } else {
+            } else if(cls.equals(SubstemaUtils.dateTimeRClass)){
+                addImport(LocalDateTime.class);
+                addImport(ExprPropertyDateTime.class);
+                addImport(ETypeDateTime.class);
+                type = "ETypeDateTime";
+                value = "new ExprPropertyDateTime(this,\"" + property.getName() + "\");";
+
+            } else if(cls.equals(SubstemaUtils.dateRClass)){
+                addImport(LocalDate.class);
+                addImport(ExprPropertyDate.class);
+                addImport(ETypeDate.class);
+                type = "ETypeDate";
+                value = "new ExprPropertyDate(this,\"" + property.getName() + "\");";
+
+            }else {
+                if(cls.getPackageName().isEmpty()){
+                    throw new SubstemaException("Unknown internal type:" + cls);
+                }
                 RClass nc = toExprClass(cls);
                 //addImport(cls);
                 addImport(nc);

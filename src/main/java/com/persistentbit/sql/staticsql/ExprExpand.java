@@ -2,6 +2,7 @@ package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.tuples.Tuple2;
+import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.staticsql.expr.*;
 
 
@@ -12,6 +13,10 @@ public class ExprExpand implements ExprVisitor<PList<Expr>>{
 
     static public PList<Expr> exapand(Expr e){
         return new ExprExpand().visit(e);
+    }
+
+    private PList<Expr> visit(Expr expr){
+        return (PList<Expr>)expr.accept(this);
     }
 
     @Override
@@ -35,6 +40,16 @@ public class ExprExpand implements ExprVisitor<PList<Expr>>{
     }
 
     @Override
+    public PList<Expr> visit(ExprPropertyDate v) {
+        throw new NotYet();
+    }
+
+    @Override
+    public PList<Expr> visit(ExprPropertyDateTime v) {
+        throw new NotYet();
+    }
+
+    @Override
     public PList<Expr> visit(ExprProperty v) {
         ETypeObject parent = (ETypeObject)v.getParent();
         Expr subProp = getProperty(v.getParent(),v.getPropertyName());
@@ -55,6 +70,16 @@ public class ExprExpand implements ExprVisitor<PList<Expr>>{
 
     @Override
     public PList<Expr> visit(ExprBoolean v) {
+        return PList.val(v);
+    }
+
+    @Override
+    public PList<Expr> visit(ExprDate v) {
+        return PList.val(v);
+    }
+
+    @Override
+    public PList<Expr> visit(ExprDateTime v) {
         return PList.val(v);
     }
 

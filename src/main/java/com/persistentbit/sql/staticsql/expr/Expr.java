@@ -1,5 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.function.Function;
 
 /**
@@ -16,6 +18,14 @@ public interface Expr<S>{
     }
 
     static ETypeBoolean val(Boolean value) { return new ExprBoolean(value);}
+
+    static ETypeDate    val(LocalDate date){
+        return new ExprDate(date);
+    }
+
+    static ETypeDateTime val(LocalDateTime dateTime){
+        return new ExprDateTime(dateTime);
+    }
 
     default <R> EMapper<S,R> map(Function<S,R> mapper){
         return new EMapper<>(this,mapper);

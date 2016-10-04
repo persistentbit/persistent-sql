@@ -30,7 +30,7 @@ public class DbDerby extends AbstractDbType{
 
     @Override
     public String asLiteralDateTime(LocalDateTime dateTime){
-        return "TIMESTAMP('" + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.nnnnnn").format(dateTime) + "')";
+        return "TIMESTAMP('" + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(dateTime) + "')";
     }
 
     static public String urlInMemory(String name) {

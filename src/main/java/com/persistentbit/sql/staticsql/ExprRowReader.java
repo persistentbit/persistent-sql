@@ -16,10 +16,26 @@ import java.util.Set;
 /**
  * Created by petermuys on 3/10/16.
  */
-public class ExprRowReader {
+public class ExprRowReader implements ExprRowReaderCache{
 
     private final Map<Object,Object> cache   =   new HashMap<>();
     private final Set<Object> usedFromCache = new HashSet<>();
+
+    @Override
+    public Object updatedFromCache(Object value){
+        if(value == null){
+            return null;
+        }
+        Object cached = cache.get(value);
+        if(cached != null){
+            //System.out.println("Cached: " + cached);
+            usedFromCache.add(cached);
+            return cached;
+        }
+        cache.put(value,value);
+        return value;
+    }
+
 
     public <T> T read(Expr<T> expr, RowReader reader){
         return (T) new Visitor(reader).visitExpr(expr);
@@ -61,34 +77,35 @@ public class ExprRowReader {
             value = updatedFromCache(value);
             return mapper.getMapper().apply(value);
         }
-
-        private Object error(Expr v) {
-            throw new RuntimeException("Can't read from row for expression " + v);
-        }
-        @Override
-        public Object visit(ETypeObject v) {
+        private Map<Class,Method> readMethods = new HashMap<>();
+        private Method getTableReadMethod(ETypeObject v){
             try{
                 Class cls = v.getClass();
-                Method m = cls.getDeclaredMethod("read",RowReader.class,boolean.class);
-                Object value = m.invoke(null,reader,true);
+                Method m = readMethods.get(cls);
+                if(m != null){
+                    return m;
+                }
+                m = cls.getDeclaredMethod("read",RowReader.class,ExprRowReaderCache.class);
+                readMethods.put(cls,m);
+                return m;
 
-                return updatedFromCache(value);
             }catch (Exception e){
                 throw new RuntimeException("Error reading for expr "+ v,e);
             }
         }
 
-        private Object updatedFromCache(Object value){
-            if(value == null){
-                return null;
+
+        @Override
+        public Object visit(ETypeObject v) {
+            try{
+                return getTableReadMethod(v).invoke(null,reader,ExprRowReader.this);
+            }catch (Exception e){
+                throw new RuntimeException("Error reading for expr "+ v,e);
             }
-            Object cached = cache.get(value);
-            if(cached != null){
-                usedFromCache.add(cached);
-                return cached;
-            }
-            cache.put(value,value);
-            return value;
+        }
+
+        private Object error(Expr v) {
+            throw new RuntimeException("Can't read from row for expression " + v);
         }
 
         @Override

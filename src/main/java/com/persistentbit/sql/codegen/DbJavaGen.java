@@ -9,6 +9,7 @@ import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.StringUtils;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.DbSql;
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.*;
 import com.persistentbit.sql.transactions.SQLTransactionRunner;
@@ -189,7 +190,8 @@ public class DbJavaGen {
                 }be();
                 // **************** read
                 addImport(RowReader.class);
-                bs("static public " + vcCls.getClassName() + " read(RowReader rowReader, boolean canBeNull)");{
+                addImport(ExprRowReaderCache.class);
+                bs("static public " + vcCls.getClassName() + " read(RowReader _rowReader, " + ExprRowReaderCache.class.getSimpleName() + " _cache)");{
                     vc.getProperties().forEach(p -> {
                         RClass pcls = p.getValueType().getTypeSig().getName();
 
@@ -203,18 +205,18 @@ public class DbJavaGen {
                                 addImport(LocalDate.class);
                                 javaClassName = LocalDate.class.getSimpleName();
                             }
-                            println(javaClassName + " " + p.getName() + " = rowReader.readNext("+ javaClassName + ".class);");
+                            println(javaClassName + " " + p.getName() + " = _rowReader.readNext("+ javaClassName + ".class);");
                         } else {
                             if(getInternalOrExternalEnum(pcls).isPresent()){
                                 //Gender gender = Gender.valueOf(rowReader.readNext(String.class));
                                 addImport(pcls);
-                                println(pcls.getClassName() + " " + p.getName() + " = " + pcls.getClassName() + ".valueOf(rowReader.readNext(String.class));");
+                                println(pcls.getClassName() + " " + p.getName() + " = " + pcls.getClassName() + ".valueOf(_rowReader.readNext(String.class));");
                             } else {
                                 addImport(pcls);
                                 javaClassName = JavaGenUtils.toString(packageName,pcls.withPackageName(packageName));
                                 RClass nc = toExprClass(pcls);
                                 addImport(nc);
-                                println(javaClassName + " " + p.getName() + " = " + nc.getClassName() + ".read(rowReader, true);");
+                                println(javaClassName + " " + p.getName() + " = " + nc.getClassName() + ".read(_rowReader,_cache);");
                             }
 
                         }
@@ -222,17 +224,15 @@ public class DbJavaGen {
                     });
                     String allNull = vc.getProperties().map(p -> p.getName() + "==null").toString(" && ");
                     if(allNull.isEmpty() == false){
-                        println("if(canBeNull && " + allNull+") { return null; }");
-                    } else{
-                        println("if(canBeNull) { return null; }");
+                        println("if(" + allNull+") { return null; }");
                     }
-                    println("return " + vcCls.getClassName() + ".build(b-> b");
+                    println("return _cache.updatedFromCache(" + vcCls.getClassName() + ".build(b-> b");
                     indent();
                         vc.getProperties().forEach(p -> {
                             println(".set" + StringUtils.firstUpperCase(p.getName()) + "(" + p.getName() + ")");
                         });
                     outdent();
-                    println(");");
+                    println("));");
 
                 }be();
 

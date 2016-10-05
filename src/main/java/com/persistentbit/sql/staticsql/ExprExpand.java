@@ -24,6 +24,11 @@ public class ExprExpand implements ExprVisitor<PList<Expr>>{
         return visit(mapper.getExpr());
     }
 
+    @Override
+    public PList<Expr> visit(EGroup group) {
+        return visit(group.getValue());
+    }
+
     private Expr getProperty(Expr parent, String propertyName){
         if(parent instanceof ETypeObject){
             // We have a table column

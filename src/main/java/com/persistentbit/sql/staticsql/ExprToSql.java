@@ -30,6 +30,11 @@ public class ExprToSql implements ExprVisitor<String>{
     }
 
     @Override
+    public String visit(EGroup group) {
+        return "(" + visit(group.getValue()) + ")";
+    }
+
+    @Override
     public String visit(ExprPropertyDate v) {
         throw new NotYet();
     }

@@ -7,6 +7,7 @@ public interface ExprVisitor<R> {
     /*default R visit(Expr e){
         return (R)e.accept(this);
     }*/
+    R visit(EGroup group);
     R visit(EMapper mapper);
     R visit(ExprProperty v);
     R visit(ExprPropertyDate v);

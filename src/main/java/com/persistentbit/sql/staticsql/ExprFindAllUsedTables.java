@@ -23,6 +23,11 @@ public class ExprFindAllUsedTables implements ExprVisitor<PSet<ETypeObject>> {
     }
 
     @Override
+    public PSet<ETypeObject> visit(EGroup group) {
+        return visit(group.getValue());
+    }
+
+    @Override
     public PSet<ETypeObject> visit(EMapper mapper) {
         return visit(mapper.getExpr());
     }

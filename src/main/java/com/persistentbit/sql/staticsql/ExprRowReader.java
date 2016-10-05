@@ -32,6 +32,10 @@ public class ExprRowReader {
             return e.accept(this);
         }
 
+        @Override
+        public Object visit(EGroup group) {
+            return visitExpr(group.getValue());
+        }
 
         @Override
         public Object visit(ExprPropertyDate v) {

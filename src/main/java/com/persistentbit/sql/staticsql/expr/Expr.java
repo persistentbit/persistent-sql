@@ -1,6 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.sql.codegen.DbJavaGenException;
+import com.persistentbit.sql.staticsql.ENumberGroup;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,6 +28,16 @@ public interface Expr<S>{
 
     static ETypeDateTime val(LocalDateTime dateTime){
         return new ExprDateTime(dateTime);
+    }
+
+    static EBooleanGroup    group(ETypeBoolean b){
+        return new EBooleanGroup(b);
+    }
+    static <N extends Number> ENumberGroup<N> group(ETypeNumber<N> v){
+        return new ENumberGroup<>(v);
+    }
+    static EStringGroup group(ETypeString v){
+        return new EStringGroup(v);
     }
 
     static <T extends Enum<?>> ETypeEnum<T> val(T value){

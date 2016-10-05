@@ -85,6 +85,10 @@ public class ExprRowReader {
         }
 
 
+        @Override
+        public Object visit(ExprEnum v) {
+            throw new NotYet();
+        }
 
         @Override
         public Object visit(ExprNumberToString v) {

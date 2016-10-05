@@ -1,5 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.sql.codegen.DbJavaGenException;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.function.Function;
@@ -25,6 +27,17 @@ public interface Expr<S>{
 
     static ETypeDateTime val(LocalDateTime dateTime){
         return new ExprDateTime(dateTime);
+    }
+
+    static <T extends Enum<?>> ETypeEnum<T> val(T value){
+        if(value == null){
+            throw new DbJavaGenException("Need to know the class of the null enum: use Expr.valNullEnum(cls) instead.");
+        }
+        return new ExprEnum<>(value,value.getClass());
+    }
+
+    static <T extends Enum<T>> ETypeEnum<T> valNullEnum(Class<T> value){
+        return new ExprEnum<>(null,value);
     }
 
     default <R> EMapper<S,R> map(Function<S,R> mapper){

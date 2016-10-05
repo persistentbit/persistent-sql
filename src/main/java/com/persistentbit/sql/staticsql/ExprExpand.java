@@ -40,6 +40,11 @@ public class ExprExpand implements ExprVisitor<PList<Expr>>{
     }
 
     @Override
+    public PList<Expr> visit(ExprEnum v) {
+        return PList.val(v);
+    }
+
+    @Override
     public PList<Expr> visit(ExprPropertyDate v) {
         throw new NotYet();
     }

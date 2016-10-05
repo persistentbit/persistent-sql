@@ -205,11 +205,18 @@ public class DbJavaGen {
                             }
                             println(javaClassName + " " + p.getName() + " = rowReader.readNext("+ javaClassName + ".class);");
                         } else {
-                            addImport(pcls);
-                            javaClassName = JavaGenUtils.toString(packageName,pcls.withPackageName(packageName));
-                            RClass nc = toExprClass(pcls);
-                            addImport(nc);
-                            println(javaClassName + " " + p.getName() + " = " + nc.getClassName() + ".read(rowReader, true);");
+                            if(getInternalOrExternalEnum(pcls).isPresent()){
+                                //Gender gender = Gender.valueOf(rowReader.readNext(String.class));
+                                addImport(pcls);
+                                println(pcls.getClassName() + " " + p.getName() + " = " + pcls.getClassName() + ".valueOf(rowReader.readNext(String.class));");
+                            } else {
+                                addImport(pcls);
+                                javaClassName = JavaGenUtils.toString(packageName,pcls.withPackageName(packageName));
+                                RClass nc = toExprClass(pcls);
+                                addImport(nc);
+                                println(javaClassName + " " + p.getName() + " = " + nc.getClassName() + ".read(rowReader, true);");
+                            }
+
                         }
 
                     });
@@ -235,6 +242,11 @@ public class DbJavaGen {
             return toGenJava(cls);
         }
 
+        /**
+         * Generate the javacode to transform a real property value to an Expr
+         * @param p The RProperty
+         * @return The java code to add the Expression(s) to the generated code for a PList with name r
+         */
         public String generateValueExpr(RProperty p){
 
 
@@ -250,6 +262,13 @@ public class DbJavaGen {
                     ){
                 return "r = r.plus(Expr.val(" + getter + "));";
             }else {
+                if(getInternalOrExternalEnum(cls).isPresent()){
+                    addImport(ExprEnum.class);
+                    //We have an enum
+                    //r = r.plus(new ExprEnum<Gender>(v.getGender(),Gender.class));
+                    String clsName = cls.getClassName();
+                    return "r = r.plus(new " + ExprEnum.class.getSimpleName() + "<" + clsName + ">(" + getter + ", " + clsName + ".class));";
+                }
                 if(cls.getPackageName().isEmpty()){
                     throw new DbJavaGenException("Unknown internal class: "+ cls);
                 }
@@ -289,6 +308,10 @@ public class DbJavaGen {
             return toGenJava(dbCls);
         }
 
+        /**
+         * Generate the java code for a property of a db table description value class;
+         * @param property The property to generate
+         */
         private void generateProperty(RProperty property){
 
             String type;
@@ -327,19 +350,46 @@ public class DbJavaGen {
                 if(cls.getPackageName().isEmpty()){
                     throw new DbJavaGenException("Unknown internal type:" + cls);
                 }
-                RClass nc = toExprClass(cls);
-                //addImport(cls);
-                addImport(nc);
-                addImport(ExprProperty.class);
-                type = JavaGenUtils.toString(packageName,nc);
-                String valueClass = cls.getClassName();
-                value = "new " + type + "(new ExprProperty("+ valueClass + ".class,this,\"" + property.getName() + "\"));";
+
+                boolean isEnum = getInternalOrExternalEnum(cls).isPresent();
+
+                if(isEnum){
+                    addImport(cls);
+                    addImport(ExprPropertyEnum.class);
+                    String valueName = ExprPropertyEnum.class.getSimpleName();
+
+                    type = ExprPropertyEnum.class.getSimpleName()+ "<" + cls.getClassName() + ">";
+                    value = "new " +  type + "(" + cls.getClassName() + ".class,this,\"" + property.getName() + "\");";
+                } else {
+                    RClass nc = toExprClass(cls);
+                    //addImport(cls);
+                    addImport(nc);
+                    addImport(ExprProperty.class);
+                    type = JavaGenUtils.toString(packageName,nc);
+                    String valueClass = cls.getClassName();
+                    value = "new " + type + "(new ExprProperty("+ valueClass + ".class,this,\"" + property.getName() + "\"));";
+                }
+
 
             }
             println("public " + type +" " + property.getName() + " = " + value);
         }
 
 
+        /**
+         * Try to find an enum for a given RClass.<br>
+         * if the RClass is for a diferent package, than that package is resolved.
+         * @param cls the RClass for the enum.
+         * @return the Optional REnum for the class
+         */
+        private Optional<REnum> getInternalOrExternalEnum(RClass cls){
+            if(cls.getPackageName().equals(packageName) == false){
+                RSubstema ss = compiler.compile(cls.getPackageName());
+                return ss.getEnums().find(e -> e.getName().getClassName().equals(cls.getClassName()));
+            } else {
+                return getEnum(cls);
+            }
+        }
 
 
 

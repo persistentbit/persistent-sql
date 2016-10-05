@@ -30,5 +30,6 @@ public interface ExprVisitor<R> {
     R visit(EValTable v);
     R visit(ExprDate v);
     R visit(ExprDateTime v);
+    R visit(ExprEnum v);
 
 }

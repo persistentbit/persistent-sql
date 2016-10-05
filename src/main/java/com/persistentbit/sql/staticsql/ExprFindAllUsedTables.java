@@ -53,6 +53,11 @@ public class ExprFindAllUsedTables implements ExprVisitor<PSet<ETypeObject>> {
     }
 
     @Override
+    public PSet<ETypeObject> visit(ExprEnum v) {
+        return PSet.empty();
+    }
+
+    @Override
     public PSet<ETypeObject> visit(ExprBoolean v) {
         return PSet.empty();
     }

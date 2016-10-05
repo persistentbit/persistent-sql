@@ -86,6 +86,15 @@ public class ExprToSql implements ExprVisitor<String>{
     }
 
     @Override
+    public String visit(ExprEnum v) {
+        Enum value = v.getValue();
+        if(value ==null){
+            return "null";
+        }
+        return dbType.asLiteralString(value.name());
+    }
+
+    @Override
     public String visit(ExprDateTime v) {
         return dbType.asLiteralDateTime(v.getValue());
     }

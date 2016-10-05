@@ -8,13 +8,18 @@ import com.persistentbit.sql.staticsql.expr.*;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by petermuys on 3/10/16.
  */
 public class ExprRowReader {
 
-
+    private final Map<Object,Object> cache   =   new HashMap<>();
+    private final Set<Object> usedFromCache = new HashSet<>();
 
     public <T> T read(Expr<T> expr, RowReader reader){
         return (T) new Visitor(reader).visitExpr(expr);
@@ -49,7 +54,12 @@ public class ExprRowReader {
 
         @Override
         public Object visit(EMapper mapper) {
-            return mapper.getMapper().apply(visitExpr(mapper.getExpr()));
+            Object value = visitExpr(mapper.getExpr());
+            if(usedFromCache.contains(value) == false){
+                cache.remove(value);
+            }
+            value = updatedFromCache(value);
+            return mapper.getMapper().apply(value);
         }
 
         private Object error(Expr v) {
@@ -60,10 +70,25 @@ public class ExprRowReader {
             try{
                 Class cls = v.getClass();
                 Method m = cls.getDeclaredMethod("read",RowReader.class,boolean.class);
-                return m.invoke(null,reader,true);
+                Object value = m.invoke(null,reader,true);
+
+                return updatedFromCache(value);
             }catch (Exception e){
                 throw new RuntimeException("Error reading for expr "+ v,e);
             }
+        }
+
+        private Object updatedFromCache(Object value){
+            if(value == null){
+                return null;
+            }
+            Object cached = cache.get(value);
+            if(cached != null){
+                usedFromCache.add(cached);
+                return cached;
+            }
+            cache.put(value,value);
+            return value;
         }
 
         @Override
@@ -116,7 +141,7 @@ public class ExprRowReader {
 
         @Override
         public Object visit(ETuple2 v) {
-            return new Tuple2(visitExpr(v.getV1()),visitExpr(v.getV2()));
+            return updatedFromCache(new Tuple2(visitExpr(v.getV1()),visitExpr(v.getV2())));
         }
 
         @Override
@@ -125,37 +150,37 @@ public class ExprRowReader {
         }
         @Override
         public Object visit(ETuple4 v) {
-            return new Tuple4(
+            return updatedFromCache(new Tuple4(
                     visitExpr(v.getV1()),
                     visitExpr(v.getV2()),
                     visitExpr(v.getV3()),
                     visitExpr(v.getV4())
-            );
+            ));
         }
         @Override
         public Object visit(ETuple5 v) {
-            return new Tuple5(
+            return updatedFromCache(new Tuple5(
                     visitExpr(v.getV1()),
                     visitExpr(v.getV2()),
                     visitExpr(v.getV3()),
                     visitExpr(v.getV4()),
                     visitExpr(v.getV5())
-            );
+            ));
         }
         @Override
         public Object visit(ETuple6 v) {
-            return new Tuple6(
+            return updatedFromCache(new Tuple6(
                     visitExpr(v.getV1()),
                     visitExpr(v.getV2()),
                     visitExpr(v.getV3()),
                     visitExpr(v.getV4()),
                     visitExpr(v.getV5()),
                     visitExpr(v.getV6())
-            );
+            ));
         }
         @Override
         public Object visit(ETuple7 v) {
-            return new Tuple7(
+            return updatedFromCache(new Tuple7(
                     visitExpr(v.getV1()),
                     visitExpr(v.getV2()),
                     visitExpr(v.getV3()),
@@ -163,7 +188,7 @@ public class ExprRowReader {
                     visitExpr(v.getV5()),
                     visitExpr(v.getV6()),
                     visitExpr(v.getV7())
-            );
+            ));
         }
         @Override
         public Object visit(ExprConstNumber v) {

@@ -1,35 +1,27 @@
 package com.persistentbit.sql.codegen;
 
 
-import com.persistentbit.core.Nullable;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.sourcegen.SourceGen;
-import com.persistentbit.core.tokenizer.Token;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.StringUtils;
-import com.persistentbit.core.utils.builders.NOT;
-import com.persistentbit.core.utils.builders.SET;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.DbSql;
 import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.*;
 import com.persistentbit.sql.transactions.SQLTransactionRunner;
-import com.persistentbit.substema.compiler.*;
+import com.persistentbit.substema.compiler.SubstemaCompiler;
+import com.persistentbit.substema.compiler.SubstemaUtils;
+import com.persistentbit.substema.compiler.values.*;
 import com.persistentbit.substema.javagen.GeneratedJava;
 import com.persistentbit.substema.javagen.JavaGenOptions;
-import com.persistentbit.substema.compiler.values.*;
 import com.persistentbit.substema.javagen.JavaGenUtils;
 
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Created by petermuys on 14/09/16.
@@ -49,63 +41,59 @@ public class DbJavaGen {
         this.service = service;
         this.packageName = service.getPackageName();
         this.compiler = compiler;
-        this.allExternalValueClasses = findAllExternalValueClasses();
+        this.allExternalValueClasses = findAllExternalDefinitions();
     }
 
+    /**
+     * Generate all java classes for this DB Substema.
+     *
+     * @param options   Code gen options
+     * @param service   The substema
+     * @param compiler  The substema compiler
+     * @return  PList with all the generated java files
+     */
     static public PList<GeneratedJava>  generate(JavaGenOptions options,RSubstema service,SubstemaCompiler compiler){
         return new DbJavaGen(options,service,compiler).generateService();
     }
 
+    /**
+     * Generate all java classes for this DB Substema.
+     * @return PList with all the generated java files
+     */
     public PList<GeneratedJava> generateService(){
-        PList<GeneratedJava> result = PList.empty();
 
-        //System.out.println("ALL EXTERNAL: " + allExternalValueClasses);
-        result = result.plusAll(service.getValueClasses().map(vc -> new Generator().generateValueClass(vc)));
-        result = result.plusAll(allExternalValueClasses.map(c -> {
-            RSubstema substema = compiler.compile(c.getPackageName());
-            RValueClass vc = substema.getValueClasses().find(evc -> evc.getTypeSig().getName().equals(c)).get();
-            return new Generator().generateValueClass(vc);
-        }));
-        result = result.plus(new Generator().generateDb(service.getValueClasses()));
-        return result.filterNulls().plist();
+
+        //Generate value classes defined in this substema
+        PList<GeneratedJava> generatedForThisSubstema = service.getValueClasses().map(vc -> new Generator().generateValueClass(vc));
+
+
+        //For all external case classes that are used
+        //in this substema, generate the db description
+        PList<GeneratedJava> generatedDescriptions =
+                allExternalValueClasses.map( c-> {
+                    if(c.getPackageName().isEmpty()){
+                        //must be an enum;
+                        return null;
+                    }
+                    RSubstema substema = compiler.compile(c.getPackageName());
+                    RValueClass vc = substema.getValueClasses().find(evc -> evc.getTypeSig().getName().equals(c)).orElse(null);
+                    if(vc == null){
+                        return null;
+                    }
+                    return new Generator().generateValueClass(vc);
+                }).filterNulls().plist();
+
+
+        GeneratedJava generatedDbClass = new Generator().generateDb(service.getValueClasses());
+
+
+        return PList.val(generatedDbClass)
+                .plusAll(generatedForThisSubstema)
+                .plusAll(generatedDescriptions)
+                ;
     }
 
-    private PSet<RClass> findAllExternalValueClasses() {
-        PSet<RClass> found = PSet.empty();
-        for(RValueClass vc : service.getValueClasses()){
-            found = findExternalValueClasses(found,vc.getTypeSig().getName());
-        }
-        return found;
-    }
 
-    private Optional<RValueClass> getValueClass(RClass cls){
-        return service.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls));
-    }
-
-    private PSet<RClass> findExternalValueClasses(PSet<RClass> found,RClass cls){
-        if(found.contains(cls)){
-            return found;
-        }
-        if(SubstemaUtils.isSubstemaClass(cls)){
-            return found;
-        }
-        RValueClass vc = getValueClass(cls).orElse(null);
-
-
-        if(cls.getPackageName().equals(packageName) == false){
-            found = found.plus(cls);
-        }
-
-        if(vc == null){
-            return found;
-        }
-
-        for(RProperty prop : vc.getProperties()){
-
-            found = found.plusAll(findExternalValueClasses(found,prop.getValueType().getTypeSig().getName()));
-        }
-        return found;
-    }
 
     private class Generator extends SourceGen{
         private PSet<RClass>    imports = PSet.empty();
@@ -263,7 +251,7 @@ public class DbJavaGen {
                 return "r = r.plus(Expr.val(" + getter + "));";
             }else {
                 if(cls.getPackageName().isEmpty()){
-                    throw new SubstemaException("Unknown internal class: "+ cls);
+                    throw new DbJavaGenException("Unknown internal class: "+ cls);
                 }
                 RClass nc = toExprClass(cls);
                 addImport(nc);
@@ -271,6 +259,12 @@ public class DbJavaGen {
             }
         }
 
+        /**
+         * Generate The DB class for this Substema.<br>
+         *
+         * @param valueClasses All the tables value classes
+         * @return The Generated Db java file
+         */
         public GeneratedJava generateDb(PList<RValueClass> valueClasses) {
 
             RClass dbCls = new RClass(packageName,"Db");
@@ -331,7 +325,7 @@ public class DbJavaGen {
 
             }else {
                 if(cls.getPackageName().isEmpty()){
-                    throw new SubstemaException("Unknown internal type:" + cls);
+                    throw new DbJavaGenException("Unknown internal type:" + cls);
                 }
                 RClass nc = toExprClass(cls);
                 //addImport(cls);
@@ -385,6 +379,69 @@ public class DbJavaGen {
 
 
 
+    }
+    /**
+     * Find all external value classes and enums that are used
+     * in this substema
+     * @return Set with RClass's for all used external value classes or enums
+     */
+    private PSet<RClass> findAllExternalDefinitions() {
+        PSet<RClass> found = PSet.empty();
+        for(RValueClass vc : service.getValueClasses()){
+            found = findExternalDefinitions(found,vc.getTypeSig().getName());
+        }
+        return found;
+    }
+
+    /**
+     * Find external classes and enums used by the provided cls.<br>
+     * used enums and substema classes are ignored
+     * @param found list of found external classes
+     * @param cls   The class to process
+     * @return
+     */
+    private PSet<RClass> findExternalDefinitions(PSet<RClass> found, RClass cls){
+        if(found.contains(cls)){
+            return found;
+        }
+        if(SubstemaUtils.isSubstemaClass(cls)){
+            return found;
+        }
+
+        if(cls.getPackageName().equals(packageName) == false){
+            found = found.plus(cls);
+        }
+
+
+        RValueClass vc = getValueClass(cls).orElse(null);
+        if(vc == null){
+
+            return found;
+        }
+
+        for(RProperty prop : vc.getProperties()){
+
+            found = found.plusAll(findExternalDefinitions(found,prop.getValueType().getTypeSig().getName()));
+        }
+        return found;
+    }
+
+    /**
+     * Return the optional RValueClass defined in the service substema by checking the RClass
+     * @param cls The Value class to find
+     * @return empty or some RValueClass
+     */
+    private Optional<RValueClass> getValueClass(RClass cls){
+        return service.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls));
+    }
+
+    /**
+     * Return the optional REnum defined in the service substem by checking the RClass
+     * @param cls The RClass to find
+     * @return empty or some REnum
+     */
+    private Optional<REnum> getEnum(RClass cls){
+        return service.getEnums().find(vc -> vc.getName().equals(cls));
     }
 
 

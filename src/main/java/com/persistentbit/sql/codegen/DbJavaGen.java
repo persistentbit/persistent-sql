@@ -196,6 +196,7 @@ public class DbJavaGen {
                         RClass pcls = p.getValueType().getTypeSig().getName();
 
                         String javaClassName = JavaGenUtils.toString(packageName,pcls);
+                        //For internal Substem classes
                         if(SubstemaUtils.isSubstemaClass(pcls)){
                             if(pcls.equals(SubstemaUtils.dateTimeRClass)){
                                 addImport(LocalDateTime.class);
@@ -207,10 +208,14 @@ public class DbJavaGen {
                             }
                             println(javaClassName + " " + p.getName() + " = _rowReader.readNext("+ javaClassName + ".class);");
                         } else {
+
                             if(getInternalOrExternalEnum(pcls).isPresent()){
+                                //For Enums
                                 //Gender gender = Gender.valueOf(rowReader.readNext(String.class));
                                 addImport(pcls);
-                                println(pcls.getClassName() + " " + p.getName() + " = " + pcls.getClassName() + ".valueOf(_rowReader.readNext(String.class));");
+                                String enumStringName = "_" + p.getName() + "String";
+                                println("String " + enumStringName +" = _rowReader.readNext(String.class);");
+                                println(pcls.getClassName() + " " + p.getName() + " = " + enumStringName +"== null ? null : "+ pcls.getClassName() + ".valueOf(" + enumStringName + ");");
                             } else {
                                 addImport(pcls);
                                 javaClassName = JavaGenUtils.toString(packageName,pcls.withPackageName(packageName));
@@ -222,7 +227,7 @@ public class DbJavaGen {
                         }
 
                     });
-                    String allNull = vc.getProperties().map(p -> p.getName() + "==null").toString(" && ");
+                    String allNull = vc.getProperties().filter(p -> p.getValueType().isRequired()).map(p -> p.getName() + "==null").toString(" || ");
                     if(allNull.isEmpty() == false){
                         println("if(" + allNull+") { return null; }");
                     }

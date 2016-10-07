@@ -1,0 +1,27 @@
+
+annotation Table{
+    name:String;
+}
+
+annotation Column{
+    name:String;
+}
+
+annotation Key{
+
+}
+
+annotation AutoGen{
+
+}
+
+annotation OneToOne{
+    table:String;
+    column:String;
+}
+
+annotation OneToMany{
+    table:String;
+    column:String;
+}
+

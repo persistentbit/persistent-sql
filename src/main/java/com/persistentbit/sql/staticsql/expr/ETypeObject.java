@@ -2,7 +2,6 @@ package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.core.utils.StringUtils;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -26,11 +25,9 @@ public interface ETypeObject<T> extends Expr<T>{
 
     Optional<Expr<?>> getParent();
 
-    default String getTableName(){
-        return StringUtils.dropLast(getClass().getSimpleName(),1);
-    }
+    String _getTableName();
     default String getInstanceName() {
-        return getTableName();
+        return _getTableName();
     }
 
     default EValTable<T> val(T value){

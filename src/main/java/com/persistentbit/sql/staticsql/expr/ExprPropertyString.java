@@ -5,7 +5,7 @@ package com.persistentbit.sql.staticsql.expr;
  * @since 28/09/2016
  */
 public class ExprPropertyString extends ExprProperty<String> implements ETypeString {
-    public ExprPropertyString(Expr parent, String propertyName) {
-        super(String.class,parent,propertyName);
+    public ExprPropertyString(Expr parent, String propertyName, String columnName) {
+        super(String.class,parent,propertyName,columnName);
     }
 }

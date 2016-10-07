@@ -54,9 +54,9 @@ public class ExprToSql implements ExprVisitor<String>{
         ETypeObject parent = (ETypeObject)v.getParent();
 
         if(parent.getParent().isPresent() == false){
-            return visit(parent)+"." + v.getPropertyName();
+            return visit(parent)+"." + v.getColumnName();
         } else {
-            return visit(parent)+"_" + v.getPropertyName();
+            return visit(parent)+"_" + v.getColumnName();
         }
 
     }

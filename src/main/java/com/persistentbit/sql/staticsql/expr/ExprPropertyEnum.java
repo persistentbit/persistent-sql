@@ -7,7 +7,7 @@ import java.time.LocalDate;
  */
 public class ExprPropertyEnum<T extends Enum<?>>  extends ExprProperty<T> implements ETypeEnum<T> {
 
-    public ExprPropertyEnum(Class<T> valueClass, Expr parent, String propertyName) {
-        super(valueClass, parent, propertyName);
+    public ExprPropertyEnum(Class<T> valueClass, Expr parent, String propertyName,String columnName) {
+        super(valueClass, parent, propertyName,columnName);
     }
 }

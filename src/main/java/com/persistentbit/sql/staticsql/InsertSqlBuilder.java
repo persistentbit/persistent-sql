@@ -27,14 +27,14 @@ public class InsertSqlBuilder {
     public String generate() {
         String nl = "\r\n";
         String res = "";
-        String tableName = insert.getInto().getTableName();
-        res += "INSERT INTO " + insert.getInto().getTableName() + " ";
+        String tableName = insert.getInto()._getTableName();
+        res += "INSERT INTO " + insert.getInto()._getTableName() + " ";
         PList<Tuple2<String,Expr>> all = insert.getInto()._all();
         PList<Expr> expanded = all.map(e -> ExprExpand.exapand(e._2)).<Expr>flatten().plist();
         PList<Expr> expandedGenerated = ExprExpand.exapand(generatedKeys);
         PList<Expr> expandedNotGenerated = expanded.filter( e -> expandedGenerated.contains(e) == false);
 
-        PList<String> names = expandedNotGenerated.map(e -> ExprToSql.toSql(e,t-> Optional.of(t.getTableName()),dbType)).map(n -> n.substring(tableName.length()+1));
+        PList<String> names = expandedNotGenerated.map(e -> ExprToSql.toSql(e,t-> Optional.of(t._getTableName()),dbType)).map(n -> n.substring(tableName.length()+1));
         res += "(" + names.toString(", ") + ")" + nl;
         res += "VALUES \r\n";
         res += insert.getValues().map(v -> {
@@ -46,11 +46,11 @@ public class InsertSqlBuilder {
                     valsNoGen = valsNoGen.plus(vals.get(t));
                 }
             }
-            return valsNoGen.map(vn->ExprToSql.toSql(vn,t -> Optional.of(t.getTableName()),dbType)).toString("(",", ", ")");
+            return valsNoGen.map(vn->ExprToSql.toSql(vn,t -> Optional.of(t._getTableName()),dbType)).toString("(",", ", ")");
         }).toString(",\r\n");
 
 
-        //res += insert.getValues().map(v -> ExprToSql.toSql(v,t -> Optional.of(t.getTableName()),dbType)).toString(",\r\n");
+        //res += insert.getValues().map(v -> ExprToSql.toSql(v,t -> Optional.of(t._getTableName()),dbType)).toString(",\r\n");
         return res.toString();
     }
 }

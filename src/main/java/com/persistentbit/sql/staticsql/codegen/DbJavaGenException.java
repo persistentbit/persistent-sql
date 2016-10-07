@@ -1,4 +1,4 @@
-package com.persistentbit.sql.codegen;
+package com.persistentbit.sql.staticsql.codegen;
 
 /**
  * @author Peter Muys

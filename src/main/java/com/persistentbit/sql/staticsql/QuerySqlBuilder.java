@@ -49,7 +49,7 @@ public class QuerySqlBuilder {
         PList<String> asSql = expanded.map(this::toSql);
         String nl = "\r\n";
         String sql = "SELECT " + asSql.toString(", ") + nl;
-        sql += " FROM " + q.getFrom().getTableName() + " AS " + tables.get(q.getFrom()).getName() + nl;
+        sql += " FROM " + q.getFrom()._getTableName() + " AS " + tables.get(q.getFrom()).getName() + nl;
         sql += q.getJoins().map(j -> joinToString(j)).toString(nl);
         sql += q.getWhere().map(w -> nl + "WHERE " + toSql(w)).orElse("");
 
@@ -65,7 +65,7 @@ public class QuerySqlBuilder {
             default: throw new IllegalArgumentException(join.getType().toString());
 
         }
-        res += " " + join.getTable().getTableName() + " " + getTableName(join.getTable()).get();
+        res += " " + join.getTable()._getTableName() + " " + getTableName(join.getTable()).get();
         res += join.getJoinExpr().map( e -> " ON " + toSql(e)).get();
         return res;
     }

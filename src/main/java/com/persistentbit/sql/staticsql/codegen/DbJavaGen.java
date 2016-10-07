@@ -1,9 +1,10 @@
-package com.persistentbit.sql.codegen;
+package com.persistentbit.sql.staticsql.codegen;
 
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
+import com.persistentbit.core.logging.PLog;
 import com.persistentbit.core.sourcegen.SourceGen;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.StringUtils;
@@ -16,13 +17,12 @@ import com.persistentbit.sql.transactions.SQLTransactionRunner;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
 import com.persistentbit.substema.compiler.SubstemaUtils;
 import com.persistentbit.substema.compiler.values.*;
-import com.persistentbit.substema.javagen.GeneratedJava;
-import com.persistentbit.substema.javagen.JavaGenOptions;
-import com.persistentbit.substema.javagen.JavaGenUtils;
+import com.persistentbit.substema.javagen.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * Created by petermuys on 14/09/16.
@@ -30,18 +30,27 @@ import java.util.Optional;
 public class DbJavaGen {
 
     private final JavaGenOptions options;
-    private final RSubstema service;
-    private final String  packageName;
-    private PList<GeneratedJava>    generatedJava = PList.empty();
-    private SubstemaCompiler    compiler;
+    private final RSubstema substema;
+
+    private final SubstemaCompiler    compiler;
     private PSet<RClass> allExternalValueClasses;
 
 
-    private DbJavaGen(JavaGenOptions options, RSubstema service, SubstemaCompiler compiler) {
+    static public final String packageDbAnnotations = "com.persistentbit.sql.annotations";
+    static public final RClass rclassTable = new RClass(packageDbAnnotations,"Table");
+    static public final RClass rclassColumn = new RClass(packageDbAnnotations,"Column");
+
+
+    private DbJavaGen(JavaGenOptions options, String packageName, SubstemaCompiler compiler) {
         this.options = options;
-        this.service = service;
-        this.packageName = service.getPackageName();
+
+        /*this.compiler = compiler
+                .withImplicitImportPackages(
+                        compiler.getImplicitImportPackages().plus(packageDbAnnotations)
+                );*/
         this.compiler = compiler;
+        this.substema = this.compiler.compile(packageName);
+
         this.allExternalValueClasses = findAllExternalDefinitions();
     }
 
@@ -49,12 +58,11 @@ public class DbJavaGen {
      * Generate all java classes for this DB Substema.
      *
      * @param options   Code gen options
-     * @param service   The substema
      * @param compiler  The substema compiler
      * @return  PList with all the generated java files
      */
-    static public PList<GeneratedJava>  generate(JavaGenOptions options,RSubstema service,SubstemaCompiler compiler){
-        return new DbJavaGen(options,service,compiler).generateService();
+    static public PList<GeneratedJava>  generate(JavaGenOptions options,String packageName,SubstemaCompiler compiler){
+        return new DbJavaGen(options,packageName,compiler).generateService();
     }
 
     /**
@@ -63,9 +71,15 @@ public class DbJavaGen {
      */
     public PList<GeneratedJava> generateService(){
 
+        PList<GeneratedJava> tableValueClasses = SubstemaJavaGen.generate(compiler,options,substema);
 
         //Generate value classes defined in this substema
-        PList<GeneratedJava> generatedForThisSubstema = service.getValueClasses().map(vc -> new Generator().generateValueClass(vc));
+        PList<GeneratedJava> generatedForThisSubstema =
+                substema.getValueClasses()
+                        .map(vc -> new Generator(compiler,substema.getPackageName())
+                                .generateValueClass(vc)
+                        )
+                ;
 
 
         //For all external case classes that are used
@@ -81,55 +95,34 @@ public class DbJavaGen {
                     if(vc == null){
                         return null;
                     }
-                    return new Generator().generateValueClass(vc);
+                    return new Generator(compiler,this.substema.getPackageName()).generateValueClass(vc);
                 }).filterNulls().plist();
 
 
-        GeneratedJava generatedDbClass = new Generator().generateDb(service.getValueClasses());
+        GeneratedJava generatedDbClass = new Generator(compiler,substema.getPackageName()).generateDb(substema.getValueClasses());
 
 
         return PList.val(generatedDbClass)
                 .plusAll(generatedForThisSubstema)
                 .plusAll(generatedDescriptions)
+                .plusAll(tableValueClasses)
                 ;
     }
 
 
 
-    private class Generator extends SourceGen{
+    private class Generator extends AbstractJavaGenerator{
         private PSet<RClass>    imports = PSet.empty();
         private SourceGen       header = new SourceGen();
 
 
-        public Generator() {
-            header.println("// GENERATED CODE FOR DB TABLE: DO NOT CHANGE!");
-            header.println("");
-        }
+        public Generator(SubstemaCompiler compiler, String packageName) {
+            super(compiler,packageName);
 
-        public GeneratedJava    toGenJava(RClass cls){
-            SourceGen sg = new SourceGen();
-            header.println("package " + packageName + ";");
-            header.println("");
-            sg.add(header);
-            imports.filter(i -> i.getPackageName().equals(packageName) == false).forEach(i -> {
-                sg.println("import " + i.getPackageName() + "." + i.getClassName() + ";");
-            });
-            sg.println("");
-            sg.add(this);
-            return new GeneratedJava(cls,sg.writeToString());
-        }
-
-
-        private void addImport(RClass cls){
-
-            imports = imports.plus(cls);
-        }
-        private void addImport(Class<?> cls){
-            addImport(new RClass(cls.getPackage().getName(),cls.getSimpleName()));
         }
 
         private RClass toExprClass(RClass cls){
-            return cls.withClassName(cls.getClassName()+"_").withPackageName(packageName);
+            return cls.withClassName("_" + cls.getClassName()).withPackageName(packageName);
         }
 
         public GeneratedJava    generateValueClass(RValueClass vc){
@@ -140,8 +133,12 @@ public class DbJavaGen {
             addImport(vcCls);
             addImport(Expr.class);
             addImport(ETypeObject.class);
+
+            // ********   Table Definition class
+
             bs("public class " + cls.getClassName() + " implements ETypeObject<" + vcCls.getClassName() + ">");
             {
+                // ************ Construction & Parent Expression
                 addImport(DbSql.class);
                 println("private final Expr __parent;");
 
@@ -158,12 +155,28 @@ public class DbJavaGen {
                 addImport(Optional.class);
                 println("@Override");
                 println("public Optional<Expr<?>> getParent() { return Optional.ofNullable(this.__parent); }");
+                // *****************  _getTableName
+
+                println("");
+                println("@Override");
+                bs("public String _getTableName()");{
+                    String name = atUtils.getOneAnnotation(vc.getAnnotations(),rclassTable)
+                            .map(at -> atUtils.getStringProperty(at,"name").orElse(null)).orElse(null);
+                    if(name == null) { name = vcCls.getClassName(); }
+                    println("return \"" + name + "\";");
+                }be();
+
+
+                // *****************  toString
 
                 println("");
                 println("@Override");
                 println("public String toString() { return getInstanceName(); }");
 
                 println("");
+
+                // ***************** properties
+
                 vc.getProperties().forEach(this::generateProperty);
 
                 // ****************** _all()
@@ -322,34 +335,39 @@ public class DbJavaGen {
             String type;
             String value;
             RClass cls = property.getValueType().getTypeSig().getName();
+            String tableName = property.getName();
+            RAnnotation columnAt =atUtils.getOneAnnotation(property.getAnnotations(),rclassColumn).orElse(null);
+            if(columnAt != null){
+                tableName = atUtils.getStringProperty(columnAt,"name").orElse(tableName);
+            }
             if(SubstemaUtils.isNumberClass(cls)){
                 addImport(ETypeNumber.class);
                 addImport(ExprPropertyNumber.class);
                 type = "ETypeNumber<" + cls.getClassName() + ">";
-                value = "new ExprPropertyNumber<>(" + cls.getClassName() + ".class,this,\"" + property.getName() + "\");";
+                value = "new ExprPropertyNumber<>(" + cls.getClassName() + ".class,this,\"" + property.getName()  + "\", \"" + tableName+ "\");";
             } else if (cls.equals(SubstemaUtils.booleanRClass)){
                 addImport(ETypeBoolean.class);
                 addImport(ExprPropertyBoolean.class);
                 type = "ETypeBoolean";
-                value = "new ExprPropertyBoolean(this,\"" + property.getName() + "\");";
+                value = "new ExprPropertyBoolean(this,\"" + property.getName() + "\", \"" + tableName+ "\");";
             } else if (cls.equals(SubstemaUtils.stringRClass)){
                 addImport(ETypeString.class);
                 addImport(ExprPropertyString.class);
                 type = "ETypeString";
-                value = "new ExprPropertyString(this,\"" + property.getName() + "\");";
+                value = "new ExprPropertyString(this,\"" + property.getName() + "\", \"" + tableName+ "\");";
             } else if(cls.equals(SubstemaUtils.dateTimeRClass)){
                 addImport(LocalDateTime.class);
                 addImport(ExprPropertyDateTime.class);
                 addImport(ETypeDateTime.class);
                 type = "ETypeDateTime";
-                value = "new ExprPropertyDateTime(this,\"" + property.getName() + "\");";
+                value = "new ExprPropertyDateTime(this,\"" + property.getName() + "\", \"" + tableName+ "\");";
 
             } else if(cls.equals(SubstemaUtils.dateRClass)){
                 addImport(LocalDate.class);
                 addImport(ExprPropertyDate.class);
                 addImport(ETypeDate.class);
                 type = "ETypeDate";
-                value = "new ExprPropertyDate(this,\"" + property.getName() + "\");";
+                value = "new ExprPropertyDate(this,\"" + property.getName() + "\", \"" + tableName+ "\");";
 
             }else {
                 if(cls.getPackageName().isEmpty()){
@@ -364,7 +382,7 @@ public class DbJavaGen {
                     String valueName = ExprPropertyEnum.class.getSimpleName();
 
                     type = ExprPropertyEnum.class.getSimpleName()+ "<" + cls.getClassName() + ">";
-                    value = "new " +  type + "(" + cls.getClassName() + ".class,this,\"" + property.getName() + "\");";
+                    value = "new " +  type + "(" + cls.getClassName() + ".class,this,\"" + property.getName() + "\", \""+ tableName+ "\");";
                 } else {
                     RClass nc = toExprClass(cls);
                     //addImport(cls);
@@ -372,7 +390,7 @@ public class DbJavaGen {
                     addImport(ExprProperty.class);
                     type = JavaGenUtils.toString(packageName,nc);
                     String valueClass = cls.getClassName();
-                    value = "new " + type + "(new ExprProperty("+ valueClass + ".class,this,\"" + property.getName() + "\"));";
+                    value = "new " + type + "(new ExprProperty("+ valueClass + ".class,this,\"" + property.getName() + "\", \"" + tableName+ "\"));";
                 }
 
 
@@ -442,7 +460,7 @@ public class DbJavaGen {
      */
     private PSet<RClass> findAllExternalDefinitions() {
         PSet<RClass> found = PSet.empty();
-        for(RValueClass vc : service.getValueClasses()){
+        for(RValueClass vc : substema.getValueClasses()){
             found = findExternalDefinitions(found,vc.getTypeSig().getName());
         }
         return found;
@@ -463,7 +481,7 @@ public class DbJavaGen {
             return found;
         }
 
-        if(cls.getPackageName().equals(packageName) == false){
+        if(cls.getPackageName().equals(substema.getPackageName()) == false){
             found = found.plus(cls);
         }
 
@@ -482,21 +500,21 @@ public class DbJavaGen {
     }
 
     /**
-     * Return the optional RValueClass defined in the service substema by checking the RClass
+     * Return the optional RValueClass defined in the substema substema by checking the RClass
      * @param cls The Value class to find
      * @return empty or some RValueClass
      */
     private Optional<RValueClass> getValueClass(RClass cls){
-        return service.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls));
+        return substema.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls));
     }
 
     /**
-     * Return the optional REnum defined in the service substem by checking the RClass
+     * Return the optional REnum defined in the substema substem by checking the RClass
      * @param cls The RClass to find
      * @return empty or some REnum
      */
     private Optional<REnum> getEnum(RClass cls){
-        return service.getEnums().find(vc -> vc.getName().equals(cls));
+        return substema.getEnums().find(vc -> vc.getName().equals(cls));
     }
 
 

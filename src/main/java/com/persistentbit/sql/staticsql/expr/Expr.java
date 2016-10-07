@@ -1,6 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
-import com.persistentbit.sql.codegen.DbJavaGenException;
+import com.persistentbit.sql.staticsql.codegen.DbJavaGenException;
 import com.persistentbit.sql.staticsql.ENumberGroup;
 
 import java.time.LocalDate;

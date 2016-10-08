@@ -4,6 +4,7 @@ import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.function.Function2;
 import com.persistentbit.core.logging.PLog;
 import com.persistentbit.core.utils.NotYet;
+import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
@@ -33,6 +34,15 @@ public class DbSql {
     public int runInsert(ETypeObject table, Expr...values){
         Insert insert = Insert.into(table,values);
         return run(insert);
+    }
+
+    public <T> T runInsertWithGenKeys(ETypeObject<T> table, T value){
+        Expr autoKey = table._getAutoGenKey().orElse(null);
+        if(autoKey == null){
+            throw new PersistSqlException("Expected a Table with 1 auto generated key");
+        }
+        Object autoKeyValue = runInsertWithGenKeys(table,value,autoKey);
+        return table._setAutoGenKey(value,autoKeyValue);
     }
 
     public <T,K,R> R runInsertWithGenKeys(ETypeObject<T> table, T value, Expr<K> generatedKey,Function2<T,K,R> mapper){

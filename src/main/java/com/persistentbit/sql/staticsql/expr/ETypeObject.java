@@ -33,4 +33,7 @@ public interface ETypeObject<T> extends Expr<T>{
     default EValTable<T> val(T value){
         return new EValTable<>(this,value);
     }
+
+    Optional<Expr> _getAutoGenKey();
+    T _setAutoGenKey(T object, Object value);
 }

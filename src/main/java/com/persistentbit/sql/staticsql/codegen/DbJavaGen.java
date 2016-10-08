@@ -8,6 +8,7 @@ import com.persistentbit.core.logging.PLog;
 import com.persistentbit.core.sourcegen.SourceGen;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.StringUtils;
+import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.DbSql;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
@@ -39,6 +40,7 @@ public class DbJavaGen {
     static public final String packageDbAnnotations = "com.persistentbit.sql.annotations";
     static public final RClass rclassTable = new RClass(packageDbAnnotations,"Table");
     static public final RClass rclassColumn = new RClass(packageDbAnnotations,"Column");
+    static public final RClass rclassAutoGen = new RClass(packageDbAnnotations,"AutoGen");
 
 
     private DbJavaGen(JavaGenOptions options, String packageName, SubstemaCompiler compiler) {
@@ -254,10 +256,46 @@ public class DbJavaGen {
 
                 }be();
 
-
+                //**************   Auto Generated Key
+                generateAutGenKeyFunctions(vc);
 
             }be();
             return toGenJava(cls);
+        }
+
+        private void generateAutGenKeyFunctions(RValueClass vc){
+            /*
+            public Optional<Expr<?>> _getAutoGenKey(){
+                return Optional.of(id);
+            }
+            public TranslationUser	setAutoGenKey(TranslationUser object, Object value){
+                return object.withId((Long)value);
+            }
+            */
+            RProperty autoGenProp = vc.getProperties().find(p -> atUtils.getOneAnnotation(p.getAnnotations(),rclassAutoGen).isPresent()).orElse(null);
+            addImport(Optional.class);
+            println("@Override");
+            bs("public Optional<Expr> _getAutoGenKey()");{
+                if(autoGenProp == null){
+                    println("return Optional.empty();");
+                } else {
+                    println("return Optional.of(" + autoGenProp.getName() + ");");
+                }
+            }be();
+            String vcName = vc.getTypeSig().getName().getClassName();
+            println("@Override");
+            bs("public " + vcName + " _setAutoGenKey(" + vcName + " object, Object value)");{
+                if(autoGenProp == null){
+                    addImport(PersistSqlException.class);
+                    println("throw new PersistSqlException(\" There is no auto generated key for " + vcName+ "\");");
+                } else {
+                    String typeName =autoGenProp.getValueType().getTypeSig().getName().getClassName();
+                    println("return object.with" +
+                            StringUtils.firstUpperCase(autoGenProp.getName()) + "((" + typeName + ") value);");
+                }
+            }be();
+
+
         }
 
         /**

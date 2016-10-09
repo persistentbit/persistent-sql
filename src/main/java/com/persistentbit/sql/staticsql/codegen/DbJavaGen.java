@@ -41,7 +41,7 @@ public class DbJavaGen {
     static public final RClass rclassTable = new RClass(packageDbAnnotations,"Table");
     static public final RClass rclassColumn = new RClass(packageDbAnnotations,"Column");
     static public final RClass rclassAutoGen = new RClass(packageDbAnnotations,"AutoGen");
-
+    static public final RClass rclassKey = new RClass(packageDbAnnotations,"Key");
 
     private DbJavaGen(JavaGenOptions options, String packageName, SubstemaCompiler compiler) {
         this.options = options;

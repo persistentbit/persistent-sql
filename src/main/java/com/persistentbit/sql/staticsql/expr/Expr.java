@@ -47,6 +47,7 @@ public interface Expr<S>{
         return new ExprEnum<>(value,value.getClass());
     }
 
+
     static <T extends Enum<T>> ETypeEnum<T> valNullEnum(Class<T> value){
         return new ExprEnum<>(null,value);
     }

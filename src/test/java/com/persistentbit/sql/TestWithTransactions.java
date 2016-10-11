@@ -22,7 +22,7 @@ public class TestWithTransactions {
     public void setupTransactions() {
         dbConnector = new InMemConnectionProvider();
         trans = new TransactionRunnerPerThread(dbConnector);
-        loader = new SqlLoader("Tests.sql");
+        loader = new SqlLoader("/db/Tests.sql");
     }
     @After
     public void closeTransactions() {

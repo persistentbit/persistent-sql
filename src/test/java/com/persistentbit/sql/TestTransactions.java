@@ -15,8 +15,8 @@ public class TestTransactions extends TestWithTransactions {
 
     @Test
     public void testTrans(){
-        trans.run(c -> {
-            String sql = loader.getOne("create_test_table");
+        trans.trans(c -> {
+            String sql = loader.getAll("create_test_table").head();
             log.fine(sql);
             PreparedStatement stat = c.prepareStatement(sql);
             stat.execute();

@@ -15,11 +15,11 @@ public class TestSchemaHistory extends TestWithTransactions {
     @Test
     public void testa(){
         assert trans != null;
-        trans.run(c -> {
+        trans.trans(c -> {
             SchemaUpdateHistory uh = new SchemaUpdateHistoryImpl(trans);
-            assert uh.isDone("com.persistbit","persist-sql","testupdatehistory") == false;
-            uh.setDone("com.persistbit","persist-sql","testupdatehistory");
-            assert uh.isDone("com.persistbit","persist-sql","testupdatehistory");
+            assert uh.isDone("com.persistbit.persist-sql","testupdatehistory") == false;
+            uh.setDone("com.persistbit.persist-sql","testupdatehistory");
+            assert uh.isDone("com.persistbit.persist-sql","testupdatehistory");
         });
 
 

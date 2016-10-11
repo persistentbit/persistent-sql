@@ -13,6 +13,7 @@ import com.persistentbit.sql.staticsql.DbSql;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.*;
+import com.persistentbit.sql.transactions.TransactionRunner;
 import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
 import com.persistentbit.substema.compiler.SubstemaUtils;
@@ -344,10 +345,10 @@ public class DbJavaGen {
             addImport(dbCls);
             //addImport(ExprDb.class);
             addImport(DbSql.class);
-            addImport(TransactionRunnerPerThread.class);
+            addImport(TransactionRunner.class);
             addImport(DbType.class);
             bs("public class Db extends DbSql");{
-                bs("public Db(DbType dbType, SQLTransactionRunner trans)");{
+                bs("public Db(DbType dbType, "+ TransactionRunner.class.getSimpleName() + " trans)");{
                     println("super(dbType, trans);");
                 }be();
 

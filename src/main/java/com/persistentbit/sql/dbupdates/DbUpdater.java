@@ -32,7 +32,7 @@ public class DbUpdater{
         this.sqlLoader = new SqlLoader(sqlResourceName);
         this.updateHistory = updateHistory;
     }
-    public DbUpdater(TransactionRunnerPerThread runner, String packageName, String sqlResourceName){
+    public DbUpdater(TransactionRunner runner, String packageName, String sqlResourceName){
         this(runner,packageName,sqlResourceName,new SchemaUpdateHistoryImpl(runner));
     }
 

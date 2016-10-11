@@ -7,6 +7,7 @@ import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
+import com.persistentbit.sql.transactions.TransactionRunner;
 import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 
 import java.sql.PreparedStatement;
@@ -19,9 +20,9 @@ import java.sql.Statement;
 public class DbSql {
     static private final PLog log = PLog.get(DbSql.class);
     private final DbType    dbType;
-    private final TransactionRunnerPerThread run;
+    private final TransactionRunner run;
 
-    public DbSql(DbType dbType, TransactionRunnerPerThread run) {
+    public DbSql(DbType dbType, TransactionRunner run) {
         this.dbType = dbType;
         this.run = run;
     }

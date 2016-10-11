@@ -105,7 +105,7 @@ public class SqlLoader {
                     allCurrent.add(current);
                 }
 
-                snippets.put(entry.getKey(),allCurrent);
+                snippets = snippets.put(entry.getKey(),allCurrent);
 
             }
         }catch(IOException e){

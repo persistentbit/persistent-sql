@@ -1,12 +1,14 @@
 package com.persistentbit.sql.dbupdates.impl;
 
 import com.persistentbit.core.logging.PLog;
+import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.dbupdates.SchemaUpdateHistory;
 import com.persistentbit.sql.transactions.TransactionRunner;
 
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 
 /**
  * Implements A {@link SchemaUpdateHistory} interface by using a db table<br>
@@ -37,54 +39,56 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
         this(runner,"schema_history");
     }
 
+
+    private void createTableIfNotExist() {
+        runner.trans(c ->{
+            if(tableExists(tableName) == false){
+                return;
+            }
+            try(Statement stat = c.createStatement() ){
+                stat.execute( "CREATE TABLE " + tableName + " (" +
+                        "  createdDate TIMESTAMP          NOT NULL DEFAULT current_timestamp,"+
+                        "  package_name  VARCHAR(80)        NOT NULL,"+
+                        "  update_name  VARCHAR(80)        NOT NULL,"+
+                        "  CONSTRAINT " + tableName +"_uc UNIQUE (package_name,update_name)"+
+                        ")");
+
+            }
+        });
+
+
+    }
+
     @Override
     public boolean isDone(String packageName, String updateName) {
-        throw new RuntimeException("SchemaUpdateHistoryImpl.isDone TODO: Not yet implemented");
+        int count = runner.trans(c -> {
+            try(PreparedStatement stat = c.prepareStatement("select count(1) from " + tableName +
+                    " where package_name=?  and update_name=?")){
+                stat.setString(1,packageName);
+                stat.setString(2,updateName);
+                try(ResultSet rs = stat.executeQuery()){
+                    rs.next();
+                    return rs.getInt(1);
+                }
+            }
+        });
+        return count > 0;
     }
 
     @Override
     public void setDone(String packageName, String updateName) {
-        throw new RuntimeException("SchemaUpdateHistoryImpl.setDone TODO: Not yet implemented");
-    }
-    private void createTableIfNotExist() {
-        EStat stat =stat();
-        if(stat.tableExists(tableName) == false){
-            log.info("Creating table " + tableName);
-            stat.sql(
-                    "CREATE TABLE " + tableName + " (",
-                    "  createdDate TIMESTAMP          NOT NULL DEFAULT current_timestamp,",
-                    "  package_name  VARCHAR(80)        NOT NULL,",
-                    "  update_name  VARCHAR(80)        NOT NULL,",
-                    "  CONSTRAINT " + tableName +"_uc UNIQUE (package_name,update_name)",
-                    ")");
-            stat.execute();
-
-        }
-
-    }
-
-    @Override
-    public boolean isDone(String packageName, String updateName) {
+        String sql = "insert into " + tableName +
+                "(package_name,update_name) values(?,?)";
         runner.trans(c -> {
-            try(PreparedStatement stat = c.prepareStatement("select count(10) from " + tableName +
-                    "where package_name=?  and update_name=?")){
-                stat.setString(1,packageName);
-                stat.setString(2,updateName);
+            try(PreparedStatement s = c.prepareStatement(sql)){
+                s.setString(1,packageName);
+                s.setString(2,updateName);
+                if(s.executeUpdate() != 1){
+                    throw new PersistSqlException("Expected 1 update for " + packageName + "." + updateName);
+                }
             }
+            return;
         });
-        EStat stat = stat();
-        return stat.sql()
-                .arg("projectName",projectName, "moduleName",moduleName,"updateName",updateName)
-                .select().isEmpty() == false;
-    }
-
-    @Override
-    public void setDone(String projectName, String moduleName, String updateName) {
-        EStat stat = stat();
-        stat.sql("insert into " + tableName,
-                "(project_name,module_name,update_name) values(:projectName,:moduleName,:updateName)")
-                .arg("projectName",projectName, "moduleName",moduleName,"updateName",updateName);
-        stat.updateOne();
     }
 
     public boolean tableExists(String tableName){

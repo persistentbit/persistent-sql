@@ -1,7 +1,7 @@
 package com.persistentbit.sql;
 
 import com.persistentbit.sql.statement.SqlLoader;
-import com.persistentbit.sql.transactions.SQLTransactionRunner;
+import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 import org.junit.After;
 import org.junit.Before;
 
@@ -15,13 +15,13 @@ import java.util.logging.Logger;
 public class TestWithTransactions {
     protected Logger log = Logger.getLogger(this.getClass().getName());
     protected InMemConnectionProvider dbConnector;
-    protected SQLTransactionRunner trans;
+    protected TransactionRunnerPerThread trans;
     protected SqlLoader loader;
 
     @Before
     public void setupTransactions() {
         dbConnector = new InMemConnectionProvider();
-        trans = new SQLTransactionRunner(dbConnector);
+        trans = new TransactionRunnerPerThread(dbConnector);
         loader = new SqlLoader("Tests.sql");
     }
     @After

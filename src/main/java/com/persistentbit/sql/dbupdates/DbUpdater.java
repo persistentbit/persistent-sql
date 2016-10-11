@@ -1,93 +1,88 @@
 package com.persistentbit.sql.dbupdates;
 
-import com.persistentbit.core.Pair;
+import com.persistentbit.core.collections.PMap;
 import com.persistentbit.sql.PersistSqlException;
-import com.persistentbit.sql.statement.EStat;
+import com.persistentbit.sql.dbupdates.impl.SchemaUpdateHistoryImpl;
 import com.persistentbit.sql.statement.SqlLoader;
-import com.persistentbit.sql.transactions.SQLTransactionRunner;
-import com.persistentbit.sql.transactions.WithTransactions;
-
+import com.persistentbit.sql.transactions.TransactionRunner;
+import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * User: petermuys
  * Date: 18/06/16
  * Time: 21:42
  */
-public class DbUpdater implements WithTransactions {
+public class DbUpdater{
     protected final Logger log = Logger.getLogger(getClass().getName());
-    protected final SQLTransactionRunner    runner;
-    protected final String projectName;
-    protected final String moduleName;
+    protected final TransactionRunner runner;
+    protected final String packageName;
     protected final SqlLoader sqlLoader;
     protected final SchemaUpdateHistory updateHistory;
 
 
-    public DbUpdater(SQLTransactionRunner runner,String projectName,String moduleName,String sqlResourceName,SchemaUpdateHistory updateHistory){
+    public DbUpdater(TransactionRunner runner, String packageName, String sqlResourceName, SchemaUpdateHistory updateHistory){
         this.runner =runner;
-        this.projectName = projectName;
-        this.moduleName = moduleName;
+        this.packageName = packageName;
         this.sqlLoader = new SqlLoader(sqlResourceName);
         this.updateHistory = updateHistory;
     }
-    public DbUpdater(SQLTransactionRunner runner,String projectName,String moduleName,String sqlResourceName){
-        this(runner,projectName,moduleName,sqlResourceName,new SchemaUpdateHistoryImpl(runner));
+    public DbUpdater(TransactionRunnerPerThread runner, String packageName, String sqlResourceName){
+        this(runner,packageName,sqlResourceName,new SchemaUpdateHistoryImpl(runner));
     }
 
-    @Override
-    public SQLTransactionRunner sqlRunner() {
-        return runner;
-    }
+
 
     private String getFullName(String updateName) {
-        return projectName+"." + moduleName + "." + updateName;
+        return packageName + "." + updateName;
     }
 
 
     /**
-     * Execute all the database update methods not registered in the SchemaHistory table
+     * Execute all the database update methods not registered in the SchemaHistory table.<br>
+     * If there is a declared method in this class with the same name,
+     * then that method is executed with a {@link java.sql.Connection} as argument.<br>
      */
     public void update() {
 
         Class<?> cls = this.getClass();
-        Set<String> names = new HashSet<>(sqlLoader.getAllSnippetNames());
-        List<Pair<String,Optional<Method>>> all = sqlLoader.getAllSnippetNames().stream().map(n -> new Pair<String,Optional<Method>>(n, Optional.empty())).collect(Collectors.toList());
+
+        PMap<String,Method> declaredMethods = PMap.empty();
 
         for(Method m :  cls.getDeclaredMethods()){
-            if(names.contains(m.getName())){
-                all.add(new Pair<>(m.getName(), Optional.of(m)));
-            }
+            declaredMethods = declaredMethods.put(m.getName(),m);
         }
-        all.sort((a,b) -> a.getLeft().compareTo(b.getLeft()));
-        all.forEach( m -> {
-            run((c) -> {
-                if(updateHistory.isDone(projectName,moduleName,m.getLeft())){
+        PMap<String,Method> methods = declaredMethods;
+        sqlLoader.getAllSnippetNames().forEach( name -> {
+            runner.trans((c) -> {
+                if(updateHistory.isDone(packageName,name)){
                     return;
                 }
-                log.info("DBUpdate for  " + getFullName(m.getLeft()));
-                Method met = m.getRight().orElse(null);
-                if(met != null) {
+                log.info("DBUpdate for  " + getFullName(name));
+                methods.getOpt(name).ifPresent(m -> {
                     try {
-                        met.invoke(this);
+                        m.invoke(this,c);
                     } catch (IllegalAccessException |InvocationTargetException e) {
                         throw new PersistSqlException(e);
                     }
-                } else {
-                    sqlLoader.getAll(m.getLeft()).forEach(sql -> {
-                        EStat stat = new EStat(runner);
-                        stat.sql(sql);
-                        stat.execute();
-                    });
-                }
-                updateHistory.setDone(projectName,moduleName,m.getLeft());
+                });
+                sqlLoader.getAll(name).forEach(sql -> {
+                    try{
+                        try(Statement stat = c.createStatement()){
+                            stat.execute(sql);
+                        }
+                    }catch(SQLException e){
+                        throw new RuntimeException("Error executing " + getFullName(name),e);
+                    }
+
+
+                });
+                updateHistory.setDone(packageName,name);
             });
         });
 

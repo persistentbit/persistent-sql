@@ -1,7 +1,7 @@
 package com.persistentbit.sql;
 
 import com.persistentbit.sql.dbupdates.SchemaUpdateHistory;
-import com.persistentbit.sql.dbupdates.SchemaUpdateHistoryImpl;
+import com.persistentbit.sql.dbupdates.impl.SchemaUpdateHistoryImpl;
 import org.junit.Test;
 
 

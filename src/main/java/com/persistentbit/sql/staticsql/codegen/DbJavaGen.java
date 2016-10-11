@@ -4,7 +4,6 @@ package com.persistentbit.sql.staticsql.codegen;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
-import com.persistentbit.core.logging.PLog;
 import com.persistentbit.core.sourcegen.SourceGen;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.StringUtils;
@@ -14,7 +13,7 @@ import com.persistentbit.sql.staticsql.DbSql;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.*;
-import com.persistentbit.sql.transactions.SQLTransactionRunner;
+import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
 import com.persistentbit.substema.compiler.SubstemaUtils;
 import com.persistentbit.substema.compiler.values.*;
@@ -23,7 +22,6 @@ import com.persistentbit.substema.javagen.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.logging.Level;
 
 /**
  * Created by petermuys on 14/09/16.
@@ -346,7 +344,7 @@ public class DbJavaGen {
             addImport(dbCls);
             //addImport(ExprDb.class);
             addImport(DbSql.class);
-            addImport(SQLTransactionRunner.class);
+            addImport(TransactionRunnerPerThread.class);
             addImport(DbType.class);
             bs("public class Db extends DbSql");{
                 bs("public Db(DbType dbType, SQLTransactionRunner trans)");{

@@ -6,15 +6,18 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 /**
+ * A Simple {@link Connection} supplier that uses a jdbc driver to create new Connections.
  * @author Peter Muys
  * @since 13/07/2016
  */
-public class SimpleConnectionProvider implements SQLRunner {
+public class SimpleConnectionProvider implements Supplier<Connection> {
     private final String url;
     private final String userName;
     private final String passWord;
+
     public SimpleConnectionProvider(String driverClass, String url, String userName, String password){
         try {
             Driver driver = (Driver)Class.forName(driverClass).newInstance();

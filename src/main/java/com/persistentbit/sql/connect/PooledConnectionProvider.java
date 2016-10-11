@@ -13,10 +13,11 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
+ * A {@link Connection} supplier that uses a connection pool to return new connections.<br>
  * @author Peter Muys
  * @since 13/07/2016
  */
-public class PooledConnectionProvider implements SQLRunner {
+public class PooledConnectionProvider implements Supplier<Connection> {
     static private final Logger log = Logger.getLogger(PooledConnectionProvider.class.getName());
 
     private final Supplier<Connection> supplier;

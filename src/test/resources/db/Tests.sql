@@ -1,5 +1,4 @@
 -->>create_test_table
-
 CREATE TABLE test_table (
   id INTEGER PRIMARY KEY NOT NULL,
   createddate TIMESTAMP NOT NULL,

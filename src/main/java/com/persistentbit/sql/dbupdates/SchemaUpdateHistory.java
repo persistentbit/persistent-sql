@@ -10,17 +10,15 @@ package com.persistentbit.sql.dbupdates;
 public interface SchemaUpdateHistory {
     /**
      * Is the database update for the provided version done ?
-     * @param projectName   The project Name (ex. com.persistentbit)
-     * @param moduleName    The module Name (ex. persistent-sql)
+     * @param packageName   The package or module Name (ex. com.persistentbit.sql)
      * @param updateName    The name of the update (ex. create_initial_tables)
      * @return is the update done
      */
-    boolean isDone(String projectName,String moduleName,String updateName);
+    boolean isDone(String packageName,String updateName);
     /**
      * set the database update for the provided version as done.
-     * @param projectName   The project Name (ex. com.persistentbit)
-     * @param moduleName    The module Name (ex. persistent-sql)
+     * @param packageName   The package or module Name (ex. com.persistentbit.sql)
      * @param updateName    The name of the update (ex. create_initial_tables)
      */
-    void setDone(String projectName, String moduleName, String updateName);
+    void setDone(String packageName, String updateName);
 }

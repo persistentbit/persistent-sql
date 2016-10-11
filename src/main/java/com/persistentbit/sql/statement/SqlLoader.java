@@ -2,11 +2,17 @@ package com.persistentbit.sql.statement;
 
 
 
+import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.collections.POrderedMap;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -18,13 +24,10 @@ import java.util.stream.Collectors;
  */
 public class SqlLoader {
     static private final Logger log = Logger.getLogger(SqlLoader.class.getName());
-    private final Map<String,List<String>> snippets    =   new LinkedHashMap<>();
+    private POrderedMap<String,List<String>> snippets    =   POrderedMap.empty();
     private final String resourcePath;
 
     public SqlLoader(String resourcePath){
-        if(resourcePath.startsWith("/") == false){
-            resourcePath = "/db/" + resourcePath;
-        }
         this.resourcePath = resourcePath;
         InputStream in = SqlLoader.class.getResourceAsStream(resourcePath);
         if(in == null){
@@ -34,24 +37,13 @@ public class SqlLoader {
         }
     }
 
-    public String getOne(String name){
-        List<String> result = getAll(name);
-        if(result.size() != 1){
-            throw new IllegalArgumentException("Found "+ result.size() +  " statements, expected just 1 for  '" + name + "' in  '" + resourcePath  + "'");
-        }
-        return result.get(0);
+
+    public PList<String> getAll(String name){
+        return  PList.from(snippets.getOpt(name).orElseThrow(()-> new IllegalArgumentException("Can't find snippet '" + name + "' in  '" + resourcePath  + "'")));
     }
 
-    public List<String> getAll(String name){
-        List<String> result = snippets.get(name);
-        if(result == null){
-            throw new IllegalArgumentException("Can't find snippet '" + name + "' in  '" + resourcePath  + "'");
-        }
-        return result;
-    }
-
-    public Collection<String> getAllSnippetNames() {
-        return snippets.keySet();
+    public PList<String> getAllSnippetNames() {
+        return snippets.keys().plist();
     }
 
 

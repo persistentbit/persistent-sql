@@ -6,6 +6,10 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 /**
+ * Used by {@link PooledConnectionProvider} to wrap extra functionality around a {@link Connection}
+ *
+ *
+ * @see PooledConnectionProvider
  * @author Peter Muys
  * @since 13/07/2016
  */
@@ -13,7 +17,7 @@ public class ConnectionWrapper implements Connection{
     private final Connection master;
     private final ConnectionHandler   handler;
 
-    static public interface ConnectionHandler{
+    public interface ConnectionHandler{
         default void onClose(Connection connection) throws SQLException{
             connection.close();
         }

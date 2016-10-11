@@ -1,7 +1,7 @@
 package com.persistentbit.sql;
 
 import com.persistentbit.sql.dbupdates.DbUpdater;
-import com.persistentbit.sql.transactions.SQLTransactionRunner;
+import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 import org.junit.Test;
 
 
@@ -13,7 +13,7 @@ import org.junit.Test;
 public class TestDbUpdate extends TestWithTransactions{
 
     public static class TestUpdater extends DbUpdater{
-        public TestUpdater(SQLTransactionRunner runner) {
+        public TestUpdater(TransactionRunnerPerThread runner) {
             super(runner, "com.persistbit", "persist-sql.test", "/dbupdates/dbupdate_tests.sql");
         }
 

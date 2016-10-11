@@ -1,40 +1,37 @@
 package com.persistentbit.sql.transactions;
 
 
-
 import com.persistentbit.core.Pair;
 import com.persistentbit.sql.PersistSqlException;
-import com.persistentbit.sql.connect.ConnectionWrapper;
-import com.persistentbit.sql.connect.SQLRunner;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
- * A SQLRunner for running code in transactions.<br>
+ * A SQL transaction code Runner that keeps track of the current transaction on a thread basis.<br>
+ *
  * @author Peter Muys
  * @since 29/02/2016
  */
-public class SQLTransactionRunner implements SQLRunner {
-    static private final Logger log = Logger.getLogger(SQLTransactionRunner.class.getName());
+public class TransactionRunnerPerThread implements TransactionRunner {
+    static private final Logger log = Logger.getLogger(TransactionRunnerPerThread.class.getName());
 
     private final Supplier<Connection>   connectionSupplier;
     private AtomicLong  nextTransactionId = new AtomicLong(0);
 
     private ThreadLocal<Pair<Long,Connection>> currentConnection = new ThreadLocal<>();
 
-    public SQLTransactionRunner(Supplier<Connection> connectionSupplier){
+    public TransactionRunnerPerThread(Supplier<Connection> connectionSupplier){
         this.connectionSupplier = connectionSupplier;
     }
 
-    public SQLTransactionRunner(DataSource ds){
+    public TransactionRunnerPerThread(DataSource ds){
         this(() -> {
             try {
                 return ds.getConnection();
@@ -45,9 +42,8 @@ public class SQLTransactionRunner implements SQLRunner {
         });
     }
 
-
     @Override
-    public <T> T run(SqlCodeWithResult<T> code) {
+    public <T> T trans(SqlCodeWithResult<T> code) {
         return doRun(() -> {
             try {
                 return code.run(currentConnection.get()._2);
@@ -58,45 +54,38 @@ public class SQLTransactionRunner implements SQLRunner {
     }
 
     @Override
-    public void run(SqlCode code){
-
+    public void trans(SqlCode code) {
         doRun(() -> {
             try {
                 code.run(currentConnection.get()._2);
-            }catch(SQLException e){
+            } catch (SQLException e) {
                 throw new PersistSqlException(e);
             }
             return null;
         });
     }
 
+    @Override
+    public <T> T transNew(SqlCodeWithResult<T> code) {
+            Pair<Long,Connection> prev = currentConnection.get();
+            try {
+                currentConnection.remove();
+                return trans(code);
+            }finally{
+                currentConnection.set(prev);
+            }
+    }
 
     @Override
-    public Connection get() {
-        return connectionSupplier.get();
+    public void transNew(SqlCode code) {
+            Pair<Long,Connection> prev = currentConnection.get();
+            try {
+                currentConnection.remove();
+                trans(code);
+            }finally{
+                currentConnection.set(prev);
+            }
     }
-
-
-    public void runNew(SqlCode code){
-        Pair<Long,Connection> prev = currentConnection.get();
-        try {
-            currentConnection.remove();
-            run(code);
-        }finally{
-            currentConnection.set(prev);
-        }
-    }
-
-    public <R> R runNew(SqlCodeWithResult<R> code){
-        Pair<Long,Connection> prev = currentConnection.get();
-        try {
-            currentConnection.remove();
-            return run(code);
-        }finally{
-            currentConnection.set(prev);
-        }
-    }
-
 
     public Optional<Long> currentTransactionId() {
         Pair<Long,Connection> con = currentConnection.get();

@@ -3,12 +3,11 @@ package com.persistentbit.sql.staticsql;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.function.Function2;
 import com.persistentbit.core.logging.PLog;
-import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
-import com.persistentbit.sql.transactions.SQLTransactionRunner;
+import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,11 +19,11 @@ import java.sql.Statement;
 public class DbSql {
     static private final PLog log = PLog.get(DbSql.class);
     private final DbType    dbType;
-    private final SQLTransactionRunner  trans;
+    private final TransactionRunnerPerThread run;
 
-    public DbSql(DbType dbType, SQLTransactionRunner trans) {
+    public DbSql(DbType dbType, TransactionRunnerPerThread run) {
         this.dbType = dbType;
-        this.trans = trans;
+        this.run = run;
     }
 
     public Query    queryFrom(ETypeObject typeObject){
@@ -57,7 +56,7 @@ public class DbSql {
         InsertSqlBuilder b = new InsertSqlBuilder(dbType,insert);
         String sql = b.generate();
         log.debug(sql);
-        return trans.run(c -> {
+        return run.trans(c -> {
             PreparedStatement s = c.prepareStatement(sql);
             return s.executeUpdate();
         });
@@ -67,7 +66,7 @@ public class DbSql {
         InsertSqlBuilder b = new InsertSqlBuilder(dbType,ik.getInsert(),ik.getGenerated());
         String sql = b.generate();
         log.debug(sql);
-        return trans.run(c -> {
+        return run.trans(c -> {
             PreparedStatement s = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             int count = s.executeUpdate();
             ExprRowReader exprReader = new ExprRowReader();
@@ -87,7 +86,7 @@ public class DbSql {
         QuerySqlBuilder b = new QuerySqlBuilder(selection,dbType);
         String sql = b.generate();
         log.debug(sql);
-        return trans.run(c-> {
+        return run.trans(c-> {
             PreparedStatement s = c.prepareStatement(sql);
             ExprRowReader exprReader = new ExprRowReader();
             try(ResultSet rs = s.executeQuery()){

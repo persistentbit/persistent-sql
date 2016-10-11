@@ -5,13 +5,13 @@ import com.persistentbit.sql.PersistSqlException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 /**
- * User: petermuys
- * Date: 14/07/16
- * Time: 21:13
+ * {@link Connection} supplier that used a {@link DataSource} to create new connections
+ * @author Peter Muys
  */
-public class DatasourceConnectionProvider implements SQLRunner{
+public class DatasourceConnectionProvider implements Supplier<Connection> {
     private final DataSource    dataSource;
 
     public DatasourceConnectionProvider(DataSource dataSource) {

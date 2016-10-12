@@ -37,11 +37,14 @@ public class SimpleConnectionProvider implements Supplier<Connection> {
     @Override
     public Connection get() {
         try {
+            Connection c;
             if(userName != null){
-                return DriverManager.getConnection(url,userName,passWord);
+                c = DriverManager.getConnection(url,userName,passWord);
             } else {
-                return DriverManager.getConnection(url);
+                c = DriverManager.getConnection(url);
             }
+            c.setAutoCommit(false);
+            return c;
 
         } catch (SQLException e) {
             throw new PersistSqlException(e);

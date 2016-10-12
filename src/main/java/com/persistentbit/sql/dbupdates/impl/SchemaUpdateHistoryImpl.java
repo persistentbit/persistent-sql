@@ -42,7 +42,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 
     private void createTableIfNotExist() {
         runner.trans(c ->{
-            if(tableExists(tableName) == false){
+            if(tableExists(tableName)){
                 return;
             }
             try(Statement stat = c.createStatement() ){
@@ -94,7 +94,9 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
     public boolean tableExists(String tableName){
         return runner.trans(c -> {
             DatabaseMetaData dbm = c.getMetaData();
-            try(ResultSet rs = dbm.getTables(null,null,null,null)){
+
+            try(ResultSet rs = dbm.getTables(null,null,
+                    tableName,null)){
                 while(rs.next()){
                     String tn = rs.getString("table_name");
                     if(tableName.equalsIgnoreCase(tableName)){

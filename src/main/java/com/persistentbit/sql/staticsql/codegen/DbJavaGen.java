@@ -14,15 +14,16 @@ import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.*;
 import com.persistentbit.sql.transactions.TransactionRunner;
-import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
 import com.persistentbit.substema.compiler.SubstemaUtils;
 import com.persistentbit.substema.compiler.values.*;
+import com.persistentbit.substema.compiler.values.expr.RConstEnum;
 import com.persistentbit.substema.javagen.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Created by petermuys on 14/09/16.
@@ -41,6 +42,11 @@ public class DbJavaGen {
     static public final RClass rclassColumn = new RClass(packageDbAnnotations,"Column");
     static public final RClass rclassAutoGen = new RClass(packageDbAnnotations,"AutoGen");
     static public final RClass rclassKey = new RClass(packageDbAnnotations,"Key");
+    static public final RClass rclassNameToLower = new RClass(packageDbAnnotations,"NameToLower");
+    static public final RClass rclassNameToUpper = new RClass(packageDbAnnotations,"NameToUpper");
+    static public final RClass rclassCamelToSnake = new RClass(packageDbAnnotations,"NameCamelToSnake");
+    static public final RClass rclassPrefix = new RClass(packageDbAnnotations,"NamePrefix");
+    static public final RClass rclassPostfix = new RClass(packageDbAnnotations,"NamePostfix");
 
     private DbJavaGen(JavaGenOptions options, String packageName, SubstemaCompiler compiler) {
         this.options = options;
@@ -59,6 +65,7 @@ public class DbJavaGen {
      * Generate all java classes for this DB Substema.
      *
      * @param options   Code gen options
+     * @param packageName   package to generate java for.
      * @param compiler  The substema compiler
      * @return  PList with all the generated java files
      */
@@ -73,6 +80,10 @@ public class DbJavaGen {
     public PList<GeneratedJava> generateService(){
 
         PList<GeneratedJava> tableValueClasses = SubstemaJavaGen.generate(compiler,options,substema);
+
+
+
+
 
         //Generate value classes defined in this substema
         PList<GeneratedJava> generatedForThisSubstema =
@@ -120,6 +131,7 @@ public class DbJavaGen {
         public Generator(SubstemaCompiler compiler, String packageName) {
             super(compiler,packageName);
 
+
         }
 
         private RClass toExprClass(RClass cls){
@@ -130,6 +142,7 @@ public class DbJavaGen {
             RClass vcCls = vc.getTypeSig().getName();
             RClass cls = toExprClass(vcCls);
 
+            Function<String,String> tableNameConverter = createNameConverter(substema.getPackageDef().getAnnotations(),NameType.table);
 
             addImport(vcCls);
             addImport(Expr.class);
@@ -163,7 +176,7 @@ public class DbJavaGen {
                 bs("public String _getTableName()");{
                     String name = atUtils.getOneAnnotation(vc.getAnnotations(),rclassTable)
                             .map(at -> atUtils.getStringProperty(at,"name").orElse(null)).orElse(null);
-                    if(name == null) { name = vcCls.getClassName(); }
+                    if(name == null) { name = tableNameConverter.apply(vcCls.getClassName()); }
                     println("return \"" + name + "\";");
                 }be();
 
@@ -368,7 +381,7 @@ public class DbJavaGen {
          * @param property The property to generate
          */
         private void generateProperty(RProperty property){
-
+            Function<String,String> columnNameConverter = createNameConverter(substema.getPackageDef().getAnnotations(),NameType.column);
             String type;
             String value;
             RClass cls = property.getValueType().getTypeSig().getName();
@@ -376,6 +389,8 @@ public class DbJavaGen {
             RAnnotation columnAt =atUtils.getOneAnnotation(property.getAnnotations(),rclassColumn).orElse(null);
             if(columnAt != null){
                 tableName = atUtils.getStringProperty(columnAt,"name").orElse(tableName);
+            } else {
+                tableName = columnNameConverter.apply(tableName);
             }
             if(SubstemaUtils.isNumberClass(cls)){
                 addImport(ETypeNumber.class);
@@ -488,8 +503,54 @@ public class DbJavaGen {
         }
 
 
+        private Function<String,String> createNameConverter(PList<RAnnotation> annotations,NameType type){
+            //Find all anotations
+            PList<RAnnotation> nameAt = annotations.filter(a ->
+                a.getName().equals(rclassCamelToSnake) ||
+                a.getName().equals(rclassNameToLower) ||
+                a.getName().equals(rclassNameToUpper) ||
+                a.getName().equals(rclassPostfix) ||
+                a.getName().equals(rclassPrefix)
+            );
+            Function<String,String> res = i -> i;
+            for(RAnnotation at : nameAt){
+                RConstEnum cenum = (RConstEnum)atUtils.getProperty(at,"type").get();
+                String atTypeName = cenum.getEnumValue();
+
+                boolean ok =    (type == NameType.table && atTypeName.equals("table")) ||
+                                (type==NameType.column && atTypeName.equals("column")) ||
+                                atTypeName.equals("all");
+                if(ok == false){
+                    continue;
+                }
+                switch(at.getName().getClassName()){
+                    case "NameToLower":
+                        res = res.andThen(s -> s.toLowerCase());
+                        break;
+                    case "NameToUpper":
+                        res = res.andThen(s -> s.toUpperCase());
+                        break;
+                    case "NameCamelToSnake":
+                        res = res.andThen(s -> StringUtils.camelCaseTo_snake(s));
+                        break;
+                    case "NamePrefix":
+                        String prefix = atUtils.getStringProperty(at,"value").orElse(null);
+                        res = res.andThen(s -> prefix + s);
+                        break;
+                    case "NamePostfix":
+                        String postFix = atUtils.getStringProperty(at,"value").orElse(null);
+                        res = res.andThen(s -> s + postFix);
+                        break;
+                    default: throw new PersistSqlException("Unknown:" + cenum.getEnumClass());
+                }
+            }
+            return res;
+        }
+
 
     }
+
+
     /**
      * Find all external value classes and enums that are used
      * in this substema
@@ -554,5 +615,7 @@ public class DbJavaGen {
         return substema.getEnums().find(vc -> vc.getName().equals(cls));
     }
 
-
+    private enum  NameType{
+        column,table
+    }
 }

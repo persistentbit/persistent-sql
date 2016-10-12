@@ -10,6 +10,7 @@ public interface ExprRowReaderCache {
      * If the supplied value is not already in the cache,
      * put it in the cache and return the value.<br>
      * @param value The object to check in the cache
+     * @param <T> The type of the object.
      * @return The cached object.
      */
     <T> T updatedFromCache(T value);

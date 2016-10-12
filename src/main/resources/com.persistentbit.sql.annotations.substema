@@ -14,14 +14,25 @@ annotation Key{
 annotation AutoGen{
 
 }
-
-annotation OneToOne{
-    table:String;
-    column:String;
+enum NameType{
+    table,column,all;
+}
+annotation NameToLower{
+    type:NameType = NameType.all;
+}
+annotation NameToUpper{
+    type:NameType = NameType.all;
 }
 
-annotation OneToMany{
-    table:String;
-    column:String;
+annotation NameCamelToSnake{
+    type:NameType = NameType.all;
+}
+annotation NamePrefix{
+    type:NameType = NameType.all;
+    value:String;
+}
+annotation NamePostfix{
+    type:NameType = NameType.all;
+    value:String;
 }
 

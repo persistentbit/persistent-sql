@@ -168,6 +168,11 @@ public class ExprExpand implements ExprVisitor<PList<Expr>>{
     }
 
     @Override
+    public PList<Expr> visit(ExprStringLike v) {
+        return PList.val(v);
+    }
+
+    @Override
     public PList<Expr> visit(ExprConstString v) {
         return PList.val(v);
     }

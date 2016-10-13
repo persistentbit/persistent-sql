@@ -1,6 +1,5 @@
 package com.persistentbit.sql.staticsql;
 
-import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.tuples.*;
 import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.staticsql.expr.*;
@@ -226,6 +225,10 @@ public class ExprRowReader implements ExprRowReaderCache{
         @Override
         public Object visit(ExprStringAdd v) {
             return reader.readNext(String.class);
+        }
+        @Override
+        public Object visit(ExprStringLike v) {
+            return reader.readNext(Boolean.class);
         }
 
         @Override

@@ -13,6 +13,9 @@ public interface ETypeString  extends Expr<String>,MixinEq<ETypeString>,MixinCom
         return notEq(Expr.val(other));
     }
 
+    default ETypeBoolean    like(ETypeString other) { return new ExprStringLike(this,other);}
+    default ETypeBoolean    like(String other) { return this.like(Expr.val(other));}
+
 
     default ETypeString add(ETypeString expr){
         return new ExprStringAdd(this,expr);

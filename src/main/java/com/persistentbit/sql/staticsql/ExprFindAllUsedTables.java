@@ -1,6 +1,5 @@
 package com.persistentbit.sql.staticsql;
 
-import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.staticsql.expr.*;
@@ -148,7 +147,12 @@ public class ExprFindAllUsedTables implements ExprVisitor<PSet<ETypeObject>> {
 
     @Override
     public PSet<ETypeObject> visit(ExprStringAdd v) {
-        return PSet.empty();
+        return visit(v.getLeft()).plusAll(visit(v.getRight()));
+    }
+
+    @Override
+    public PSet<ETypeObject> visit(ExprStringLike v) {
+        return visit(v.getLeft()).plusAll(visit(v.getRight()));
     }
 
     @Override

@@ -195,6 +195,11 @@ public class ExprToSql implements ExprVisitor<String>{
     }
 
     @Override
+    public String visit(ExprStringLike v) {
+        return visit(v.getLeft()) + " LIKE " + visit(v.getRight());
+    }
+
+    @Override
     public String visit(ExprConstString v) {
         return dbType.asLiteralString(v.getValue());
     }

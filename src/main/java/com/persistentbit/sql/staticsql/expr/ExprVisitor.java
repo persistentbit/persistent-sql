@@ -26,6 +26,7 @@ public interface ExprVisitor<R> {
     R visit(ETypeObject v);
     R visit(ExprCompare v);
     R visit(ExprStringAdd v);
+    R visit(ExprStringLike v);
     R visit(ExprConstString v);
     R visit(ExprNumberBinOp v);
     R visit(EValTable v);

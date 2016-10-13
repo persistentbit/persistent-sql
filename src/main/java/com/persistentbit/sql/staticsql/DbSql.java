@@ -31,6 +31,7 @@ public class DbSql {
     }
 
     public Update   update(ETypeObject typeObject) { return new Update(this, typeObject); }
+    public Delete   deleteFrom(ETypeObject typeObject) { return new Delete(this, typeObject); }
 
     public int runInsert(ETypeObject table, Expr...values){
         Insert insert = Insert.into(table,values);
@@ -105,6 +106,16 @@ public class DbSql {
 
     public int run(Update update){
         UpdateSqlBuilder b = new UpdateSqlBuilder(dbType,update);
+        String sql = b.generate();
+        log.debug(sql);
+        return run.trans(c -> {
+            PreparedStatement s = c.prepareStatement(sql);
+            return s.executeUpdate();
+        });
+    }
+
+    public int run(Delete delete){
+        DeleteSqlBuilder b = new DeleteSqlBuilder(dbType,delete);
         String sql = b.generate();
         log.debug(sql);
         return run.trans(c -> {

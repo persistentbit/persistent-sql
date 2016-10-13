@@ -38,6 +38,7 @@ public class TransactionRunnerSingleExisting implements TransactionRunner{
             T result = code.run(current);
             if(isNew) {
                 current.commit();
+
             }
             return result;
         }catch(Exception e){
@@ -52,6 +53,7 @@ public class TransactionRunnerSingleExisting implements TransactionRunner{
 
             if(isNew){
                 try{ current.close(); } catch(Exception e){log.error("Error while closing the db connection",e); }
+                current = null;
             }
         }
     }

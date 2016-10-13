@@ -5,7 +5,6 @@ import com.persistentbit.sql.PersistSqlException;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -50,7 +49,7 @@ public interface DbType{
     }
 
     default String asLiteralDateTime(LocalDateTime dateTime){
-        return "TIMESTAMP '" + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.nnnnnn").format(dateTime) + "'";
+        return "TIMESTAMP '" + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.nnnnnnnnnn").format(dateTime) + "'";
     }
 
 

@@ -8,7 +8,6 @@ import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.transactions.TransactionRunner;
-import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,6 +29,8 @@ public class DbSql {
     public Query    queryFrom(ETypeObject typeObject){
         return Query.from(this,typeObject);
     }
+
+    public Update   update(ETypeObject typeObject) { return new Update(this, typeObject); }
 
     public int runInsert(ETypeObject table, Expr...values){
         Insert insert = Insert.into(table,values);
@@ -102,4 +103,13 @@ public class DbSql {
         });
     }
 
+    public int run(Update update){
+        UpdateSqlBuilder b = new UpdateSqlBuilder(dbType,update);
+        String sql = b.generate();
+        log.debug(sql);
+        return run.trans(c -> {
+            PreparedStatement s = c.prepareStatement(sql);
+            return s.executeUpdate();
+        });
+    }
 }

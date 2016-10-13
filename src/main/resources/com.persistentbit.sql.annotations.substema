@@ -14,6 +14,26 @@ annotation Key{
 annotation AutoGen{
 
 }
+
+/*
+    marks a property that has a sub value as
+    having no prefix.
+    ex:
+    case class Embedded{
+        a:String;
+        b:String;
+    }
+
+    @Table
+    case class Table{
+        @NoPrefix
+        emb:Embedded        --> column names are: a and b instead of emb_a and emb_b
+    }
+*/
+annotation NoPrefix{
+
+}
+
 enum NameType{
     table,column,all;
 }

@@ -1,24 +1,21 @@
 package com.persistentbit.sql.transactions;
 
 import com.persistentbit.core.logging.PLog;
-import com.persistentbit.core.utils.NotYet;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.function.Supplier;
 
 /**
- * TODO: Add comment
+ * Transaction runner keeping track of just 1 {@link Connection} even across multiple threads
  *
  * @author Peter Muys
  * @since 11/10/2016
  */
 public class TransactionRunnerSingleExisting implements TransactionRunner{
     static private PLog log = PLog.get(TransactionRunnerSingleExisting.class);
-    private final Deque<Connection> connectionStack = new ArrayDeque<Connection>();
     private Supplier<Connection>    connectionSupplier;
+    private Connection  current;
 
     public TransactionRunnerSingleExisting(Supplier<Connection> connectionSupplier) {
         this.connectionSupplier = connectionSupplier;
@@ -31,30 +28,30 @@ public class TransactionRunnerSingleExisting implements TransactionRunner{
     public <T> T trans(SqlCodeWithResult<T> code) {
         Connection c;
         boolean isNew = false;
-        synchronized (connectionStack){
-            c = connectionStack.peek();
-            if(c == null){
-                c =connectionSupplier.get();
-                connectionStack.push(c);
+        synchronized (this){
+            if(current == null){
+                current = connectionSupplier.get();
                 isNew = true;
             }
         }
         try{
-            T result = code.run(c);
-            c.commit();
+            T result = code.run(current);
+            if(isNew) {
+                current.commit();
+            }
             return result;
         }catch(Exception e){
             try {
-                c.rollback();
+                current.rollback();
             } catch (SQLException e1) {
                 log.error("Error while performing rollback",e1);
             }
             throw new RuntimeException("Rolledback",e);
         }
         finally {
-            try{ c.close(); } catch(Exception e){log.error("Error while closing the db connection",e); }
+
             if(isNew){
-                synchronized (connectionStack) { connectionStack.pop(); }
+                try{ current.close(); } catch(Exception e){log.error("Error while closing the db connection",e); }
             }
         }
     }
@@ -67,30 +64,7 @@ public class TransactionRunnerSingleExisting implements TransactionRunner{
     @Override
     public <T> T transNew(SqlCodeWithResult<T> code) {
 
-        if(true){ throw new NotYet("transNew Not yet supported on " + getClass().getName()); }
-        Connection c;
-
-        synchronized (connectionStack){
-            c =connectionSupplier.get();
-            connectionStack.push(c);
-            try{
-                T result = code.run(c);
-                c.commit();
-                return result;
-            }catch(Exception e){
-                try {
-                    c.rollback();
-                } catch (SQLException e1) {
-                    log.error("Error while performing rollback",e1);
-                }
-                throw new RuntimeException("Rolledback",e);
-            }
-            finally {
-                try{ c.close(); } catch(Exception e){log.error("Error while closing the db connection",e); }
-                synchronized (connectionStack) { connectionStack.pop(); }
-            }
-        }
-
+        throw new UnsupportedOperationException("transNew Not yet supported on " + getClass().getName());
     }
 
     @Override

@@ -47,6 +47,7 @@ public class DbJavaGen {
     static public final RClass rclassCamelToSnake = new RClass(packageDbAnnotations,"NameCamelToSnake");
     static public final RClass rclassPrefix = new RClass(packageDbAnnotations,"NamePrefix");
     static public final RClass rclassPostfix = new RClass(packageDbAnnotations,"NamePostfix");
+    static public final RClass rclassNoPrefix = new RClass(packageDbAnnotations,"NoPrefix");
 
     private DbJavaGen(JavaGenOptions options, String packageName, SubstemaCompiler compiler) {
         this.options = options;
@@ -385,41 +386,41 @@ public class DbJavaGen {
             String type;
             String value;
             RClass cls = property.getValueType().getTypeSig().getName();
-            String tableName = property.getName();
+            String columnName = property.getName();
             RAnnotation columnAt =atUtils.getOneAnnotation(property.getAnnotations(),rclassColumn).orElse(null);
             if(columnAt != null){
-                tableName = atUtils.getStringProperty(columnAt,"name").orElse(tableName);
+                columnName = atUtils.getStringProperty(columnAt,"name").orElse(columnName);
             } else {
-                tableName = columnNameConverter.apply(tableName);
+                columnName = columnNameConverter.apply(columnName);
             }
             if(SubstemaUtils.isNumberClass(cls)){
                 addImport(ETypeNumber.class);
                 addImport(ExprPropertyNumber.class);
                 type = "ETypeNumber<" + cls.getClassName() + ">";
-                value = "new ExprPropertyNumber<>(" + cls.getClassName() + ".class,this,\"" + property.getName()  + "\", \"" + tableName+ "\");";
+                value = "new ExprPropertyNumber<>(" + cls.getClassName() + ".class,this,\"" + property.getName()  + "\", \"" + columnName+ "\");";
             } else if (cls.equals(SubstemaUtils.booleanRClass)){
                 addImport(ETypeBoolean.class);
                 addImport(ExprPropertyBoolean.class);
                 type = "ETypeBoolean";
-                value = "new ExprPropertyBoolean(this,\"" + property.getName() + "\", \"" + tableName+ "\");";
+                value = "new ExprPropertyBoolean(this,\"" + property.getName() + "\", \"" + columnName+ "\");";
             } else if (cls.equals(SubstemaUtils.stringRClass)){
                 addImport(ETypeString.class);
                 addImport(ExprPropertyString.class);
                 type = "ETypeString";
-                value = "new ExprPropertyString(this,\"" + property.getName() + "\", \"" + tableName+ "\");";
+                value = "new ExprPropertyString(this,\"" + property.getName() + "\", \"" + columnName+ "\");";
             } else if(cls.equals(SubstemaUtils.dateTimeRClass)){
                 addImport(LocalDateTime.class);
                 addImport(ExprPropertyDateTime.class);
                 addImport(ETypeDateTime.class);
                 type = "ETypeDateTime";
-                value = "new ExprPropertyDateTime(this,\"" + property.getName() + "\", \"" + tableName+ "\");";
+                value = "new ExprPropertyDateTime(this,\"" + property.getName() + "\", \"" + columnName+ "\");";
 
             } else if(cls.equals(SubstemaUtils.dateRClass)){
                 addImport(LocalDate.class);
                 addImport(ExprPropertyDate.class);
                 addImport(ETypeDate.class);
                 type = "ETypeDate";
-                value = "new ExprPropertyDate(this,\"" + property.getName() + "\", \"" + tableName+ "\");";
+                value = "new ExprPropertyDate(this,\"" + property.getName() + "\", \"" + columnName+ "\");";
 
             }else {
                 if(cls.getPackageName().isEmpty()){
@@ -434,7 +435,7 @@ public class DbJavaGen {
                     String valueName = ExprPropertyEnum.class.getSimpleName();
 
                     type = ExprPropertyEnum.class.getSimpleName()+ "<" + cls.getClassName() + ">";
-                    value = "new " +  type + "(" + cls.getClassName() + ".class,this,\"" + property.getName() + "\", \""+ tableName+ "\");";
+                    value = "new " +  type + "(" + cls.getClassName() + ".class,this,\"" + property.getName() + "\", \""+ columnName+ "\");";
                 } else {
                     RClass nc = toExprClass(cls);
                     //addImport(cls);
@@ -442,7 +443,18 @@ public class DbJavaGen {
                     addImport(ExprProperty.class);
                     type = JavaGenUtils.toString(packageName,nc);
                     String valueClass = cls.getClassName();
-                    value = "new " + type + "(new ExprProperty("+ valueClass + ".class,this,\"" + property.getName() + "\", \"" + tableName+ "\"));";
+                    //Check if we have a @NoPrefix on the property.
+                    RAnnotation noPrefixAt =atUtils.getOneAnnotation(property.getAnnotations(),rclassNoPrefix)
+                            .orElseGet(() ->
+                                    atUtils.getOneAnnotation(findValueClass(cls).getAnnotations(),rclassNoPrefix)
+                                            .orElse(null)
+                            );
+
+                    if(noPrefixAt != null){
+                        columnName = "";
+                    }
+
+                    value = "new " + type + "(new ExprProperty("+ valueClass + ".class,this,\"" + property.getName() + "\", \"" + columnName+ "\"));";
                 }
 
 
@@ -598,12 +610,25 @@ public class DbJavaGen {
     }
 
     /**
-     * Return the optional RValueClass defined in the substema substema by checking the RClass
+     * Return the optional RValueClass defined in the current substema by checking the RClass
      * @param cls The Value class to find
      * @return empty or some RValueClass
      */
     private Optional<RValueClass> getValueClass(RClass cls){
         return substema.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls));
+    }
+
+    /**
+     * Find a  value class internally or externally...
+     * @param cls the RClass to find
+     * @return  The Optional cls
+     */
+    private RValueClass findValueClass(RClass cls){
+        if(cls.getPackageName() == substema.getPackageName()){
+            return getValueClass(cls).orElseThrow(()->new PersistSqlException("Can't find Internal Value class " + cls));
+        }
+        RSubstema ns = compiler.compile(cls.getPackageName());
+        return ns.getValueClasses().find(vc-> vc.getTypeSig().getName().equals(cls)).orElseThrow(()-> new PersistSqlException("Can't find Value class " + cls));
     }
 
     /**

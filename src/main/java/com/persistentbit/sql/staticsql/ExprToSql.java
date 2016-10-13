@@ -56,6 +56,10 @@ public class ExprToSql implements ExprVisitor<String>{
         if(parent.getParent().isPresent() == false){
             return visit(parent)+"." + v.getColumnName();
         } else {
+            String parentStr = visit(parent);
+            if(parentStr.endsWith(".")){
+                return parentStr + v.getColumnName();
+            }
             return visit(parent)+"_" + v.getColumnName();
         }
 

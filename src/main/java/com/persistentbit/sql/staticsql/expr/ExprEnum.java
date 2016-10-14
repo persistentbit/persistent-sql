@@ -3,13 +3,13 @@ package com.persistentbit.sql.staticsql.expr;
 /**
  * Created by petermuys on 5/10/16.
  */
-public class ExprEnum<T extends Enum<?>> implements ETypeEnum<T> {
+public class ExprEnum<T extends Enum<T>> implements ETypeEnum<T> {
     private T value;
-    private Class<?> cls;
+    private Class<T> enumClass;
 
-    public ExprEnum(T value,Class<?> cls) {
+    public ExprEnum(T value,Class<? extends Enum> enumClass) {
         this.value = value;
-        this.cls = cls;
+        this.enumClass = (Class<T>)enumClass;
     }
 
     @Override
@@ -21,7 +21,8 @@ public class ExprEnum<T extends Enum<?>> implements ETypeEnum<T> {
         return value;
     }
 
-    public Class<?> getCls() {
-        return cls;
+    @Override
+    public Class<T> _getEnumClass() {
+        return enumClass;
     }
 }

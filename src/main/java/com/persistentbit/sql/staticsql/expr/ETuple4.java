@@ -2,6 +2,9 @@ package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.function.Function4;
 import com.persistentbit.core.tuples.Tuple4;
+import com.persistentbit.core.tuples.Tuple5;
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
+import com.persistentbit.sql.staticsql.RowReader;
 
 /**
  * Created by petermuys on 3/10/16.
@@ -42,5 +45,13 @@ public class ETuple4<T1,T2,T3,T4> implements Expr<Tuple4<T1,T2,T3,T4>>{
         return v4;
     }
 
-
+    @Override
+    public Tuple4<T1, T2,T3,T4> read(RowReader _rowReader, ExprRowReaderCache _cache) {
+        return _cache.updatedFromCache(Tuple4.of(
+                v1.read(_rowReader,_cache)
+                ,v2.read(_rowReader,_cache)
+                ,v3.read(_rowReader,_cache)
+                ,v4.read(_rowReader,_cache)
+        ));
+    }
 }

@@ -1,5 +1,8 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
+import com.persistentbit.sql.staticsql.RowReader;
+
 import java.util.function.Function;
 
 /**
@@ -25,5 +28,20 @@ public class EMapper<T,R> implements Expr<R>{
 
     public Function<T, R> getMapper() {
         return mapper;
+    }
+
+    @Override
+    public R read(RowReader _rowReader, ExprRowReaderCache _cache) {
+        /*T value = expr.read(_rowReader,_cache);
+        if(_cache.contains(value) == false){
+            cache.remove(value);
+        }
+        value = updatedFromCache(value);
+        return mapper.getMapper().apply(value);*/
+
+        //TODO look to remove cached unmapped value if this is
+        //The first time it is used
+
+        return _cache.updatedFromCache(mapper.apply(expr.read(_rowReader,_cache)));
     }
 }

@@ -6,6 +6,7 @@ import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
+import com.persistentbit.sql.staticsql.expr.ETypeSelection;
 import com.persistentbit.sql.staticsql.expr.Expr;
 
 import java.util.Optional;
@@ -15,11 +16,11 @@ import java.util.Optional;
  */
 public class QuerySqlBuilder {
 
-    private final Selection s;
+    private final ETypeSelection s;
     private final Query q;
     private final DbType type;
     private final PMap<ETypeObject,TableInst> tables;
-    public QuerySqlBuilder(Selection s, DbType type){
+    public QuerySqlBuilder(ETypeSelection s, DbType type){
         this.s = s;
         this.q = s.getQuery();
         this.type = type;
@@ -47,6 +48,7 @@ public class QuerySqlBuilder {
         PList<Expr> expanded = ExprExpand.exapand(s.getSelection());
         //System.out.println("Expanded selection: " + expanded);
         PList<String> asSql = expanded.map(this::toSql);
+        asSql = asSql.zipWithIndex().map(t -> t._2 + " AS " + "t_" + (t._1+1)).plist();
         String nl = "\r\n";
         String sql = "SELECT " + asSql.toString(", ") + nl;
         sql += " FROM " + q.getFrom()._getTableName() + " AS " + tables.get(q.getFrom()).getName() + nl;

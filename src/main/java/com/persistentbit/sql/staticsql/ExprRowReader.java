@@ -103,6 +103,11 @@ public class ExprRowReader implements ExprRowReaderCache{
             }
         }
 
+        @Override
+        public Object visit(ETypeSelection v) {
+            return v.read(reader,this);
+        }
+
         private Object error(Expr v) {
             throw new RuntimeException("Can't read from row for expression " + v);
         }
@@ -206,6 +211,9 @@ public class ExprRowReader implements ExprRowReaderCache{
                     visitExpr(v.getV7())
             ));
         }
+
+
+
         @Override
         public Object visit(ExprConstNumber v) {
             return reader.readNext(v.getValue().getClass());

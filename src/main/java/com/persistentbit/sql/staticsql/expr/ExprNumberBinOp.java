@@ -1,5 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
+import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.ETypeNumber;
 
 /**
@@ -36,5 +38,10 @@ public class ExprNumberBinOp<N extends Number> implements ETypeNumber<N> {
 
     public String getBinOp() {
         return binOp;
+    }
+
+    @Override
+    public N read(RowReader _rowReader, ExprRowReaderCache _cache) {
+        return left.read(_rowReader,_cache);
     }
 }

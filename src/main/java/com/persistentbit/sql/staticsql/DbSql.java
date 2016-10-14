@@ -6,6 +6,7 @@ import com.persistentbit.core.logging.PLog;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
+import com.persistentbit.sql.staticsql.expr.ETypeSelection;
 import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.transactions.TransactionRunner;
 
@@ -85,7 +86,7 @@ public class DbSql {
         });
     }
 
-    public <T> PList<T> run(Selection<T> selection){
+    public <T> PList<T> run(ETypeSelection<T> selection){
         QuerySqlBuilder b = new QuerySqlBuilder(selection,dbType);
         String sql = b.generate();
         log.debug(sql);
@@ -96,7 +97,7 @@ public class DbSql {
                 ResultSetRowReader rowReader = new ResultSetRowReader(rs);
                 PList<T> res = PList.empty();
                 while(rs.next()){
-                    res = res.plus(exprReader.read(selection.getSelection(),rowReader));
+                    res = res.plus(selection.read(rowReader,exprReader));
                     rowReader.nextRow();
                 }
                 return res;

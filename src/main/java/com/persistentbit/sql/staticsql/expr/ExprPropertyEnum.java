@@ -5,9 +5,14 @@ import java.time.LocalDate;
 /**
  * Created by petermuys on 5/10/16.
  */
-public class ExprPropertyEnum<T extends Enum<?>>  extends ExprProperty<T> implements ETypeEnum<T> {
+public class ExprPropertyEnum<T extends Enum<T>>  extends ExprProperty<T> implements ETypeEnum<T> {
 
     public ExprPropertyEnum(Class<T> valueClass, Expr parent, String propertyName,String columnName) {
         super(valueClass, parent, propertyName,columnName);
+    }
+
+    @Override
+    public Class<T> _getEnumClass() {
+        return getValueClass();
     }
 }

@@ -1,5 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
+import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.ETypeNumber;
 
 /**
@@ -7,9 +9,9 @@ import com.persistentbit.sql.staticsql.expr.ETypeNumber;
  */
 public class ExprNumberCast<F extends Number,T extends Number> implements ETypeNumber<T>{
     private ETypeNumber<F> from;
-    private Class<? extends Number> clsTo;
+    private Class<T> clsTo;
 
-    public ExprNumberCast(ETypeNumber<F> from, Class<? extends Number> clsTo) {
+    public ExprNumberCast(ETypeNumber<F> from, Class<T> clsTo) {
         this.from = from;
         this.clsTo = clsTo;
     }
@@ -29,5 +31,10 @@ public class ExprNumberCast<F extends Number,T extends Number> implements ETypeN
 
     public Class<? extends Number> getClsTo() {
         return clsTo;
+    }
+
+    @Override
+    public T read(RowReader _rowReader, ExprRowReaderCache _cache) {
+        return _rowReader.readNext(clsTo);
     }
 }

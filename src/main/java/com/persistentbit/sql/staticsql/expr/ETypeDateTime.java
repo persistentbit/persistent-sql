@@ -1,5 +1,8 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
+import com.persistentbit.sql.staticsql.RowReader;
+
 import java.time.LocalDateTime;
 
 /**
@@ -14,4 +17,8 @@ public interface ETypeDateTime  extends Expr<LocalDateTime>, MixinEq<ETypeDateTi
         return notEq(Expr.val(dateTime));
     }
 
+    @Override
+    default LocalDateTime read(RowReader _rowReader, ExprRowReaderCache _cache) {
+        return _rowReader.readNext(LocalDateTime.class);
+    }
 }

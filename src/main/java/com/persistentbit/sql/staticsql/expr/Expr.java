@@ -1,5 +1,8 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.sql.PersistSqlException;
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
+import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.codegen.DbJavaGenException;
 import com.persistentbit.sql.staticsql.ENumberGroup;
 
@@ -14,7 +17,7 @@ import java.util.function.Function;
 public interface Expr<S>{
 
     static <N extends Number> ExprConstNumber<N> val(N number){
-        return new ExprConstNumber<N>(number);
+        return new ExprConstNumber<>(number.getClass(),number);
     }
     static ETypeString  val(String value){
         return new ExprConstString(value);
@@ -40,11 +43,11 @@ public interface Expr<S>{
         return new EStringGroup(v);
     }
 
-    static <T extends Enum<?>> ETypeEnum<T> val(T value){
+    static <T extends Enum<T>> ETypeEnum<T> val(T value){
         if(value == null){
-            throw new DbJavaGenException("Need to know the class of the null enum: use Expr.valNullEnum(cls) instead.");
+            throw new PersistSqlException("Need to know the class of the null enum: use Expr.valNullEnum(cls) instead.");
         }
-        return new ExprEnum<>(value,value.getClass());
+        return new ExprEnum<T>(value,value.getClass());
     }
 
 
@@ -80,4 +83,7 @@ public interface Expr<S>{
     }
     <R> R accept(ExprVisitor<R> visitor);
 
+    S read(RowReader _rowReader, ExprRowReaderCache _cache);
+
+    String _toSql(ExprToSqlContext context);
 }

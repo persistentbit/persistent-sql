@@ -1,5 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
+import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.Expr;
 
 /**
@@ -42,5 +44,10 @@ public class ExprProperty<T> implements Expr<T> {
 
     public Class<T> getValueClass() {
         return valueClass;
+    }
+
+    @Override
+    public T read(RowReader _rowReader, ExprRowReaderCache _cache) {
+        return _rowReader.readNext(valueClass);
     }
 }

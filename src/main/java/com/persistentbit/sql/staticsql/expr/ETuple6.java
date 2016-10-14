@@ -4,6 +4,8 @@ import com.persistentbit.core.function.Function6;
 import com.persistentbit.core.function.Function7;
 import com.persistentbit.core.tuples.Tuple6;
 import com.persistentbit.core.tuples.Tuple7;
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
+import com.persistentbit.sql.staticsql.RowReader;
 
 /**
  * Created by petermuys on 3/10/16.
@@ -51,6 +53,17 @@ public class ETuple6<T1,T2,T3,T4,T5,T6> implements Expr<Tuple6<T1,T2,T3,T4,T5,T6
     }
     public Expr<T6> getV6() {
         return v6;
+    }
+    @Override
+    public Tuple6<T1, T2,T3,T4,T5,T6> read(RowReader _rowReader, ExprRowReaderCache _cache) {
+        return _cache.updatedFromCache(Tuple6.of(
+                v1.read(_rowReader,_cache)
+                ,v2.read(_rowReader,_cache)
+                ,v3.read(_rowReader,_cache)
+                ,v4.read(_rowReader,_cache)
+                ,v5.read(_rowReader,_cache)
+                ,v6.read(_rowReader,_cache)
+        ));
     }
 
 }

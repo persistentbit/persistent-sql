@@ -1,9 +1,7 @@
 package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
-import com.persistentbit.sql.staticsql.expr.ETypeBoolean;
-import com.persistentbit.sql.staticsql.expr.ETypeObject;
-import com.persistentbit.sql.staticsql.expr.Expr;
+import com.persistentbit.sql.staticsql.expr.*;
 
 import java.util.Optional;
 
@@ -64,11 +62,47 @@ public class Query {
         return Optional.ofNullable(where);
     }
 
-    public <T> Selection<T> selection(Expr<T> selection){
-        return new Selection<T>(this,selection);
+    public <T> Selection1<T> selection(Expr<T> selection){
+        return new Selection1<T>(this,selection);
     }
 
-    DbSql getDbSql() {
+    public <T1,T2> Selection2<T1,T2> selection(
+            Expr<T1> col1, Expr<T2> col2
+    ){
+        return new Selection2<>(this,col1,col2);
+    }
+
+    public <T1,T2,T3> Selection3<T1,T2,T3> selection(
+            Expr<T1> col1, Expr<T2> col2, Expr<T3> col3
+    ){
+        return new Selection3<>(this,col1,col2,col3);
+    }
+
+    public <T1,T2,T3,T4> Selection4<T1,T2,T3,T4> selection(
+            Expr<T1> col1, Expr<T2> col2, Expr<T3> col3, Expr<T4> col4
+    ){
+        return new Selection4<>(this,col1,col2,col3,col4);
+    }
+
+    public <T1,T2,T3,T4,T5> Selection5<T1,T2,T3,T4,T5> selection(
+            Expr<T1> col1, Expr<T2> col2, Expr<T3> col3, Expr<T4> col4, Expr<T5> col5
+    ){
+        return new Selection5<>(this,col1,col2,col3,col4,col5);
+    }
+
+    public <T1,T2,T3,T4,T5,T6> Selection6<T1,T2,T3,T4,T5,T6> selection(
+            Expr<T1> col1, Expr<T2> col2, Expr<T3> col3, Expr<T4> col4, Expr<T5> col5, Expr<T6> col6
+    ){
+        return new Selection6<>(this,col1,col2,col3,col4,col5,col6);
+    }
+
+    public <T1,T2,T3,T4,T5,T6,T7> Selection7<T1,T2,T3,T4,T5,T6,T7> selection(
+            Expr<T1> col1, Expr<T2> col2, Expr<T3> col3, Expr<T4> col4, Expr<T5> col5, Expr<T6> col6, Expr<T7> col7
+            ){
+        return new Selection7<>(this,col1,col2,col3,col4,col5,col6,col7);
+    }
+
+    public DbSql getDbSql() {
         return dbSql;
     }
 }

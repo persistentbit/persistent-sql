@@ -4,6 +4,8 @@ import com.persistentbit.core.function.Function5;
 import com.persistentbit.core.function.Function6;
 import com.persistentbit.core.tuples.Tuple5;
 import com.persistentbit.core.tuples.Tuple6;
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
+import com.persistentbit.sql.staticsql.RowReader;
 
 /**
  * Created by petermuys on 3/10/16.
@@ -49,5 +51,15 @@ public class ETuple5<T1,T2,T3,T4,T5> implements Expr<Tuple5<T1,T2,T3,T4,T5>>{
         return v5;
     }
 
+    @Override
+    public Tuple5<T1, T2,T3,T4,T5> read(RowReader _rowReader, ExprRowReaderCache _cache) {
+        return _cache.updatedFromCache(Tuple5.of(
+                v1.read(_rowReader,_cache)
+                ,v2.read(_rowReader,_cache)
+                ,v3.read(_rowReader,_cache)
+                ,v4.read(_rowReader,_cache)
+                ,v5.read(_rowReader,_cache)
+        ));
+    }
 
 }

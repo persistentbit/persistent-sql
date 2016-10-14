@@ -1,18 +1,20 @@
-package com.persistentbit.sql.staticsql;
+package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PList;
-import com.persistentbit.sql.staticsql.expr.Expr;
+import com.persistentbit.sql.staticsql.ExprRowReaderCache;
+import com.persistentbit.sql.staticsql.Query;
+import com.persistentbit.sql.staticsql.RowReader;
 
 import java.util.Optional;
 
 /**
- * Created by petermuys on 1/10/16.
+ * Created by petermuys on 14/10/16.
  */
-public class Selection<T> {
+public abstract class BaseSelection<T> implements ETypeSelection<T>{
     private final Query query;
     private final Expr<T> selection;
 
-    public Selection(Query query, Expr<T> selection) {
+    public BaseSelection(Query query, Expr<T> selection) {
         this.query = query;
         this.selection = selection;
     }
@@ -21,6 +23,7 @@ public class Selection<T> {
         return query;
     }
 
+
     public Expr<T> getSelection() {
         return selection;
     }
@@ -28,7 +31,9 @@ public class Selection<T> {
     public PList<T> getResult() {
         return query.getDbSql().run(this);
     }
-    public Optional<T>  getOneResult() {
+    public Optional<T> getOneResult() {
         return getResult().headOpt();
     }
+
+
 }

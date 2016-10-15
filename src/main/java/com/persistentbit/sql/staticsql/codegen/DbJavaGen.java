@@ -293,43 +293,6 @@ public class DbJavaGen {
                         }
                     });
 
-
-                    /*vc.getProperties().forEach(p -> {
-                        RClass pcls = p.getValueType().getTypeSig().getName();
-
-                        String javaClassName = JavaGenUtils.toString(packageName,pcls);
-                        //For internal Substem classes
-                        if(SubstemaUtils.isSubstemaClass(pcls)){
-                            if(pcls.equals(SubstemaUtils.dateTimeRClass)){
-                                addImport(LocalDateTime.class);
-                                javaClassName  = LocalDateTime.class.getSimpleName();
-                            }
-                            if(pcls.equals(SubstemaUtils.dateRClass)){
-                                addImport(LocalDate.class);
-                                javaClassName = LocalDate.class.getSimpleName();
-                            }
-                            println(javaClassName + " " + p.getName() + " = _rowReader.readNext("+ javaClassName + ".class);");
-                        } else {
-
-                            if(getInternalOrExternalEnum(pcls).isPresent()){
-                                //For Enums
-                                //Gender gender = Gender.valueOf(rowReader.readNext(String.class));
-                                addImport(pcls);
-                                String enumStringName = "_" + p.getName() + "String";
-                                println("String " + enumStringName +" = _rowReader.readNext(String.class);");
-                                println(pcls.getClassName() + " " + p.getName() + " = " + enumStringName +"== null ? null : "+ pcls.getClassName() + ".valueOf(" + enumStringName + ");");
-                            } else {
-                                addImport(pcls);
-                                javaClassName = JavaGenUtils.toString(packageName,pcls.withPackageName(packageName));
-                                RClass nc = toExprClass(pcls);
-                                addImport(nc);
-                                println(javaClassName + " " + p.getName() + " = " + nc.getClassName() + ".read(_rowReader,_cache);");
-                            }
-
-                        }
-
-                    });
-                    */
                     String allNull = vc.getProperties().filter(p -> p.getValueType().isRequired()).map(p -> p.getName() + "==null").toString(" || ");
                     if(allNull.isEmpty() == false){
                         println("if(" + allNull+") { return null; }");
@@ -359,10 +322,71 @@ public class DbJavaGen {
                 if(isTableClass){
                     generateDeleteByIdFunction(vc);
                 }
+                //*************  Update
+                if(isTableClass){
+                    generateUpdateFunction(vc);
+                }
 
             }be();
             return toGenJava(cls);
         }
+
+        private void generateUpdateFunction(RValueClass vc){
+            PList<RProperty> keys = vc.getProperties().filter(p -> atUtils.hasAnnotation(p.getAnnotations(),rclassKey));
+            if(keys.isEmpty()){
+                return;
+            }
+
+            String vcName = vc.getTypeSig().getName().getClassName();
+            bs("public " + vcName + " update(" + vcName + " _row)");{
+                println("int count = _db.update(this)");
+
+                vc.getProperties()
+                        .filter(p -> atUtils.hasAnnotation(p.getAnnotations(),rclassKey) == false)
+                        .filter(p -> atUtils.hasAnnotation(p.getAnnotations(),rclassAutoGen) == false)
+                        .forEach(p -> {
+                    RClass cls = p.getValueType().getTypeSig().getName();
+                    String getter = "_row.get" + StringUtils.firstUpperCase(p.getName()) + "()";
+                    if(p.getValueType().isRequired() == false){
+                        getter = getter + ".orElse(null)";
+                    }
+                    String valExpr;
+                    if(SubstemaUtils.isSubstemaClass(cls)){
+                        valExpr = "Sql.val(" + getter + ")";
+                    } else {
+                        if(getInternalOrExternalEnum(cls).isPresent()){
+                            addImport(ExprEnum.class);
+                            String clsName = cls.getClassName();
+                            valExpr =  "new " + ExprEnum.class.getSimpleName() + "<" + clsName + ">(" + getter + ", " + clsName + ".class)";
+                        } else {
+                            addImport(EValTable.class);
+                            valExpr = "new EValTable(" + p.getName() + ", " + getter + ")";
+                        }
+                    }
+                    println(".set(" + p.getName() + ", " + valExpr + ")");
+                });
+
+                String cond = keys.headOpt().map(p ->  "this." + p.getName() + ".eq(" + getValGetter(p,"_row") + ")").get();
+                cond = cond + keys.tail().map(p ->  ".and(this." + p.getName() + ".eq(" + getValGetter(p,"_row") + "))").toString("");
+                println(".where(" + cond + ")");
+                println(".execute();");
+                bs("if(count != 1)");{
+                    addImport(PersistSqlException.class);
+                    println("throw new PersistSqlException(\"Expected 1 row updated, not \" + count + \" for \" + _row);");
+                }be();
+                println("return _row;");
+            }be();
+        }
+
+        private String getValGetter(RProperty p, String valueName){
+            RClass cls = p.getValueType().getTypeSig().getName();
+            String getter = valueName + ".get" + StringUtils.firstUpperCase(p.getName()) + "()";
+            if(p.getValueType().isRequired() == false){
+                getter = getter + ".orElse(null)";
+            }
+            return getter;
+        }
+
         private void generateDeleteByIdFunction(RValueClass vc){
             PList<RProperty> keys = vc.getProperties().filter(p -> atUtils.hasAnnotation(p.getAnnotations(),rclassKey));
             if(keys.isEmpty()){
@@ -372,7 +396,7 @@ public class DbJavaGen {
                     Tuple2.of(p.getValueType().getTypeSig().getName().getClassName(), p.getName())
             );
             addImport(Optional.class);
-            String vcName = vc.getTypeSig().getName().getClassName();
+
             bs("public int deleteById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2).toString(", ") + ")");{
                 String cond = keyTypesAndNames.headOpt().map(tn ->  "this." + tn._2 + ".eq(" + tn._2 + ")").get();
                 cond = cond + keyTypesAndNames.tail().map(tn ->  ".and(this." + tn._2 + ".eq(" + tn._2 + "))").toString("");

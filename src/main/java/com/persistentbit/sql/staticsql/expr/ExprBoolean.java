@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.expr.ETypeBoolean;
 
 /**
@@ -12,12 +13,19 @@ public class ExprBoolean implements ETypeBoolean {
     public ExprBoolean(Boolean value) {
         this.value = value;
     }
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
+
 
     public Boolean getValue() {
         return value;
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return value.toString().toUpperCase();
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

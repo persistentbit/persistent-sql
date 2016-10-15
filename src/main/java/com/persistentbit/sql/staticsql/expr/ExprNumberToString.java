@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.expr.ETypeNumber;
 import com.persistentbit.sql.staticsql.expr.ETypeString;
 
@@ -17,12 +18,19 @@ public class ExprNumberToString implements ETypeString {
     public String toString() {
         return "((String)" + number + ")";
     }
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
+
 
     public ETypeNumber getNumber() {
         return number;
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return context.getDbType().numberToString(number._toSql(context),20);
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

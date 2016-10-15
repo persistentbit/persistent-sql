@@ -1,5 +1,8 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.collections.PStream;
+import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
@@ -15,10 +18,31 @@ import java.util.function.Function;
  * @since 28/09/2016
  */
 public interface Expr<S>{
-
-    static <N extends Number> ExprConstNumber<N> val(N number){
+    static  <N extends Number> ExprConstNumber<N> val(N number){
         return new ExprConstNumber<>(number.getClass(),number);
     }
+    static  ExprConstNumber<Short> val(Short number){
+        return new ExprConstNumber<>(Short.class,number);
+    }
+
+    static  ExprConstNumber<Integer> val(Integer number){
+        return new ExprConstNumber<>(Integer.class,number);
+    }
+
+    static  ExprConstNumber<Long> val(Long number){
+        return new ExprConstNumber<>(Long.class,number);
+    }
+
+    static  ExprConstNumber<Float> val(Float number){
+        return new ExprConstNumber<>(Float.class,number);
+    }
+
+    static  ExprConstNumber<Double> val(Double number){
+        return new ExprConstNumber<>(Double.class,number);
+    }
+
+
+
     static ETypeString  val(String value){
         return new ExprConstString(value);
     }
@@ -32,6 +56,16 @@ public interface Expr<S>{
     static ETypeDateTime val(LocalDateTime dateTime){
         return new ExprDateTime(dateTime);
     }
+
+
+    default ETypeBoolean    in(ETypeList<S> in){
+        return new ExprIn<>(this,in);
+    }
+
+    static ETypeBoolean exists(ETypeList<?> list){
+        return new ExprExists(list);
+    }
+
 
     static EBooleanGroup    group(ETypeBoolean b){
         return new EBooleanGroup(b);
@@ -81,9 +115,20 @@ public interface Expr<S>{
             Expr<T2> v2, Expr<T3> v3, Expr<T4> v4, Expr<T5> v5, Expr<T6> v6, Expr<T7> v7){
         return new ETuple7<>(this,v2,v3,v4,v5,v6,v7);
     }
-    <R> R accept(ExprVisitor<R> visitor);
+
 
     S read(RowReader _rowReader, ExprRowReaderCache _cache);
 
+    /**
+     * Return the name of the expression without the tablename.<br>
+     * Mainly used by the insert sql generator to get a list of all column names to insert.<br>
+     * @param context   The context
+     * @return  The full property name without the
+     */
+    default String _fullColumnName(ExprToSqlContext context){
+        throw new NotYet("Not Yet supported on " + getClass().getName());
+    }
+
     String _toSql(ExprToSqlContext context);
+    PList<Expr> _expand();
 }

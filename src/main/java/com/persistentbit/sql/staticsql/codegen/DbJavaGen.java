@@ -155,10 +155,11 @@ public class DbJavaGen {
             {
                 // ************ Construction & Parent Expression
                 addImport(DbSql.class);
-                println("private final Expr __parent;");
+                addImport(ETypePropertyParent.class);
+                println("private final ETypePropertyParent __parent;");
 
                 println("");
-                bs("public " + cls.getClassName() + "(Expr parent)");{
+                bs("public " + cls.getClassName() + "(ETypePropertyParent parent)");{
                 println("this.__parent = parent;");
             }be();
                 println("");
@@ -169,7 +170,7 @@ public class DbJavaGen {
                 println("");
                 addImport(Optional.class);
                 println("@Override");
-                println("public Optional<Expr<?>> getParent() { return Optional.ofNullable(this.__parent); }");
+                println("public Optional<ETypePropertyParent> getParent() { return Optional.ofNullable(this.__parent); }");
                 // *****************  _getTableName
 
                 println("");
@@ -190,6 +191,12 @@ public class DbJavaGen {
 
                 println("");
 
+                // ***************** _fullColumnName
+                addImport(ExprToSqlContext.class);
+                println("");
+                println("@Override");
+                println("public String _fullColumnName(ExprToSqlContext context) { return __parent == null ? \"\" : __parent._fullColumnName(context); }");
+
                 // ***************** properties
 
                 vc.getProperties().forEach(this::generateProperty);
@@ -206,21 +213,72 @@ public class DbJavaGen {
                         println("return PList.val(" + vc.getProperties().map(p -> "Tuple2.of(\"" + p.getName()  + "\","  +p.getName() +")").toString(", ") + ");");
                     }
                 }be();
-                // ***************** asValues
+                // ***************** _asExprValues
                 println("");
-                bs("static public PList<Expr> asValues(Object obj)");{
-                    println(vcCls.getClassName() + " v = (" + vcCls.getClassName() + ")obj;");
-                    println("PList<Expr> r = PList.empty();");
-                    vc.getProperties().forEach(p -> {
-                                println(generateValueExpr(p));
-                            });
-                    println("return r;");
+                bs("public PList<Expr> _asExprValues(" + vcCls.getClassName() + " v)");{
+                    println("return " + cls.getClassName() + ".asValues(v);");
                 }be();
+
+                bs("static public PList<Expr> asValues(" + vcCls.getClassName() + " v)");{
+                println("PList<Expr> r = PList.empty();");
+                vc.getProperties().forEach(p -> {
+                    println(generateValueExpr(p));
+                });
+                println("return r;");
+            }be();
+
+                // ***************** _expand
+                println("");
+                bs("public PList<Expr> _expand()");{
+                     println("PList<Expr> res = PList.empty();");
+                     vc.getProperties().forEach(p -> {
+                         println("res = res.plusAll(" + p.getName() + "._expand());");
+                     });
+                     println("return res;");
+                }be();
+
+
                 // **************** read
                 addImport(RowReader.class);
                 addImport(ExprRowReaderCache.class);
-                bs("static public " + vcCls.getClassName() + " read(RowReader _rowReader, " + ExprRowReaderCache.class.getSimpleName() + " _cache)");{
+                bs("public " + vcCls.getClassName() + " read(RowReader _rowReader, " + ExprRowReaderCache.class.getSimpleName() + " _cache)");{
                     vc.getProperties().forEach(p -> {
+                        RClass pcls = p.getValueType().getTypeSig().getName();
+
+                        String javaClassName = JavaGenUtils.toString(packageName,pcls);
+                        //For internal Substem classes
+                        if(SubstemaUtils.isSubstemaClass(pcls)){
+                            if(pcls.equals(SubstemaUtils.dateTimeRClass)){
+                                addImport(LocalDateTime.class);
+                                javaClassName  = LocalDateTime.class.getSimpleName();
+                            }
+                            if(pcls.equals(SubstemaUtils.dateRClass)){
+                                addImport(LocalDate.class);
+                                javaClassName = LocalDate.class.getSimpleName();
+                            }
+                            println(javaClassName + " " + p.getName() + " = this." + p.getName() + ".read(_rowReader,_cache);");
+                        } else {
+
+                            if(getInternalOrExternalEnum(pcls).isPresent()){
+                                //For Enums
+                                //Gender gender = Gender.valueOf(rowReader.readNext(String.class));
+                                addImport(pcls);
+                                String enumStringName = "_" + p.getName() + "String";
+                                println("String " + enumStringName +" = _rowReader.readNext(String.class);");
+                                println(pcls.getClassName() + " " + p.getName() + " = " + enumStringName +"== null ? null : "+ pcls.getClassName() + ".valueOf(" + enumStringName + ");");
+                            } else {
+                                addImport(pcls);
+                                javaClassName = JavaGenUtils.toString(packageName,pcls.withPackageName(packageName));
+                                RClass nc = toExprClass(pcls);
+                                addImport(nc);
+                                println(javaClassName + " " + p.getName() + " = this." + p.getName() + ".read(_rowReader,_cache);");
+                            }
+
+                        }
+                    });
+
+
+                    /*vc.getProperties().forEach(p -> {
                         RClass pcls = p.getValueType().getTypeSig().getName();
 
                         String javaClassName = JavaGenUtils.toString(packageName,pcls);
@@ -255,6 +313,7 @@ public class DbJavaGen {
                         }
 
                     });
+                    */
                     String allNull = vc.getProperties().filter(p -> p.getValueType().isRequired()).map(p -> p.getName() + "==null").toString(" || ");
                     if(allNull.isEmpty() == false){
                         println("if(" + allNull+") { return null; }");

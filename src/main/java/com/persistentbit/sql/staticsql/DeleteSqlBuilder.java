@@ -1,6 +1,7 @@
 package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PMap;
+import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 
@@ -29,13 +30,14 @@ public class DeleteSqlBuilder {
     }
 
     public String generate() {
-        String nl = "\r\n";
+        throw new NotYet();
+        /*String nl = "\r\n";
         String res = "DELETE FROM  " + delete.getTable()._getTableName() + nl;
         if(delete.getWhere() != null){
             res += " WHERE " + ExprToSql.toSql(delete.getWhere(),this::getTableInstance,dbType);
         }
 
-        return res;
+        return res;*/
     }
 
 }

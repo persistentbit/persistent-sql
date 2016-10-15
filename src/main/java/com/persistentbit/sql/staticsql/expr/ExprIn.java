@@ -1,5 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
+
 /**
  * Created by petermuys on 14/10/16.
  */
@@ -12,8 +14,14 @@ public class ExprIn<T> implements ETypeBoolean{
         this.in = in;
     }
 
+
     @Override
-    public <R> R accept(ExprVisitor<R> visitor) {
-        return visitor.visit(this);
+    public String _toSql(ExprToSqlContext context) {
+        return value._toSql(context) + " IN " + in._toSql(context);
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

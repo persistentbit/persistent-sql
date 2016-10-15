@@ -1,5 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
+
 import java.time.LocalDateTime;
 
 /**
@@ -16,8 +18,14 @@ public class ExprDateTime implements Expr<LocalDateTime>,ETypeDateTime {
         return value;
     }
 
+
     @Override
-    public <R> R accept(ExprVisitor<R> visitor) {
-        return visitor.visit(this);
+    public String _toSql(ExprToSqlContext context) {
+        return context.getDbType().asLiteralDateTime(value);
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

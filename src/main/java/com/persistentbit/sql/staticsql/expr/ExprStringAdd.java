@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.expr.ETypeString;
 
 /**
@@ -18,10 +19,7 @@ public class ExprStringAdd  implements ETypeString {
     public String toString() {
         return left + "+" + right;
     }
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
+
 
     public ETypeString getLeft() {
         return left;
@@ -29,5 +27,15 @@ public class ExprStringAdd  implements ETypeString {
 
     public ETypeString getRight() {
         return right;
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return context.getDbType().concatStrings(left._toSql(context),right._toSql(context));
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

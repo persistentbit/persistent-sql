@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PStream;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 

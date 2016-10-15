@@ -2,6 +2,7 @@ package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.tuples.Tuple2;
+import com.persistentbit.core.utils.NotYet;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -10,7 +11,8 @@ import java.util.function.Function;
  * @author Peter Muys
  * @since 28/09/2016
  */
-public interface ETypeObject<T> extends Expr<T>{
+public interface ETypeObject<T> extends ETypePropertyParent<T>{
+
 
 
     PList<Tuple2<String,Expr>> _all();
@@ -18,12 +20,9 @@ public interface ETypeObject<T> extends Expr<T>{
         return new EMapper<T, R>(this,mapper);
     }
 
-    @Override
-    default <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
 
-    Optional<Expr<?>> getParent();
+
+    Optional<ETypePropertyParent> getParent();
 
     String _getTableName();
     default String getInstanceName() {
@@ -36,4 +35,21 @@ public interface ETypeObject<T> extends Expr<T>{
 
     Optional<Expr> _getAutoGenKey();
     T _setAutoGenKey(T object, Object value);
+
+    PList<Expr> _asExprValues(T value);
+
+    @Override
+    default String _toSql(ExprToSqlContext context) {
+
+        return _expand().map(e -> e._toSql(context)).toString(", ");
+    }
+
+
+    @Override
+    default String _asParentName(ExprToSqlContext context, String propertyName) {
+        if(getParent().isPresent()){
+            return getParent().get()._asParentName(context,propertyName);
+        }
+        return context.uniqueInstanceName(this,_getTableName()) + "." + propertyName;
+    }
 }

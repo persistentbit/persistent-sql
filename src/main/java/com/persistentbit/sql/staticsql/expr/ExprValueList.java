@@ -8,22 +8,28 @@ import com.persistentbit.sql.staticsql.RowReader;
 /**
  * Created by petermuys on 14/10/16.
  */
-public class ExprValueList<T> implements ETypeList<T>,Expr<PList<T>>{
+public class ExprValueList<T> implements ETypeList<T>,Expr<T>{
 
-    private final PList<T> values;
+    private final PList<Expr<T>> values;
 
-    public ExprValueList(Iterable<T> values) {
+    public ExprValueList(Iterable<Expr<T>> values) {
         this.values = PList.from(values);
     }
 
 
+
     @Override
-    public <R> R accept(ExprVisitor<R> visitor) {
-        return visitor.visit((ExprValueList) this);
+    public T read(RowReader _rowReader, ExprRowReaderCache _cache) {
+        throw new PersistSqlException("Don't know how to read a value list");
     }
 
     @Override
-    public PList<T> read(RowReader _rowReader, ExprRowReaderCache _cache) {
-        throw new PersistSqlException("Don't know how to read a value list");
+    public String _toSql(ExprToSqlContext context) {
+        return "(" + values.map(v -> v._toSql(context)).toString(", ") + ")";
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

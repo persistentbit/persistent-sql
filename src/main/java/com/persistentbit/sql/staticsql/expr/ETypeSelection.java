@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.Query;
 import com.persistentbit.sql.staticsql.RowReader;
@@ -9,10 +10,10 @@ import java.util.Optional;
 /**
  * Created by petermuys on 14/10/16.
  */
-public interface ETypeSelection<T> extends ETypeObject<T>{
+public interface ETypeSelection<T> extends ETypeObject<T>,ETypeList<T>{
     @Override
-    default Optional<Expr<?>> getParent() {
-        return null;
+    default Optional<ETypePropertyParent> getParent() {
+        return Optional.empty();
     }
 
     @Override
@@ -31,7 +32,7 @@ public interface ETypeSelection<T> extends ETypeObject<T>{
     }
 
     Query getQuery();
-    Expr<T> getSelection();
 
+    PList<BaseSelection<?>.SelectionProperty<?>> selections();
 
 }

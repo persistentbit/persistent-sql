@@ -1,5 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.ETypeNumber;
@@ -20,10 +22,7 @@ public class ExprNumberCast<F extends Number,T extends Number> implements ETypeN
     public String toString() {
         return "((" + clsTo.getSimpleName() + ")" + from + ")";
     }
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
+
 
     public ETypeNumber<F> getFrom() {
         return from;
@@ -36,5 +35,15 @@ public class ExprNumberCast<F extends Number,T extends Number> implements ETypeN
     @Override
     public T read(RowReader _rowReader, ExprRowReaderCache _cache) {
         return _rowReader.readNext(clsTo);
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        throw new NotYet(this.toString());
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

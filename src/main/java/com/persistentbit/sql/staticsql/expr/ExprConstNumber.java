@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.ETypeNumber;
@@ -20,10 +21,7 @@ public class ExprConstNumber<N extends Number> implements ETypeNumber<N> {
     public String toString() {
         return ""+value;
     }
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
+
 
     public N getValue() {
         return value;
@@ -32,5 +30,15 @@ public class ExprConstNumber<N extends Number> implements ETypeNumber<N> {
     @Override
     public N read(RowReader _rowReader, ExprRowReaderCache _cache) {
         return (N)_rowReader.readNext(valueClass);
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return ""+value;
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

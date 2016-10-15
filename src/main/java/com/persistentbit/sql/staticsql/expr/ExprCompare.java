@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.expr.ETypeBoolean;
 import com.persistentbit.sql.staticsql.expr.Expr;
 
@@ -35,10 +36,7 @@ public class ExprCompare<T extends Expr> implements ETypeBoolean {
     public String toString() {
         return left.toString() + compType + right.toString();
     }
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
+
 
     public T getLeft() {
         return left;
@@ -50,5 +48,15 @@ public class ExprCompare<T extends Expr> implements ETypeBoolean {
 
     public CompType getCompType() {
         return compType;
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return left._toSql(context) + " " + compType + " " + right._toSql(context);
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.ETypeNumber;
@@ -23,10 +24,6 @@ public class ExprNumberBinOp<N extends Number> implements ETypeNumber<N> {
     public String toString() {
         return "(" + left.toString() + " " + binOp + " " + right + ")";
     }
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
 
     public ETypeNumber<N> getLeft() {
         return left;
@@ -43,5 +40,14 @@ public class ExprNumberBinOp<N extends Number> implements ETypeNumber<N> {
     @Override
     public N read(RowReader _rowReader, ExprRowReaderCache _cache) {
         return left.read(_rowReader,_cache);
+    }
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return left._toSql(context) + " " + binOp + " " + right._toSql(context);
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

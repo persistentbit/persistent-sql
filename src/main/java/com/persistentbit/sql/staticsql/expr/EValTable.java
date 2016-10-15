@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
@@ -15,10 +16,7 @@ public class EValTable<T> implements Expr<T>{
         this.value = value;
     }
 
-    @Override
-    public <R> R accept(ExprVisitor<R> visitor) {
-        return visitor.visit(this);
-    }
+
 
     public ETypeObject<T> getTable() {
         return table;
@@ -31,5 +29,15 @@ public class EValTable<T> implements Expr<T>{
     @Override
     public T read(RowReader _rowReader, ExprRowReaderCache _cache) {
         return table.read(_rowReader,_cache);
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return _expand().map(e -> _toSql(context)).toString(", ");
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return table._asExprValues(value);
     }
 }

@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.function.Function3;
 import com.persistentbit.core.function.Function7;
 import com.persistentbit.core.tuples.Tuple2;
@@ -34,10 +35,7 @@ public class ETuple7<T1,T2,T3,T4,T5,T6,T7> implements Expr<Tuple7<T1,T2,T3,T4,T5
         return new EMapper<>(this,(t -> t.map(mapper)));
     }
 
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
+
 
     public Expr<T1> getV1() {
         return v1;
@@ -72,5 +70,22 @@ public class ETuple7<T1,T2,T3,T4,T5,T6,T7> implements Expr<Tuple7<T1,T2,T3,T4,T5
                 ,v6.read(_rowReader,_cache)
                 ,v7.read(_rowReader,_cache)
         ));
+    }
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return _expand().map(e -> e._toSql(context)).toString(", ");
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.<Expr>empty()
+                .plusAll(v1._expand())
+                .plusAll(v2._expand())
+                .plusAll(v3._expand())
+                .plusAll(v4._expand())
+                .plusAll(v5._expand())
+                .plusAll(v6._expand())
+                .plusAll(v7._expand())
+        ;
     }
 }

@@ -18,7 +18,7 @@ public class ExprToSqlContext {
     public String   uniqueInstanceName(Expr expr, String defaultName){
         String res = instanceNameLookup.getOrDefault(expr,null);
         if(res == null){
-            res = "_" + defaultName + "_" + nextUniqueId;
+            res = defaultName + "_" + nextUniqueId;
             nextUniqueId++;
             instanceNameLookup = instanceNameLookup.put(expr,res);
         }

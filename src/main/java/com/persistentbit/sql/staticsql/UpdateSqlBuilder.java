@@ -3,6 +3,7 @@ package com.persistentbit.sql.staticsql;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.tuples.Tuple2;
+import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
@@ -29,6 +30,8 @@ public class UpdateSqlBuilder {
     }
 
     public String generate() {
+        throw new NotYet();
+        /*
         String nl = "\r\n";
         String res = "UPDATE " + update.getTable()._getTableName() + nl;
         res += " SET ";
@@ -44,7 +47,7 @@ public class UpdateSqlBuilder {
             res += nl + " WHERE " + ExprToSql.toSql(update.getWhere(),this::getTableInstance,dbType);
         }
 
-        return res;
+        return res;*/
     }
 
 

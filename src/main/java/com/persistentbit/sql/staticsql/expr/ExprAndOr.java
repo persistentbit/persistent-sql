@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.expr.ETypeBoolean;
 
 /**
@@ -25,10 +26,6 @@ public class ExprAndOr implements ETypeBoolean{
         return left.toString() + " " + logicType + " " + right.toString();
     }
 
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
 
     public ETypeBoolean getLeft() {
         return left;
@@ -40,5 +37,15 @@ public class ExprAndOr implements ETypeBoolean{
 
     public LogicType getLogicType() {
         return logicType;
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return left._toSql(context) + " " + logicType.name().toUpperCase() + " " + right._toSql(context);
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

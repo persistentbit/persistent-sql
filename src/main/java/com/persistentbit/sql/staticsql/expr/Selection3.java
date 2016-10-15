@@ -13,9 +13,9 @@ import com.persistentbit.sql.staticsql.RowReader;
  */
 public class Selection3<T1,T2,T3> extends BaseSelection<Tuple3<T1,T2,T3>> {
 
-    public final Expr<T1> col1;
-    public final Expr<T2> col2;
-    public final Expr<T3> col3;
+    public final SelectionProperty<T1> col1;
+    public final SelectionProperty<T2> col2;
+    public final SelectionProperty<T3> col3;
 
 
     public Selection3(Query query,
@@ -24,9 +24,9 @@ public class Selection3<T1,T2,T3> extends BaseSelection<Tuple3<T1,T2,T3>> {
                       Expr<T3> col3
     ) {
         super(query, col1.mergeWith(col2,col3));
-        this.col1 = col1;
-        this.col2 = col2;
-        this.col3 = col3;
+        this.col1 = new SelectionProperty<>("col1",col1);
+        this.col2 = new SelectionProperty<>("col2",col2);
+        this.col3 = new SelectionProperty<>("col3",col3);
     }
 
     @Override
@@ -45,4 +45,13 @@ public class Selection3<T1,T2,T3> extends BaseSelection<Tuple3<T1,T2,T3>> {
                 ,col3.read(_rowReader,_cache)
         ));
     }
+    @Override
+    public PList<Expr> _expand() {
+        return col1._expand().plusAll(col2._expand()).plusAll(col3._expand());
+    }
+    @Override
+    public PList<BaseSelection<?>.SelectionProperty<?>> selections(){
+        return PList.val(col1,col2,col3);
+    }
+
 }

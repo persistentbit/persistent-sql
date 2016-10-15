@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
@@ -32,4 +33,5 @@ public interface ETypeString  extends Expr<String>,MixinEq<ETypeString>,MixinCom
     default String read(RowReader _rowReader, ExprRowReaderCache _cache) {
         return _rowReader.readNext(String.class);
     }
+
 }

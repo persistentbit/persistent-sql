@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
@@ -17,10 +18,6 @@ public class EMapper<T,R> implements Expr<R>{
         this.mapper = mapper;
     }
 
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
 
     public Expr<T> getExpr() {
         return expr;
@@ -43,5 +40,15 @@ public class EMapper<T,R> implements Expr<R>{
         //The first time it is used
 
         return _cache.updatedFromCache(mapper.apply(expr.read(_rowReader,_cache)));
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return expr._toSql(context);
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return expr._expand();
     }
 }

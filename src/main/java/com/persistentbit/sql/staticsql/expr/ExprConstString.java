@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.expr.ETypeString;
 
 /**
@@ -16,12 +17,18 @@ public class ExprConstString implements ETypeString {
     public String toString() {
         return "\"" + value + "\"";
     }
-    @Override
-    public <R1> R1 accept(ExprVisitor<R1> visitor) {
-        return visitor.visit(this);
-    }
 
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return context.getDbType().asLiteralString(value);
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

@@ -1,5 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
+
 /**
  * TODO: Add comment
  *
@@ -14,10 +16,6 @@ public class ExprStringLike implements ETypeBoolean{
         this.right = right;
     }
 
-    @Override
-    public <R> R accept(ExprVisitor<R> visitor) {
-        return visitor.visit(this);
-    }
 
     public ETypeString getLeft() {
         return left;
@@ -25,5 +23,15 @@ public class ExprStringLike implements ETypeBoolean{
 
     public ETypeString getRight() {
         return right;
+    }
+
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        return left._toSql(context) + " LIKE " + right._toSql(context);
+    }
+
+    @Override
+    public PList<Expr> _expand() {
+        return PList.val(this);
     }
 }

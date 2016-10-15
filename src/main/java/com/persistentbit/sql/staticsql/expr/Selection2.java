@@ -12,16 +12,16 @@ import com.persistentbit.sql.staticsql.RowReader;
  */
 public class Selection2<T1,T2> extends BaseSelection<Tuple2<T1,T2>> {
 
-    public final Expr<T1> col1;
-    public final Expr<T2> col2;
+    public final SelectionProperty<T1> col1;
+    public final SelectionProperty<T2> col2;
 
     public Selection2(Query query,
                       Expr<T1> col1,
                       Expr<T2> col2
     ) {
         super(query, col1.mergeWith(col2));
-        this.col1 = col1;
-        this.col2 = col2;
+        this.col1 = new SelectionProperty<>("col1",col1);
+        this.col2 = new SelectionProperty<>("col2",col2);
     }
 
     @Override
@@ -40,7 +40,13 @@ public class Selection2<T1,T2> extends BaseSelection<Tuple2<T1,T2>> {
     }
 
     @Override
-    public String _toSql(ExprToSqlContext context) {
-        return
+    public PList<Expr> _expand() {
+        return col1._expand().plusAll(col2._expand());
     }
+    @Override
+    public PList<BaseSelection<?>.SelectionProperty<?>> selections(){
+        return PList.val(col1,col2);
+    }
+
+
 }

@@ -32,12 +32,12 @@ public class Selection1<T1> extends BaseSelection<T1>{
     }
 
     @Override
-    public PList<Expr> _asExprValues(T1 value) {
+    public PList<Expr<?>> _asExprValues(T1 value) {
         throw new NotYet();
     }
 
     @Override
-    public PList<Expr> _expand() {
+    public PList<Expr<?>> _expand() {
         return col1._expand();
     }
 

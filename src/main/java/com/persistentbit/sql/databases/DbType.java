@@ -52,6 +52,14 @@ public interface DbType{
         return "TIMESTAMP '" + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.nnnnnnnnnn").format(dateTime) + "'";
     }
 
+    default String toUpperCase(String value){
+        return "UCASE(" + value + ")";
+    }
+
+    default String toLowerCase(String value){
+        return "LCASE(" + value + ")";
+    }
+
 
     static void registerDriver(String driverClass){
         try {

@@ -54,8 +54,8 @@ public class ETuple3<T1,T2,T3> implements Expr<Tuple3<T1,T2,T3>>{
     }
 
     @Override
-    public PList<Expr> _expand() {
-        return PList.<Expr>empty()
+    public PList<Expr<?>> _expand() {
+        return PList.<Expr<?>>empty()
                 .plusAll(v1._expand())
                 .plusAll(v2._expand())
                 .plusAll(v3._expand())

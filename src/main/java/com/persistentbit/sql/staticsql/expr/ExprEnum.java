@@ -28,8 +28,5 @@ public class ExprEnum<T extends Enum<T>> implements ETypeEnum<T> {
         return context.getDbType().asLiteralString(value.name());
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

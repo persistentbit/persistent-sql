@@ -24,8 +24,4 @@ public class ExprBoolean implements ETypeBoolean {
         return value.toString().toUpperCase();
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
 }

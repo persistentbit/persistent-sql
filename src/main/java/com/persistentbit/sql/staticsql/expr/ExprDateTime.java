@@ -24,8 +24,5 @@ public class ExprDateTime implements Expr<LocalDateTime>,ETypeDateTime {
         return context.getDbType().asLiteralDateTime(value);
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

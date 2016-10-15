@@ -1,8 +1,9 @@
-package com.persistentbit.sql.staticsql.expr;
+package com.persistentbit.sql.staticsql.expr.mixins;
 
 import com.persistentbit.sql.staticsql.expr.ETypeBoolean;
 import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.staticsql.expr.ExprCompare;
+import com.persistentbit.sql.staticsql.expr.ExprIsNull;
 
 /**
  * @author Peter Muys
@@ -15,5 +16,12 @@ public interface MixinEq<T extends Expr> {
     }
     default ETypeBoolean notEq(T right){
         return new ExprCompare((T)this,right, ExprCompare.CompType.neq);
+    }
+
+    default ETypeBoolean isNull() {
+        return new ExprIsNull((T)this,false);
+    }
+    default ETypeBoolean isNotNull() {
+        return new ExprIsNull((T)this,false);
     }
 }

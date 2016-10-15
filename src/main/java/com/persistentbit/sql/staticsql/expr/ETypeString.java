@@ -1,24 +1,28 @@
 package com.persistentbit.sql.staticsql.expr;
 
-import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
+import com.persistentbit.sql.staticsql.expr.mixins.MixinEq;
+
+
 
 /**
  * @author Peter Muys
  * @since 28/09/2016
  */
-public interface ETypeString  extends Expr<String>,MixinEq<ETypeString>,MixinComparable<ETypeString> {
+public interface ETypeString  extends Expr<String>,MixinEq<ETypeString>{
 
     default ETypeBoolean    eq(String other){
-        return eq(Expr.val(other));
+        return eq(Sql.val(other));
     }
     default ETypeBoolean notEq(String other){
-        return notEq(Expr.val(other));
+        return notEq(Sql.val(other));
     }
 
     default ETypeBoolean    like(ETypeString other) { return new ExprStringLike(this,other);}
-    default ETypeBoolean    like(String other) { return this.like(Expr.val(other));}
+    default ETypeBoolean    like(String other) { return this.like(Sql.val(other));}
+    default ETypeBoolean    notLike(ETypeString other) { return like(other).not();}
+    default ETypeBoolean    notLike(String other) { return like(other).not();}
 
 
     default ETypeString add(ETypeString expr){
@@ -26,7 +30,7 @@ public interface ETypeString  extends Expr<String>,MixinEq<ETypeString>,MixinCom
     }
 
     default ETypeString add(String value){
-        return add(Expr.val(value));
+        return add(Sql.val(value));
     }
 
     @Override
@@ -34,4 +38,26 @@ public interface ETypeString  extends Expr<String>,MixinEq<ETypeString>,MixinCom
         return _rowReader.readNext(String.class);
     }
 
+    //***************************  BETWEEN
+    default ETypeBoolean between(Expr<String> left, Expr<String> right){
+        return new ExprBetween<>(this,left,right);
+    }
+    default ETypeBoolean between(Expr<String> left, String right){
+        return between(left,Sql.val(right));
+    }
+    default ETypeBoolean between(String left,Expr<String> right){
+        return between(Sql.val(left),right);
+    }
+    default ETypeBoolean between(String left, String right){
+        return between(Sql.val(left),Sql.val(right));
+    }
+
+    //************************* UPPER / LOWER case
+
+    default ETypeString toUpperCase() {
+        return new EStringUpperLower(true,this);
+    }
+    default ETypeString toLowerCase() {
+        return new EStringUpperLower(false,this);
+    }
 }

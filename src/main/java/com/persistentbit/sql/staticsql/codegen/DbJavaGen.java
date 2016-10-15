@@ -147,7 +147,9 @@ public class DbJavaGen {
 
             addImport(vcCls);
             addImport(Expr.class);
+            addImport(Sql.class);
             addImport(ETypeObject.class);
+            boolean isTableClass = atUtils.hasAnnotation(vc.getAnnotations(),rclassTable);
 
             // ********   Table Definition class
 
@@ -157,16 +159,30 @@ public class DbJavaGen {
                 addImport(DbSql.class);
                 addImport(ETypePropertyParent.class);
                 println("private final ETypePropertyParent __parent;");
+                if(isTableClass) {
+                    println("private final DbSql _db;");
+                    println("");
+                    bs("public " + cls.getClassName() + "(DbSql db, ETypePropertyParent parent)");{
+                        println("this._db = db;");
+                        println("this.__parent = parent;");
+                    }be();
+                    println("");
+                    bs("public " + cls.getClassName() + "(DbSql db)");{
+                        println("this(db,null);");
+                    }be();
+                } else {
+                    bs("public " + cls.getClassName() + "(ETypePropertyParent parent)");{
+                        println("this.__parent = parent;");
+                    }be();
+                    println("");
+                    bs("public " + cls.getClassName() + "()");{
+                        println("this(null);");
+                    }be();
 
-                println("");
-                bs("public " + cls.getClassName() + "(ETypePropertyParent parent)");{
-                println("this.__parent = parent;");
-            }be();
-                println("");
-                bs("public " + cls.getClassName() + "()");{
-                println("this(null);");
+                }
 
-            }be();
+
+
                 println("");
                 addImport(Optional.class);
                 println("@Override");
@@ -215,12 +231,12 @@ public class DbJavaGen {
                 }be();
                 // ***************** _asExprValues
                 println("");
-                bs("public PList<Expr> _asExprValues(" + vcCls.getClassName() + " v)");{
+                bs("public PList<Expr<?>> _asExprValues(" + vcCls.getClassName() + " v)");{
                     println("return " + cls.getClassName() + ".asValues(v);");
                 }be();
 
-                bs("static public PList<Expr> asValues(" + vcCls.getClassName() + " v)");{
-                println("PList<Expr> r = PList.empty();");
+                bs("static public PList<Expr<?>> asValues(" + vcCls.getClassName() + " v)");{
+                println("PList<Expr<?>> r = PList.empty();");
                 vc.getProperties().forEach(p -> {
                     println(generateValueExpr(p));
                 });
@@ -229,8 +245,8 @@ public class DbJavaGen {
 
                 // ***************** _expand
                 println("");
-                bs("public PList<Expr> _expand()");{
-                     println("PList<Expr> res = PList.empty();");
+                bs("public PList<Expr<?>> _expand()");{
+                     println("PList<Expr<?>> res = PList.empty();");
                      vc.getProperties().forEach(p -> {
                          println("res = res.plusAll(" + p.getName() + "._expand());");
                      });
@@ -331,23 +347,19 @@ public class DbJavaGen {
                 //**************   Auto Generated Key
                 generateAutGenKeyFunctions(vc);
 
+                //**************   Insert
+                if(isTableClass){
+                    generateInsertFunction(vc);
+                }
+
             }be();
             return toGenJava(cls);
         }
 
         private void generateAutGenKeyFunctions(RValueClass vc){
-            /*
-            public Optional<Expr<?>> _getAutoGenKey(){
-                return Optional.of(id);
-            }
-            public TranslationUser	setAutoGenKey(TranslationUser object, Object value){
-                return object.withId((Long)value);
-            }
-            */
             RProperty autoGenProp = vc.getProperties().find(p -> atUtils.getOneAnnotation(p.getAnnotations(),rclassAutoGen).isPresent()).orElse(null);
             addImport(Optional.class);
-            println("@Override");
-            bs("public Optional<Expr> _getAutoGenKey()");{
+            bs("public Optional<Expr<?>> _getAutoGenKey()");{
                 if(autoGenProp == null){
                     println("return Optional.empty();");
                 } else {
@@ -355,7 +367,6 @@ public class DbJavaGen {
                 }
             }be();
             String vcName = vc.getTypeSig().getName().getClassName();
-            println("@Override");
             bs("public " + vcName + " _setAutoGenKey(" + vcName + " object, Object value)");{
                 if(autoGenProp == null){
                     addImport(PersistSqlException.class);
@@ -364,6 +375,21 @@ public class DbJavaGen {
                     String typeName =autoGenProp.getValueType().getTypeSig().getName().getClassName();
                     println("return object.with" +
                             StringUtils.firstUpperCase(autoGenProp.getName()) + "((" + typeName + ") value);");
+                }
+            }be();
+
+
+        }
+
+        private void generateInsertFunction(RValueClass vc){
+            RProperty autoGenProp = vc.getProperties().find(p -> atUtils.getOneAnnotation(p.getAnnotations(),rclassAutoGen).isPresent()).orElse(null);
+            String vcName = vc.getTypeSig().getName().getClassName();
+            bs("public " + vcName + " insert(" + vcName + " newRow)");{
+                if(autoGenProp == null){
+                    println("_db.runInsert(this,val(newRow));");
+                    println("return newRow;");
+                } else {
+                    println("return _db.runInsertWithGenKeys(this,newRow,_getAutoGenKey().get(),this::_setAutoGenKey);");
                 }
             }be();
 
@@ -388,7 +414,7 @@ public class DbJavaGen {
                     || cls.equals(SubstemaUtils.stringRClass)
                     || SubstemaUtils.isDateClass(cls)
                     ){
-                return "r = r.plus(Expr.val(" + getter + "));";
+                return "r = r.plus(Sql.val(" + getter + "));";
             }else {
                 if(getInternalOrExternalEnum(cls).isPresent()){
                     addImport(ExprEnum.class);
@@ -429,7 +455,13 @@ public class DbJavaGen {
                     RClass cls = vc.getTypeSig().getName();
                     RClass ecls = toExprClass(cls);
                     addImport(ecls);
-                    println("public " + JavaGenUtils.toString(packageName,ecls) + " " + StringUtils.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils.toString(packageName,ecls) +"(); }");
+                    boolean isTableClass = atUtils.hasAnnotation(vc.getAnnotations(),rclassTable);
+                    if(isTableClass){
+                        println("public " + JavaGenUtils.toString(packageName,ecls) + " " + StringUtils.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils.toString(packageName,ecls) +"(this); }");
+                    } else {
+                        println("public " + JavaGenUtils.toString(packageName,ecls) + " " + StringUtils.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils.toString(packageName,ecls) +"(); }");
+                    }
+
                 });
 
             }be();

@@ -20,8 +20,5 @@ public class ExprExists implements ETypeBoolean{
         return "EXISTS " + existsIn._toSql(context);
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

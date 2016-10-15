@@ -1,120 +1,148 @@
 package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PList;
-import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.utils.NotYet;
-import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
-import com.persistentbit.sql.staticsql.codegen.DbJavaGenException;
-import com.persistentbit.sql.staticsql.ENumberGroup;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.function.Function;
 
 /**
+ * An Expr instance represents a Java Equivalent of a Sql Expression.<br>
+ *
  * @author Peter Muys
- * @since 28/09/2016
  */
 public interface Expr<S>{
-    static  <N extends Number> ExprConstNumber<N> val(N number){
-        return new ExprConstNumber<>(number.getClass(),number);
+
+
+
+
+    // **********************  COUNT FUNCTION *************
+
+    /**
+     * Create an Sql count(...) expression
+     * @return the Sql expression
+     * @see #countDistinct()
+     */
+    default ETypeNumber<Long>   count() {
+        return new ECount(this,false);
     }
-    static  ExprConstNumber<Short> val(Short number){
-        return new ExprConstNumber<>(Short.class,number);
-    }
-
-    static  ExprConstNumber<Integer> val(Integer number){
-        return new ExprConstNumber<>(Integer.class,number);
-    }
-
-    static  ExprConstNumber<Long> val(Long number){
-        return new ExprConstNumber<>(Long.class,number);
-    }
-
-    static  ExprConstNumber<Float> val(Float number){
-        return new ExprConstNumber<>(Float.class,number);
-    }
-
-    static  ExprConstNumber<Double> val(Double number){
-        return new ExprConstNumber<>(Double.class,number);
-    }
-
-
-
-    static ETypeString  val(String value){
-        return new ExprConstString(value);
+    /**
+     * Create an Sql count(DISTINCT ...) expression
+     * @return the Sql expression
+     * @see #count()
+     */
+    default ETypeNumber<Long>   countDistinct(){
+        return new ECount(this,false);
     }
 
-    static ETypeBoolean val(Boolean value) { return new ExprBoolean(value);}
-
-    static ETypeDate    val(LocalDate date){
-        return new ExprDate(date);
-    }
-
-    static ETypeDateTime val(LocalDateTime dateTime){
-        return new ExprDateTime(dateTime);
-    }
-
-
+    /**
+     * an Sql IN expression.
+     * @param in A ETypeList that can be a fixed list or maybe a select statement
+     * @return The Boolean sql result
+     */
     default ETypeBoolean    in(ETypeList<S> in){
         return new ExprIn<>(this,in);
     }
 
-    static ETypeBoolean exists(ETypeList<?> list){
-        return new ExprExists(list);
+    //*******************    MERGE: merge multiple values into 1 Expression
+
+    /**
+     * Merge this value with 1 other value in a Tuple
+     * @param v2 value 2
+     * @param <T2> value 2 type
+     * @return the merged expression
+     */
+
+    default <T2> ETuple2<S,T2> mergeWith(Expr<T2> v2){
+        return new ETuple2<>(this,v2);
     }
 
+    /**
+     * Merge this value with 2 other values in a Tuple
+     * @param v2 value 2
+     * @param v3 value 3
+     * @param <T2> value 2 type
+     * @param <T3> value 3 type
+     * @return the merged expression
+     */
+    default <T2,T3> ETuple3<S,T2,T3> mergeWith(Expr<T2> v2, Expr<T3> v3){
+        return new ETuple3<>(this,v2,v3);
+    }
+    /**
+     * Merge this value with 3 other values in a Tuple
+     * @param v2 value 2
+     * @param v3 value 3
+     * @param v4 value 4
+     * @param <T2> value 2 type
+     * @param <T3> value 3 type
+     * @param <T4> value 4 type
+     * @return the merged expression
+     */
+    default <T2,T3,T4> ETuple4<S,T2,T3,T4> mergeWith(Expr<T2> v2, Expr<T3> v3, Expr<T4> v4){
+        return new ETuple4<>(this,v2,v3,v4);
+    }
+    /**
+     * Merge this value with 4 other values in a Tuple
+     * @param v2 value 2
+     * @param v3 value 3
+     * @param v4 value 4
+     * @param v5 value 5
+     * @param <T2> value 2 type
+     * @param <T3> value 3 type
+     * @param <T4> value 4 type
+     * @param <T5> value 5 type
+     * @return the merged expression
+     */
+    default <T2,T3,T4,T5> ETuple5<S,T2,T3,T4,T5> mergeWith(
+            Expr<T2> v2, Expr<T3> v3, Expr<T4> v4, Expr<T5> v5){
+        return new ETuple5<>(this,v2,v3,v4,v5);
+    }
+    /**
+     * Merge this value with 5 other values in a Tuple
+     * @param v2 value 2
+     * @param v3 value 3
+     * @param v4 value 4
+     * @param v5 value 5
+     * @param v6 value 6
+     * @param <T2> value 2 type
+     * @param <T3> value 3 type
+     * @param <T4> value 4 type
+     * @param <T5> value 5 type
+     * @param <T6> value 6 type
+     * @return the merged expression
+     */
+    default <T2,T3,T4,T5,T6> ETuple6<S,T2,T3,T4,T5,T6> mergeWith(
+            Expr<T2> v2, Expr<T3> v3, Expr<T4> v4, Expr<T5> v5, Expr<T6> v6){
+        return new ETuple6<>(this,v2,v3,v4,v5,v6);
+    }
+    /**
+     * Merge this value with 6 other values in a Tuple
+     * @param v2 value 2
+     * @param v3 value 3
+     * @param v4 value 4
+     * @param v5 value 5
+     * @param v6 value 6
+     * @param v7 value 7
+     * @param <T2> value 2 type
+     * @param <T3> value 3 type
+     * @param <T4> value 4 type
+     * @param <T5> value 5 type
+     * @param <T6> value 6 type
+     * @param <T7> value 7 type
+     * @return the merged expression
+     */
+    default <T2,T3,T4,T5,T6,T7> ETuple7<S,T2,T3,T4,T5,T6,T7> mergeWith(
+            Expr<T2> v2, Expr<T3> v3, Expr<T4> v4, Expr<T5> v5, Expr<T6> v6, Expr<T7> v7){
+        return new ETuple7<>(this,v2,v3,v4,v5,v6,v7);
+    }
 
-    static EBooleanGroup    group(ETypeBoolean b){
-        return new EBooleanGroup(b);
-    }
-    static <N extends Number> ENumberGroup<N> group(ETypeNumber<N> v){
-        return new ENumberGroup<>(v);
-    }
-    static EStringGroup group(ETypeString v){
-        return new EStringGroup(v);
-    }
-
-    static <T extends Enum<T>> ETypeEnum<T> val(T value){
-        if(value == null){
-            throw new PersistSqlException("Need to know the class of the null enum: use Expr.valNullEnum(cls) instead.");
-        }
-        return new ExprEnum<T>(value,value.getClass());
-    }
-
-
-    static <T extends Enum<T>> ETypeEnum<T> valNullEnum(Class<T> value){
-        return new ExprEnum<>(null,value);
-    }
 
     default <R> EMapper<S,R> map(Function<S,R> mapper){
         return new EMapper<>(this,mapper);
     }
 
 
-    default <T2> ETuple2<S,T2> mergeWith(Expr<T2> expr2){
-        return new ETuple2<>(this,expr2);
-    }
-    default <T2,T3> ETuple3<S,T2,T3> mergeWith(Expr<T2> v2, Expr<T3> v3){
-        return new ETuple3<>(this,v2,v3);
-    }
-    default <T2,T3,T4> ETuple4<S,T2,T3,T4> mergeWith(Expr<T2> v2, Expr<T3> v3, Expr<T4> v4){
-        return new ETuple4<>(this,v2,v3,v4);
-    }
-    default <T2,T3,T4,T5> ETuple5<S,T2,T3,T4,T5> mergeWith(
-            Expr<T2> v2, Expr<T3> v3, Expr<T4> v4, Expr<T5> v5){
-        return new ETuple5<>(this,v2,v3,v4,v5);
-    }
-    default <T2,T3,T4,T5,T6> ETuple6<S,T2,T3,T4,T5,T6> mergeWith(
-            Expr<T2> v2, Expr<T3> v3, Expr<T4> v4, Expr<T5> v5, Expr<T6> v6){
-        return new ETuple6<>(this,v2,v3,v4,v5,v6);
-    }
-    default <T2,T3,T4,T5,T6,T7> ETuple7<S,T2,T3,T4,T5,T6,T7> mergeWith(
-            Expr<T2> v2, Expr<T3> v3, Expr<T4> v4, Expr<T5> v5, Expr<T6> v6, Expr<T7> v7){
-        return new ETuple7<>(this,v2,v3,v4,v5,v6,v7);
-    }
 
 
     S read(RowReader _rowReader, ExprRowReaderCache _cache);
@@ -130,5 +158,7 @@ public interface Expr<S>{
     }
 
     String _toSql(ExprToSqlContext context);
-    PList<Expr> _expand();
+    default PList<Expr<?>> _expand(){
+        return PList.val(this);
+    }
 }

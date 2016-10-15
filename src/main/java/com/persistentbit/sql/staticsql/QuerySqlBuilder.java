@@ -43,10 +43,17 @@ public class QuerySqlBuilder {
         } else {
             selItems = exp.map(e -> e._toSql(context)).toString(", ");
         }
-        String sql = "SELECT " + selItems + nl;
+        String distinct = q.distinct ? "DISTINCT " : "";
+        String sql = "SELECT " + distinct + selItems + nl;
         sql += "FROM " + q.getFrom()._getTableName() + " AS " + context.uniqueInstanceName(q.getFrom(),q.getFrom().getInstanceName()) + " ";
         sql += q.getJoins().map(j -> joinToString(context,j)).toString(nl);
         sql += q.getWhere().map(w -> nl + "WHERE " + w._toSql(context)).orElse("");
+
+        if(q.orderBy.isEmpty() == false){
+            sql += nl + "ORDER BY " + q.orderBy.map(ob -> ob.getExpr()._toSql(context) + " " + ob.getDir().name().toUpperCase()).toString(", ");
+        }
+
+
         if(asSubQuery){
             sql = "(" + sql + ")";
         }

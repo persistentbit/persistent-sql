@@ -30,8 +30,5 @@ public class ExprStringLike implements ETypeBoolean{
         return left._toSql(context) + " LIKE " + right._toSql(context);
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

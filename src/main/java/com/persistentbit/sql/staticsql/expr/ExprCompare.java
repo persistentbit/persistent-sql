@@ -55,8 +55,5 @@ public class ExprCompare<T extends Expr> implements ETypeBoolean {
         return left._toSql(context) + " " + compType + " " + right._toSql(context);
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

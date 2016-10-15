@@ -33,10 +33,8 @@ public interface ETypeObject<T> extends ETypePropertyParent<T>{
         return new EValTable<>(this,value);
     }
 
-    Optional<Expr> _getAutoGenKey();
-    T _setAutoGenKey(T object, Object value);
 
-    PList<Expr> _asExprValues(T value);
+    PList<Expr<?>> _asExprValues(T value);
 
     @Override
     default String _toSql(ExprToSqlContext context) {

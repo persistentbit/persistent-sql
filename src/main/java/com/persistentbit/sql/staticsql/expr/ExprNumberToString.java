@@ -29,8 +29,5 @@ public class ExprNumberToString implements ETypeString {
         return context.getDbType().numberToString(number._toSql(context),20);
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

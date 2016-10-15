@@ -57,7 +57,7 @@ public class Selection5<T1,T2,T3,T4,T5> extends BaseSelection<Tuple5<T1,T2,T3,T4
     }
 
     @Override
-    public PList<Expr> _expand() {
+    public PList<Expr<?>> _expand() {
         return col1._expand().plusAll(col2._expand()).plusAll(col3._expand()).plusAll(col4._expand()).plusAll(col5._expand());
     }
     @Override

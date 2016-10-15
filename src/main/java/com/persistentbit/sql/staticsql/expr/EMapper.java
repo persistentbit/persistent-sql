@@ -48,7 +48,7 @@ public class EMapper<T,R> implements Expr<R>{
     }
 
     @Override
-    public PList<Expr> _expand() {
+    public PList<Expr<?>> _expand() {
         return expr._expand();
     }
 }

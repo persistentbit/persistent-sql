@@ -13,6 +13,8 @@ public class Query {
     private final ETypeObject from;
     private PList<Join> joins;
     private ETypeBoolean where;
+    boolean distinct = false;
+    PList<OrderBy>  orderBy = PList.empty();
 
     public Query(DbSql sql,ETypeObject from, PList<Join> joins) {
         this.dbSql = sql;
@@ -25,6 +27,22 @@ public class Query {
     }
 
 
+    public Query distinct() {
+        distinct = true;
+        return this;
+    }
+
+
+    public Query orderByDesc(Expr<?> expr){
+        return orderBy(new OrderBy(expr, OrderBy.Direction.desc));
+    }
+    public Query orderByAsc(Expr<?> expr){
+        return orderBy(new OrderBy(expr, OrderBy.Direction.asc));
+    }
+    public Query orderBy(OrderBy orderBy){
+        this.orderBy = this.orderBy.plus(orderBy);
+        return this;
+    }
 
     private Join add(Join j){
         joins = joins.plus(j);
@@ -48,6 +66,7 @@ public class Query {
         this.where = whereExpr;
         return this;
     }
+
 
 
     public ETypeObject getFrom() {

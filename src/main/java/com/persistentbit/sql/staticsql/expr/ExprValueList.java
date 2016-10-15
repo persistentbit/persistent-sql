@@ -28,8 +28,5 @@ public class ExprValueList<T> implements ETypeList<T>,Expr<T>{
         return "(" + values.map(v -> v._toSql(context)).toString(", ") + ")";
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

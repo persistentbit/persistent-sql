@@ -7,6 +7,7 @@ import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
+import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
 
 import java.util.Optional;
 
@@ -30,24 +31,24 @@ public class UpdateSqlBuilder {
     }
 
     public String generate() {
-        throw new NotYet();
-        /*
+        ExprToSqlContext context = new ExprToSqlContext(dbType);
         String nl = "\r\n";
         String res = "UPDATE " + update.getTable()._getTableName() + nl;
         res += " SET ";
         PList<Tuple2<Expr,Expr>> sets = update.getSet();
         res += sets.map(t -> {
-            PList<String> properties = ExprExpand.exapand(t._1)
-                    .map(e ->ExprToSql.toSql(e,this::getTableInstance,dbType));
-            PList<String> values = ExprExpand.exapand(t._2)
-                    .map(e ->ExprToSql.toSql(e,this::getTableInstance,dbType));
+            PList<Expr<?>> expanded = t._1._expand();
+            PList<String> properties = expanded.map(e -> e._toSql(context));
+            PList<Expr<?>> expandedValues = t._2._expand();
+            PList<String> values = expandedValues
+                    .map(e -> e._toSql(context));
             return  properties.zip(values).map(ns -> ns._2 + "=" + ns._1).toString(", ");
         }).toString(", ");
         if(update.getWhere() != null){
-            res += nl + " WHERE " + ExprToSql.toSql(update.getWhere(),this::getTableInstance,dbType);
+            res += nl + " WHERE " + update.getWhere()._toSql(context);
         }
 
-        return res;*/
+        return res;
     }
 
 

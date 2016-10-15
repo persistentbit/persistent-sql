@@ -39,14 +39,6 @@ public class DbSql {
         return run(insert);
     }
 
-    public <T> T runInsertWithGenKeys(ETypeObject<T> table, T value){
-        Expr autoKey = table._getAutoGenKey().orElse(null);
-        if(autoKey == null){
-            throw new PersistSqlException("Expected a Table with 1 auto generated key");
-        }
-        Object autoKeyValue = runInsertWithGenKeys(table,value,autoKey);
-        return table._setAutoGenKey(value,autoKeyValue);
-    }
 
     public <T,K,R> R runInsertWithGenKeys(ETypeObject<T> table, T value, Expr<K> generatedKey,Function2<T,K,R> mapper){
         K key = runInsertWithGenKeys(table,value, generatedKey);

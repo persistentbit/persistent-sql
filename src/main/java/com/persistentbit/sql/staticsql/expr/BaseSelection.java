@@ -44,7 +44,7 @@ public abstract class BaseSelection<T> implements ETypeSelection<T>{
     }
 
     @Override
-    public PList<Expr> _asExprValues(T value) {
+    public PList<Expr<?>> _asExprValues(T value) {
         throw new NotYet();
     }
 
@@ -88,7 +88,7 @@ public abstract class BaseSelection<T> implements ETypeSelection<T>{
         }
 
         @Override
-        public PList<Expr> _expand() {
+        public PList<Expr<?>> _expand() {
             return PList.val(expr);
         }
 

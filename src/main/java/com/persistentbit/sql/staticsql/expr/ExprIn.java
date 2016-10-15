@@ -20,8 +20,5 @@ public class ExprIn<T> implements ETypeBoolean{
         return value._toSql(context) + " IN " + in._toSql(context);
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

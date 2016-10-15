@@ -46,8 +46,5 @@ public class ExprNumberBinOp<N extends Number> implements ETypeNumber<N> {
         return left._toSql(context) + " " + binOp + " " + right._toSql(context);
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

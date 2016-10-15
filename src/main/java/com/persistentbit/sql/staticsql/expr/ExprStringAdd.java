@@ -34,8 +34,5 @@ public class ExprStringAdd  implements ETypeString {
         return context.getDbType().concatStrings(left._toSql(context),right._toSql(context));
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

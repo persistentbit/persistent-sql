@@ -79,7 +79,7 @@ public class ExprProperty<T> implements ETypePropertyParent<T> {
     }
 
     @Override
-    public PList<Expr> _expand() {
+    public PList<Expr<?>> _expand() {
 
         Expr subProp = getProperty(parent,propertyName);
         return PList.val(subProp);

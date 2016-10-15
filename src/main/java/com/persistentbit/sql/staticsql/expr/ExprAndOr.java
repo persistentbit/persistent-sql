@@ -44,8 +44,4 @@ public class ExprAndOr implements ETypeBoolean{
         return left._toSql(context) + " " + logicType.name().toUpperCase() + " " + right._toSql(context);
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
 }

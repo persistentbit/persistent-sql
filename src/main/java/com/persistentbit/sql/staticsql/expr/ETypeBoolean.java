@@ -8,6 +8,10 @@ import com.persistentbit.sql.staticsql.RowReader;
  * @since 28/09/2016
  */
 public interface ETypeBoolean extends Expr<Boolean>{
+    default ETypeBoolean not() {
+        return new ExprNot(this);
+    }
+
     default ETypeBoolean and(ETypeBoolean right){
         return new ExprAndOr(this,right, ExprAndOr.LogicType.and);
     }

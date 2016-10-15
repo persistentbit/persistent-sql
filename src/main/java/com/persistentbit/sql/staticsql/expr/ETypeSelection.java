@@ -21,15 +21,6 @@ public interface ETypeSelection<T> extends ETypeObject<T>,ETypeList<T>{
         return "selection";
     }
 
-    @Override
-    default Optional<Expr> _getAutoGenKey() {
-        return null;
-    }
-
-    @Override
-    default T _setAutoGenKey(T object, Object value) {
-        return null;
-    }
 
     Query getQuery();
 

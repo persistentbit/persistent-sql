@@ -28,19 +28,19 @@ public interface ETypeNumber<N extends Number> extends Expr<N> {
     }
 
     default ETypeBoolean    eq(N right){
-        return new ExprCompare<>(this,Expr.val(right), ExprCompare.CompType.eq);
+        return new ExprCompare<>(this,Sql.val(right), ExprCompare.CompType.eq);
     }
     default ETypeBoolean    lt(N right){
-        return new ExprCompare<>(this,Expr.val(right), ExprCompare.CompType.lt);
+        return new ExprCompare<>(this,Sql.val(right), ExprCompare.CompType.lt);
     }
     default ETypeBoolean    ltEq(N right){
-        return new ExprCompare<>(this,Expr.val(right), ExprCompare.CompType.ltEq);
+        return new ExprCompare<>(this,Sql.val(right), ExprCompare.CompType.ltEq);
     }
     default ETypeBoolean    gt(N right){
-        return new ExprCompare<>(this,Expr.val(right), ExprCompare.CompType.gt);
+        return new ExprCompare<>(this,Sql.val(right), ExprCompare.CompType.gt);
     }
     default ETypeBoolean    gtEq(N right){
-        return new ExprCompare<>(this,Expr.val(right), ExprCompare.CompType.gtEq);
+        return new ExprCompare<>(this,Sql.val(right), ExprCompare.CompType.gtEq);
     }
 
     default ETypeBoolean eq(ETypeNumber<N> right) {
@@ -64,26 +64,44 @@ public interface ETypeNumber<N extends Number> extends Expr<N> {
         return new ExprNumberBinOp<>(this,e,"+");
     }
     default ETypeNumber<N> add(N number){
-        return add(Expr.val(number));
+        return add(Sql.val(number));
     }
     default ETypeNumber<N> sub(ETypeNumber<N> e){
         return new ExprNumberBinOp<>(this,e,"-");
     }
     default ETypeNumber<N> sub(N number){
-        return sub(Expr.val(number));
+        return sub(Sql.val(number));
     }
     default ETypeNumber<N> mul(ETypeNumber<N> e){
         return new ExprNumberBinOp<>(this,e,"*");
     }
     default ETypeNumber<N> mul(N number){
-        return mul(Expr.val(number));
+        return mul(Sql.val(number));
     }
     default ETypeNumber<N> div(ETypeNumber<N> e){
         return new ExprNumberBinOp<>(this,e,"/");
     }
     default ETypeNumber<N> div(N number){
-        return div(Expr.val(number));
+        return div(Sql.val(number));
     }
 
-
+    default ETypeBoolean isNull() {
+        return new ExprIsNull(this,false);
+    }
+    default ETypeBoolean isNotNull() {
+        return new ExprIsNull( this,false);
+    }
+    //***************************  BETWEEN
+    default ETypeBoolean between(Expr<N> left, Expr<N> right){
+        return new ExprBetween<>(this,left,right);
+    }
+    default ETypeBoolean between(Expr<N> left, N right){
+        return between(left,Sql.val(right));
+    }
+    default ETypeBoolean between(N left,Expr<N> right){
+        return between(Sql.val(left),right);
+    }
+    default ETypeBoolean between(N left, N right){
+        return between(Sql.val(left),Sql.val(right));
+    }
 }

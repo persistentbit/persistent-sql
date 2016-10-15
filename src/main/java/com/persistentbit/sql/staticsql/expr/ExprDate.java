@@ -26,8 +26,5 @@ public class ExprDate implements Expr<LocalDate>,ETypeDate{
         return context.getDbType().asLiteralDate(value);
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

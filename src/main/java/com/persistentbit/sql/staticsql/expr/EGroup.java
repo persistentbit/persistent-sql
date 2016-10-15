@@ -33,7 +33,7 @@ public class EGroup<T> implements Expr<T> {
     }
 
     @Override
-    public PList<Expr> _expand() {
+    public PList<Expr<?>> _expand() {
         return value._expand();
     }
 }

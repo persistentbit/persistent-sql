@@ -37,8 +37,5 @@ public class ExprConstNumber<N extends Number> implements ETypeNumber<N> {
         return ""+value;
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
+
 }

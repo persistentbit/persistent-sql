@@ -37,7 +37,7 @@ public class EValTable<T> implements Expr<T>{
     }
 
     @Override
-    public PList<Expr> _expand() {
+    public PList<Expr<?>> _expand() {
         return table._asExprValues(value);
     }
 }

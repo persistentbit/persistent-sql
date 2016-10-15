@@ -42,8 +42,4 @@ public class ExprNumberCast<F extends Number,T extends Number> implements ETypeN
         throw new NotYet(this.toString());
     }
 
-    @Override
-    public PList<Expr> _expand() {
-        return PList.val(this);
-    }
 }

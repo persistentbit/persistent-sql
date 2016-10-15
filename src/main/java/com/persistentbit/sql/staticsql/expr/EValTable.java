@@ -5,7 +5,9 @@ import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
 /**
- * Created by petermuys on 2/10/16.
+ * An Sql Expression that wraps al the Values of a ETypeObject
+ * @since 2/10/16.
+ * @author Peter Muys
  */
 public class EValTable<T> implements Expr<T>{
     private final ETypeObject<T>   table;

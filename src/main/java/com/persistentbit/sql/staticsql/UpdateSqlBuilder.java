@@ -33,7 +33,7 @@ public class UpdateSqlBuilder {
     public String generate() {
         ExprToSqlContext context = new ExprToSqlContext(dbType);
         String nl = "\r\n";
-        String res = "UPDATE " + update.getTable()._getTableName() + nl;
+        String res = "UPDATE " + update.getTable()._getTableName() + " AS " + context.uniqueInstanceName(update.getTable(),update.getTable()._getTableName()) + nl;
         res += " SET ";
         PList<Tuple2<Expr,Expr>> sets = update.getSet();
         res += sets.map(t -> {

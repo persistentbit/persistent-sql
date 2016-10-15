@@ -65,6 +65,8 @@ public class Sql {
         return new EStringGroup(v);
     }
 
+
+
     static public <T extends Enum<T>> ETypeEnum<T> val(T value){
         if(value == null){
             throw new PersistSqlException("Need to know the class of the null enum: use Expr.valNullEnum(cls) instead.");

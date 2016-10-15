@@ -351,12 +351,53 @@ public class DbJavaGen {
                 if(isTableClass){
                     generateInsertFunction(vc);
                 }
+                //*************   Select
+                if(isTableClass){
+                    generateSelectByIdFunction(vc);
+                }
+                //*************  Delete
+                if(isTableClass){
+                    generateDeleteByIdFunction(vc);
+                }
 
             }be();
             return toGenJava(cls);
         }
+        private void generateDeleteByIdFunction(RValueClass vc){
+            PList<RProperty> keys = vc.getProperties().filter(p -> atUtils.hasAnnotation(p.getAnnotations(),rclassKey));
+            if(keys.isEmpty()){
+                return;
+            }
+            PList<Tuple2<String,String>> keyTypesAndNames = keys.map(p ->
+                    Tuple2.of(p.getValueType().getTypeSig().getName().getClassName(), p.getName())
+            );
+            addImport(Optional.class);
+            String vcName = vc.getTypeSig().getName().getClassName();
+            bs("public int deleteById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2).toString(", ") + ")");{
+                String cond = keyTypesAndNames.headOpt().map(tn ->  "this." + tn._2 + ".eq(" + tn._2 + ")").get();
+                cond = cond + keyTypesAndNames.tail().map(tn ->  ".and(this." + tn._2 + ".eq(" + tn._2 + "))").toString("");
+                println("return _db.deleteFrom(this).where(" + cond + ").execute();");
+            }be();
+        }
+        private void generateSelectByIdFunction(RValueClass vc){
+            PList<RProperty> keys = vc.getProperties().filter(p -> atUtils.hasAnnotation(p.getAnnotations(),rclassKey));
+            if(keys.isEmpty()){
+                return;
+            }
+            PList<Tuple2<String,String>> keyTypesAndNames = keys.map(p ->
+                    Tuple2.of(p.getValueType().getTypeSig().getName().getClassName(), p.getName())
+            );
+            addImport(Optional.class);
+            String vcName = vc.getTypeSig().getName().getClassName();
+            bs("public Optional<" + vcName + "> selectById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2).toString(", ") + ")");{
+                String cond = keyTypesAndNames.headOpt().map(tn ->  "this." + tn._2 + ".eq(" + tn._2 + ")").get();
+                cond = cond + keyTypesAndNames.tail().map(tn ->  ".and(this." + tn._2 + ".eq(" + tn._2 + "))").toString("");
+                println("return _db.queryFrom(this).where(" + cond + ").selection(this).getOneResult();");
+            }be();
+        }
 
         private void generateAutGenKeyFunctions(RValueClass vc){
+
             RProperty autoGenProp = vc.getProperties().find(p -> atUtils.getOneAnnotation(p.getAnnotations(),rclassAutoGen).isPresent()).orElse(null);
             addImport(Optional.class);
             bs("public Optional<Expr<?>> _getAutoGenKey()");{

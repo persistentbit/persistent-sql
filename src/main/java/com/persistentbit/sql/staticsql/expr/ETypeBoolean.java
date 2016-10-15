@@ -8,6 +8,21 @@ import com.persistentbit.sql.staticsql.RowReader;
  * @since 28/09/2016
  */
 public interface ETypeBoolean extends Expr<Boolean>{
+
+    default ETypeBoolean eq(Expr<Boolean> right){
+        return new ExprCompare<>(this,right, ExprCompare.CompType.eq);
+    }
+    default ETypeBoolean notEq(Expr<Boolean> right){
+        return new ExprCompare<>(this,right, ExprCompare.CompType.neq);
+    }
+
+    default ETypeBoolean eq(boolean right){
+        return eq(Sql.val(right));
+    }
+    default ETypeBoolean notEq(boolean right){
+        return notEq(Sql.val(right));
+    }
+
     default ETypeBoolean not() {
         return new ExprNot(this);
     }

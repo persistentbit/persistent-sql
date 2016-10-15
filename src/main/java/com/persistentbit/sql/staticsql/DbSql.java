@@ -20,12 +20,14 @@ import java.sql.Statement;
 public class DbSql {
     static private final PLog log = PLog.get(DbSql.class);
     private final DbType    dbType;
-    private final TransactionRunner run;
+    public final TransactionRunner run;
 
     public DbSql(DbType dbType, TransactionRunner run) {
         this.dbType = dbType;
         this.run = run;
     }
+
+
 
     public Query    queryFrom(ETypeObject typeObject){
         return Query.from(this,typeObject);

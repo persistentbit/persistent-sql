@@ -39,7 +39,7 @@ public class SqlLoader {
 
 
     public PList<String> getAll(String name){
-        return  PList.from(snippets.getOpt(name).orElseThrow(()-> new IllegalArgumentException("Can't find snippet '" + name + "' in  '" + resourcePath  + "'")));
+        return  PList.from(snippets.getOpt(name.toLowerCase()).orElseThrow(()-> new IllegalArgumentException("Can't find snippet '" + name + "' in  '" + resourcePath  + "'")));
     }
 
     public PList<String> getAllSnippetNames() {

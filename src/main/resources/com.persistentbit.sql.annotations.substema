@@ -37,6 +37,13 @@ annotation NoPrefix{
 enum NameType{
     table,column,all;
 }
+
+
+annotation NameRemovePrefix{
+    type:NameType = NameType.all;
+    value:String;
+}
+
 annotation NameToLower{
     type:NameType = NameType.all;
 }

@@ -45,6 +45,7 @@ public class DbJavaGen {
     static public final RClass rclassNameToLower = new RClass(packageDbAnnotations,"NameToLower");
     static public final RClass rclassNameToUpper = new RClass(packageDbAnnotations,"NameToUpper");
     static public final RClass rclassCamelToSnake = new RClass(packageDbAnnotations,"NameCamelToSnake");
+    static public final RClass rclassNameRemovePrefix = new RClass(packageDbAnnotations,"NameRemovePrefix");
     static public final RClass rclassPrefix = new RClass(packageDbAnnotations,"NamePrefix");
     static public final RClass rclassPostfix = new RClass(packageDbAnnotations,"NamePostfix");
     static public final RClass rclassNoPrefix = new RClass(packageDbAnnotations,"NoPrefix");
@@ -678,7 +679,8 @@ public class DbJavaGen {
                 a.getName().equals(rclassNameToLower) ||
                 a.getName().equals(rclassNameToUpper) ||
                 a.getName().equals(rclassPostfix) ||
-                a.getName().equals(rclassPrefix)
+                a.getName().equals(rclassPrefix) ||
+                a.getName().equals(rclassNameRemovePrefix)
             );
             Function<String,String> res = i -> i;
             for(RAnnotation at : nameAt){
@@ -708,6 +710,15 @@ public class DbJavaGen {
                     case "NamePostfix":
                         String postFix = atUtils.getStringProperty(at,"value").orElse(null);
                         res = res.andThen(s -> s + postFix);
+                        break;
+                    case "NameRemovePrefix":
+                        res = res.andThen(s -> {
+                            String delPrefix = atUtils.getStringProperty(at,"value").orElse(null);
+                            if(s.startsWith(delPrefix)){
+                                return s.substring(delPrefix.length());
+                            }
+                            return s;
+                        });
                         break;
                     default: throw new PersistSqlException("Unknown:" + cenum.getEnumClass());
                 }

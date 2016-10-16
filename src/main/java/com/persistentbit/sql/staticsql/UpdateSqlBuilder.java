@@ -38,7 +38,7 @@ public class UpdateSqlBuilder {
         PList<Tuple2<Expr,Expr>> sets = update.getSet();
         res += sets.map(t -> {
             PList<Expr<?>> expanded = t._1._expand();
-            PList<String> properties = expanded.map(e -> e._toSql(context));
+            PList<String> properties = expanded.map(e -> e._fullColumnName(context));
             PList<Expr<?>> expandedValues = t._2._expand();
             PList<String> values = expandedValues
                     .map(e -> e._toSql(context));

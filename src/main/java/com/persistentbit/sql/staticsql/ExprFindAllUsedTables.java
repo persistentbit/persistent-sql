@@ -1,9 +1,5 @@
 package com.persistentbit.sql.staticsql;
 
-import com.persistentbit.core.collections.PSet;
-import com.persistentbit.core.utils.NotYet;
-import com.persistentbit.sql.staticsql.expr.*;
-
 /**
  * Created by petermuys on 2/10/16.
  */
@@ -43,12 +39,12 @@ public class ExprFindAllUsedTables {} //implements ExprVisitor<PSet<ETypeObject>
 //
 //    @Override
 //    public PSet<ETypeObject> visit(ExprPropertyDate v) {
-//        throw new NotYet();
+//        throw new ToDo();
 //    }
 //
 //    @Override
 //    public PSet<ETypeObject> visit(ExprPropertyDateTime v) {
-//        throw new NotYet();
+//        throw new ToDo();
 //    }
 //
 //    @Override

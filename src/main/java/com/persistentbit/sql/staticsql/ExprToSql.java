@@ -1,13 +1,5 @@
 package com.persistentbit.sql.staticsql;
 
-import com.persistentbit.core.collections.PList;
-import com.persistentbit.core.utils.NotYet;
-import com.persistentbit.sql.databases.DbType;
-import com.persistentbit.sql.staticsql.expr.*;
-
-import java.util.Optional;
-import java.util.function.Function;
-
 /**
  * Created by petermuys on 2/10/16.
  */
@@ -38,12 +30,12 @@ public class ExprToSql {}
 //
 //    @Override
 //    public String visit(ExprPropertyDate v) {
-//        throw new NotYet();
+//        throw new ToDo();
 //    }
 //
 //    @Override
 //    public String visit(ExprPropertyDateTime v) {
-//        throw new NotYet();
+//        throw new ToDo();
 //    }
 //
 //    @Override
@@ -173,7 +165,7 @@ public class ExprToSql {}
 //
 //    @Override
 //    public String visit(ExprNumberCast v) {
-//        throw new NotYet();
+//        throw new ToDo();
 //    }
 //
 //    @Override

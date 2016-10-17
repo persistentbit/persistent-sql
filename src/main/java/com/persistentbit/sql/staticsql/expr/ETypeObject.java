@@ -2,7 +2,6 @@ package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.core.utils.NotYet;
 
 import java.util.Optional;
 import java.util.function.Function;

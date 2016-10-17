@@ -1,6 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
-import com.persistentbit.core.utils.NotYet;
+import com.persistentbit.core.utils.ToDo;
 
 import java.util.Optional;
 
@@ -24,6 +24,6 @@ public interface ETypePropertyParent<T> extends Expr<T> {
     String getInstanceName();
 
     default ETypeObject<T>  withNewParent(ETypePropertyParent newParent){
-        throw new NotYet();
+        throw new ToDo();
     }
 }

@@ -1,14 +1,8 @@
 package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
-import com.persistentbit.core.collections.PMap;
-import com.persistentbit.core.collections.PSet;
-import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.*;
-
-import java.util.Optional;
 
 /**
  * Created by petermuys on 2/10/16.

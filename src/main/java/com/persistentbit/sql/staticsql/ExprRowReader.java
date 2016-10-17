@@ -1,12 +1,7 @@
 package com.persistentbit.sql.staticsql;
 
-import com.persistentbit.core.tuples.*;
-import com.persistentbit.core.utils.NotYet;
 import com.persistentbit.sql.staticsql.expr.*;
 
-import java.lang.reflect.Method;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -60,12 +55,12 @@ public class ExprRowReader implements ExprRowReaderCache{
 //
 //        @Override
 //        public Object visit(ExprPropertyDate v) {
-//            throw new NotYet();
+//            throw new ToDo();
 //        }
 //
 //        @Override
 //        public Object visit(ExprPropertyDateTime v) {
-//            throw new NotYet();
+//            throw new ToDo();
 //        }
 //
 //        @Override
@@ -138,7 +133,7 @@ public class ExprRowReader implements ExprRowReaderCache{
 //
 //        @Override
 //        public Object visit(ExprEnum v) {
-//            throw new NotYet();
+//            throw new ToDo();
 //        }
 //
 //        @Override
@@ -247,7 +242,7 @@ public class ExprRowReader implements ExprRowReaderCache{
 //
 //        @Override
 //        public Object visit(ExprNumberBinOp v) {
-//            throw new NotYet("Need to find the right type...");
+//            throw new ToDo("Need to find the right type...");
 //        }
 //
 //        @Override

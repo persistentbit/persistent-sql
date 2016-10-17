@@ -1,7 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PList;
-import com.persistentbit.core.utils.NotYet;
+import com.persistentbit.core.utils.ToDo;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
@@ -154,7 +154,7 @@ public interface Expr<S>{
      * @return  The full property name without the
      */
     default String _fullColumnName(ExprToSqlContext context){
-        throw new NotYet("Not Yet supported on " + getClass().getName());
+        throw new ToDo("Not Yet supported on " + getClass().getName());
     }
 
     String _toSql(ExprToSqlContext context);

@@ -1,8 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PList;
-import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.core.utils.NotYet;
+import com.persistentbit.core.utils.ToDo;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.Query;
 import com.persistentbit.sql.staticsql.QuerySqlBuilder;
@@ -22,7 +21,7 @@ public abstract class BaseSelection<T> implements ETypeSelection<T>{
 
     @Override
     public ETypeObject<T> withNewParent(ETypePropertyParent newParent) {
-        throw new NotYet();
+        throw new ToDo();
     }
 
     public Query getQuery() {
@@ -45,7 +44,7 @@ public abstract class BaseSelection<T> implements ETypeSelection<T>{
 
     @Override
     public PList<Expr<?>> _asExprValues(T value) {
-        throw new NotYet();
+        throw new ToDo();
     }
 
     public class SelectionProperty<E> implements Expr<E> {

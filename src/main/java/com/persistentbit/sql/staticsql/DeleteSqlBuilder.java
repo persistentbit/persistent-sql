@@ -1,7 +1,7 @@
 package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PMap;
-import com.persistentbit.core.utils.NotYet;
+import com.persistentbit.core.utils.ToDo;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 
@@ -30,7 +30,7 @@ public class DeleteSqlBuilder {
     }
 
     public String generate() {
-        throw new NotYet();
+        throw new ToDo();
         /*String nl = "\r\n";
         String res = "DELETE FROM  " + delete.getTable()._getTableName() + nl;
         if(delete.getWhere() != null){

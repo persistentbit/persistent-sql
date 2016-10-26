@@ -14,7 +14,7 @@ public interface ETypeObject<T> extends ETypePropertyParent<T>{
 
 
 
-    PList<Tuple2<String,Expr>> _all();
+    PList<Tuple2<String,Expr<?>>> _all();
     default <R> EMapper<T,R>  map(Function<T,R> mapper){
         return new EMapper<T, R>(this,mapper);
     }

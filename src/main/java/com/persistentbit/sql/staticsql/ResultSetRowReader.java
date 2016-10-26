@@ -18,6 +18,7 @@ public class ResultSetRowReader implements RowReader{
         this.rs = rs;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T readNext(Class<T> cls) {
         try{

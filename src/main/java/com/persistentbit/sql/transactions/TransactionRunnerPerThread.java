@@ -105,7 +105,7 @@ public class TransactionRunnerPerThread implements TransactionRunner {
     private <R> R doRun(Callable<R> code){
         boolean isNewConnection = false;
         if(currentConnection.get() == null){
-            currentConnection.set(new Pair(createNewTransactionId(),connectionSupplier.get()));
+            currentConnection.set(new Pair<>(createNewTransactionId(),connectionSupplier.get()));
             try {
                 currentConnection.get()._2.setAutoCommit(false);
                 isNewConnection = true;

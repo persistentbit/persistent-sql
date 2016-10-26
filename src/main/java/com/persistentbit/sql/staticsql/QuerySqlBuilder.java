@@ -27,7 +27,7 @@ public class QuerySqlBuilder {
     public String generate(ExprToSqlContext context, boolean asSubQuery) {
         String nl = "\r\n";
         String selName = context.uniqueInstanceName(s,"s");
-        PList<Expr<?>> exp = (PList<Expr<?>>)(s._expand());
+        PList<Expr<?>> exp = s._expand();
 
         String selItems;
         if(asSubQuery) {

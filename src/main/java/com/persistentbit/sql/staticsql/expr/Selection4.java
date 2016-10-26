@@ -33,7 +33,7 @@ public class Selection4<T1,T2,T3,T4> extends BaseSelection<Tuple4<T1,T2,T3,T4>> 
     }
 
     @Override
-    public PList<Tuple2<String, Expr>> _all() {
+    public PList<Tuple2<String, Expr<?>>> _all() {
         return PList.val(
                 Tuple2.of("col1",col1),
                 Tuple2.of("col2",col2),

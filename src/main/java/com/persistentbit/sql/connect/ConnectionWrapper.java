@@ -25,7 +25,7 @@ public class ConnectionWrapper implements Connection{
             connection.commit();
         }
         default void onRollback(Connection connection) throws SQLException{
-            connection.rollback();;
+            connection.rollback();
         }
         default void onAbort(Connection connection,Executor executor) throws SQLException{
             connection.abort(executor);

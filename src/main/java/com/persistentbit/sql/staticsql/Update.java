@@ -13,7 +13,7 @@ public class Update {
     private DbSql   db;
     private ETypeObject table;
     private ETypeBoolean where;
-    private PList<Tuple2<Expr,Expr>>    set = PList.empty();
+    private PList<Tuple2<Expr<?>,Expr<?>>>    set = PList.empty();
 
 
     public Update(DbSql db, ETypeObject table){
@@ -45,7 +45,7 @@ public class Update {
         return where;
     }
 
-    public PList<Tuple2<Expr, Expr>> getSet() {
+    public PList<Tuple2<Expr<?>, Expr<?>>> getSet() {
         return set;
     }
 }

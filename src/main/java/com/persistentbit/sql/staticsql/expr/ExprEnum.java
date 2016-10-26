@@ -9,7 +9,7 @@ public class ExprEnum<T extends Enum<T>> implements ETypeEnum<T> {
     private T value;
     private Class<T> enumClass;
 
-    public ExprEnum(T value,Class<? extends Enum> enumClass) {
+    public ExprEnum(T value,Class<T> enumClass) {
         this.value = value;
         this.enumClass = (Class<T>)enumClass;
     }

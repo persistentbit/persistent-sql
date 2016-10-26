@@ -34,7 +34,7 @@ public class UpdateSqlBuilder {
         String nl = "\r\n";
         String res = "UPDATE " + update.getTable()._getTableName() + " AS " + context.uniqueInstanceName(update.getTable(),update.getTable()._getTableName()) + nl;
         res += " SET ";
-        PList<Tuple2<Expr,Expr>> sets = update.getSet();
+        PList<Tuple2<Expr<?>,Expr<?>>> sets = update.getSet();
         res += sets.map(t -> {
             PList<Expr<?>> expanded = t._1._expand();
             PList<String> properties = expanded.map(e -> e._fullColumnName(context));

@@ -22,7 +22,7 @@ public class Selection1<T1> extends BaseSelection<T1>{
     }
 
     @Override
-    public PList<Tuple2<String, Expr>> _all() {
+    public PList<Tuple2<String, Expr<?>>> _all() {
         return PList.val(Tuple2.of("col1",col1));
     }
 

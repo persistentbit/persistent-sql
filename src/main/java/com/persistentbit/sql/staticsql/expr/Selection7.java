@@ -12,13 +12,13 @@ import com.persistentbit.sql.staticsql.RowReader;
  */
 public class Selection7 <T1,T2,T3,T4,T5,T6,T7> extends BaseSelection<Tuple7<T1,T2,T3,T4,T5,T6,T7>> {
 
-    public final SelectionProperty<T1> col1;
-    public final SelectionProperty<T2> col2;
-    public final SelectionProperty<T3> col3;
-    public final SelectionProperty<T4> col4;
-    public final SelectionProperty<T5> col5;
-    public final SelectionProperty<T6> col6;
-    public final SelectionProperty<T7> col7;
+    private final SelectionProperty<T1> col1;
+    private final SelectionProperty<T2> col2;
+    private final SelectionProperty<T3> col3;
+    private final SelectionProperty<T4> col4;
+    private final SelectionProperty<T5> col5;
+    private final SelectionProperty<T6> col6;
+    private final SelectionProperty<T7> col7;
 
     public Selection7(Query query,
                       Expr<T1> col1,
@@ -40,7 +40,7 @@ public class Selection7 <T1,T2,T3,T4,T5,T6,T7> extends BaseSelection<Tuple7<T1,T
     }
 
     @Override
-    public PList<Tuple2<String, Expr>> _all() {
+    public PList<Tuple2<String, Expr<?>>> _all() {
         return PList.val(
                 Tuple2.of("col1",col1),
                 Tuple2.of("col2",col2),

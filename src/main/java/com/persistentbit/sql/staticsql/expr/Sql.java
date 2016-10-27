@@ -66,12 +66,12 @@ public class Sql {
     }
 
 
-
+    @SuppressWarnings("unchecked")
     static public <T extends Enum<T>> ETypeEnum<T> val(T value){
         if(value == null){
             throw new PersistSqlException("Need to know the class of the null enum: use Expr.valNullEnum(cls) instead.");
         }
-        return new ExprEnum<T>(value,value.getClass());
+        return new ExprEnum<T>(value, (Class<T>)value.getClass());
     }
 
 

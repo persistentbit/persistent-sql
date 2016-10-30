@@ -5,23 +5,26 @@ package com.persistentbit.sql;
  * @since 13/07/2016
  */
 public class PersistSqlException extends RuntimeException{
-    public PersistSqlException() {
-        super();
-    }
 
-    public PersistSqlException(String message) {
-        super(message);
-    }
+	public PersistSqlException() {
+		super();
+	}
 
-    public PersistSqlException(String message, Throwable cause) {
-        super(message, cause);
-    }
+	public PersistSqlException(String message) {
+		super(message);
+	}
 
-    public PersistSqlException(Throwable cause) {
-        super(cause);
-    }
+	public PersistSqlException(String message, Throwable cause) {
+		super(message, cause);
+	}
 
-    protected PersistSqlException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
+	public PersistSqlException(Throwable cause) {
+		super(cause);
+	}
+
+	protected PersistSqlException(String message, Throwable cause, boolean enableSuppression,
+								  boolean writableStackTrace
+	) {
+		super(message, cause, enableSuppression, writableStackTrace);
+	}
 }

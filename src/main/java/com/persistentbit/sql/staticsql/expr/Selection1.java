@@ -8,41 +8,40 @@ import com.persistentbit.sql.staticsql.Query;
 import com.persistentbit.sql.staticsql.RowReader;
 
 
-
 /**
  * Created by petermuys on 14/10/16.
  */
 public class Selection1<T1> extends BaseSelection<T1>{
 
-    public final SelectionProperty<T1> col1;
+	public final SelectionProperty<T1> col1;
 
-    public Selection1(Query query, Expr<T1> col1) {
-        super(query, col1);
-        this.col1 = new SelectionProperty<>("col1",col1);
-    }
+	public Selection1(Query query, Expr<T1> col1) {
+		super(query, col1);
+		this.col1 = new SelectionProperty<>("col1", col1);
+	}
 
-    @Override
-    public PList<Tuple2<String, Expr<?>>> _all() {
-        return PList.val(Tuple2.of("col1",col1));
-    }
+	@Override
+	public PList<Tuple2<String, Expr<?>>> _all() {
+		return PList.val(Tuple2.of("col1", col1));
+	}
 
-    @Override
-    public T1 read(RowReader _rowReader, ExprRowReaderCache _cache) {
-        return col1.read(_rowReader,_cache);
-    }
+	@Override
+	public T1 read(RowReader _rowReader, ExprRowReaderCache _cache) {
+		return col1.read(_rowReader, _cache);
+	}
 
-    @Override
-    public PList<Expr<?>> _asExprValues(T1 value) {
-        throw new ToDo();
-    }
+	@Override
+	public PList<Expr<?>> _asExprValues(T1 value) {
+		throw new ToDo();
+	}
 
-    @Override
-    public PList<Expr<?>> _expand() {
-        return col1._expand();
-    }
+	@Override
+	public PList<Expr<?>> _expand() {
+		return col1._expand();
+	}
 
-    @Override
-    public PList<BaseSelection<?>.SelectionProperty<?>> selections(){
-        return PList.val(col1);
-    }
+	@Override
+	public PList<BaseSelection<?>.SelectionProperty<?>> selections() {
+		return PList.val(col1);
+	}
 }

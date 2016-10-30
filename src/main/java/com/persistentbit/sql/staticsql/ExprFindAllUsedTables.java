@@ -3,7 +3,7 @@ package com.persistentbit.sql.staticsql;
 /**
  * Created by petermuys on 2/10/16.
  */
-public class ExprFindAllUsedTables {} //implements ExprVisitor<PSet<ETypeObject>> {
+public class ExprFindAllUsedTables{} //implements ExprVisitor<PSet<ETypeObject>> {
 //
 //    private ExprFindAllUsedTables(){
 //

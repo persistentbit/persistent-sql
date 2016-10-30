@@ -8,7 +8,8 @@ import com.persistentbit.sql.staticsql.expr.Expr;
  * Created by petermuys on 5/10/16.
  */
 public class ENumberGroup<T extends Number> extends EGroup<T> implements ETypeNumber<T>{
-    public ENumberGroup(Expr<T> value) {
-        super(value);
-    }
+
+	public ENumberGroup(Expr<T> value) {
+		super(value);
+	}
 }

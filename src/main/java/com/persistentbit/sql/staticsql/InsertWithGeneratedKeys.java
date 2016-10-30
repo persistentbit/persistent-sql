@@ -5,20 +5,21 @@ import com.persistentbit.sql.staticsql.expr.Expr;
 /**
  * Created by petermuys on 3/10/16.
  */
-public class InsertWithGeneratedKeys<T> {
-    private final Insert insert;
-    private final Expr<T>  generated;
+public class InsertWithGeneratedKeys<T>{
 
-    public InsertWithGeneratedKeys(Insert insert, Expr<T> generated) {
-        this.insert = insert;
-        this.generated = generated;
-    }
+	private final Insert  insert;
+	private final Expr<T> generated;
 
-    public Insert getInsert() {
-        return insert;
-    }
+	public InsertWithGeneratedKeys(Insert insert, Expr<T> generated) {
+		this.insert = insert;
+		this.generated = generated;
+	}
 
-    public Expr<T> getGenerated() {
-        return generated;
-    }
+	public Insert getInsert() {
+		return insert;
+	}
+
+	public Expr<T> getGenerated() {
+		return generated;
+	}
 }

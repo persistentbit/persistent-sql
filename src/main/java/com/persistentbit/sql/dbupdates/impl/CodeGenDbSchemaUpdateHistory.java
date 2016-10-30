@@ -15,10 +15,12 @@ import com.persistentbit.substema.javagen.JavaGenOptions;
  * @author Peter Muys
  * @since 11/10/2016
  */
-public class CodeGenDbSchemaUpdateHistory {
-    static public void main(String...args) throws Exception{
-        SubstemaCompiler compiler = new SubstemaCompiler(new DependencySupplier(PList.val(new SupplierDef(SupplierType.resource,"/"))));
-        JavaGenOptions options = new JavaGenOptions(true,true);
-        PList<GeneratedJava> genList =DbJavaGen.generate(options,"com.persistentbit.sql.dbupdates.db",compiler);
-    }
+public class CodeGenDbSchemaUpdateHistory{
+
+	static public void main(String... args) throws Exception {
+		SubstemaCompiler     compiler =
+			new SubstemaCompiler(new DependencySupplier(PList.val(new SupplierDef(SupplierType.resource, "/"))));
+		JavaGenOptions       options  = new JavaGenOptions(true, true);
+		PList<GeneratedJava> genList  = DbJavaGen.generate(options, "com.persistentbit.sql.dbupdates.db", compiler);
+	}
 }

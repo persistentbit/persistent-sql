@@ -9,21 +9,23 @@ import java.util.function.Supplier;
 
 /**
  * {@link Connection} supplier that used a {@link DataSource} to create new connections
+ *
  * @author Peter Muys
  */
-public class DatasourceConnectionProvider implements Supplier<Connection> {
-    private final DataSource    dataSource;
+public class DatasourceConnectionProvider implements Supplier<Connection>{
 
-    public DatasourceConnectionProvider(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+	private final DataSource dataSource;
 
-    @Override
-    public Connection get() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new PersistSqlException(e);
-        }
-    }
+	public DatasourceConnectionProvider(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
+
+	@Override
+	public Connection get() {
+		try {
+			return dataSource.getConnection();
+		} catch(SQLException e) {
+			throw new PersistSqlException(e);
+		}
+	}
 }

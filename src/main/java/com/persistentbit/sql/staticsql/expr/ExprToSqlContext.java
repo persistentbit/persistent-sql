@@ -6,26 +6,27 @@ import com.persistentbit.sql.databases.DbType;
 /**
  * Created by petermuys on 14/10/16.
  */
-public class ExprToSqlContext {
-    private int nextUniqueId = 1;
-    private PMap<Expr,String>   instanceNameLookup  =   PMap.empty();
-    private final DbType    dbType;
+public class ExprToSqlContext{
 
-    public ExprToSqlContext(DbType dbType) {
-        this.dbType = dbType;
-    }
+	private final DbType dbType;
+	private int                nextUniqueId       = 1;
+	private PMap<Expr, String> instanceNameLookup = PMap.empty();
 
-    public String   uniqueInstanceName(Expr expr, String defaultName){
-        String res = instanceNameLookup.getOrDefault(expr,null);
-        if(res == null){
-            res = defaultName + "_" + nextUniqueId;
-            nextUniqueId++;
-            instanceNameLookup = instanceNameLookup.put(expr,res);
-        }
-        return res;
-    }
+	public ExprToSqlContext(DbType dbType) {
+		this.dbType = dbType;
+	}
 
-    public DbType getDbType() {
-        return dbType;
-    }
+	public String uniqueInstanceName(Expr expr, String defaultName) {
+		String res = instanceNameLookup.getOrDefault(expr, null);
+		if(res == null) {
+			res = defaultName + "_" + nextUniqueId;
+			nextUniqueId++;
+			instanceNameLookup = instanceNameLookup.put(expr, res);
+		}
+		return res;
+	}
+
+	public DbType getDbType() {
+		return dbType;
+	}
 }

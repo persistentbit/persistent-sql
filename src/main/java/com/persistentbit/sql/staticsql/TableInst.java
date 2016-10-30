@@ -7,24 +7,25 @@ import com.persistentbit.sql.staticsql.expr.ETypeObject;
  * Created by petermuys on 2/10/16.
  */
 public class TableInst extends BaseValueClass{
-    private String name;
-    private ETypeObject table;
 
-    public TableInst(String name, ETypeObject table) {
-        this.name = name;
-        this.table = table;
-    }
+	private String      name;
+	private ETypeObject table;
 
-    @Override
-    public String toString() {
-        return name;
-    }
+	public TableInst(String name, ETypeObject table) {
+		this.name = name;
+		this.table = table;
+	}
 
-    public String getName() {
-        return name;
-    }
+	@Override
+	public String toString() {
+		return name;
+	}
 
-    public ETypeObject getTable() {
-        return table;
-    }
+	public String getName() {
+		return name;
+	}
+
+	public ETypeObject getTable() {
+		return table;
+	}
 }

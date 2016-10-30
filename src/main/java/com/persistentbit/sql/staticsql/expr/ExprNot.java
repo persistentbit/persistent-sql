@@ -1,23 +1,22 @@
 package com.persistentbit.sql.staticsql.expr;
 
-import com.persistentbit.core.collections.PList;
-
 /**
  * User: petermuys
  * Date: 15/10/16
  * Time: 13:54
  */
-public class ExprNot    implements ETypeBoolean {
-    private ETypeBoolean notExpr;
+public class ExprNot implements ETypeBoolean{
 
-    public ExprNot(ETypeBoolean notExpr) {
-        this.notExpr = notExpr;
-    }
+	private ETypeBoolean notExpr;
 
-    @Override
-    public String _toSql(ExprToSqlContext context) {
-        return "NOT " + notExpr._toSql(context);
-    }
+	public ExprNot(ETypeBoolean notExpr) {
+		this.notExpr = notExpr;
+	}
+
+	@Override
+	public String _toSql(ExprToSqlContext context) {
+		return "NOT " + notExpr._toSql(context);
+	}
 
 
 }

@@ -9,18 +9,19 @@ import java.util.List;
  * Date: 18/06/16
  * Time: 23:05
  */
-public class DbUpdateRunner {
-    private final List<DbUpdater> updaters ;
+public class DbUpdateRunner{
 
-    public DbUpdateRunner(DbUpdater...updaters) {
-        this.updaters = Arrays.asList(updaters);
-    }
+	private final List<DbUpdater> updaters;
 
-    public void update() {
-        for(DbUpdater u : updaters){
-            u.update();
-        }
-    }
+	public DbUpdateRunner(DbUpdater... updaters) {
+		this.updaters = Arrays.asList(updaters);
+	}
+
+	public void update() {
+		for(DbUpdater u : updaters) {
+			u.update();
+		}
+	}
 
 
 }

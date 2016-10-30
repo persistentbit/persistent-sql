@@ -1,18 +1,16 @@
 package com.persistentbit.sql.staticsql.expr;
 
-import java.time.LocalDate;
-
 /**
  * Created by petermuys on 5/10/16.
  */
-public class ExprPropertyEnum<T extends Enum<T>>  extends ExprProperty<T> implements ETypeEnum<T> {
+public class ExprPropertyEnum<T extends Enum<T>> extends ExprProperty<T> implements ETypeEnum<T>{
 
-    public ExprPropertyEnum(Class<T> valueClass, ETypeObject parent, String propertyName,String columnName) {
-        super(valueClass, parent, propertyName,columnName);
-    }
+	public ExprPropertyEnum(Class<T> valueClass, ETypeObject parent, String propertyName, String columnName) {
+		super(valueClass, parent, propertyName, columnName);
+	}
 
-    @Override
-    public Class<T> _getEnumClass() {
-        return getValueClass();
-    }
+	@Override
+	public Class<T> _getEnumClass() {
+		return getValueClass();
+	}
 }

@@ -9,9 +9,10 @@ import java.util.Optional;
  * Date: 14/10/16
  * Time: 18:11
  */
-public interface ETypePropertyParent<T> extends Expr<T> {
-    String  _asParentName(ExprToSqlContext context, String propertyName);/*{
-        if(getParent().isPresent()){
+public interface ETypePropertyParent<T> extends Expr<T>{
+
+	String _asParentName(ExprToSqlContext context, String propertyName);/*{
+		if(getParent().isPresent()){
             return getParent().get()._asParentName(context) + "_" + getInstanceName();
         }
         String name = context.uniqueInstanceName(this,getInstanceName());
@@ -20,10 +21,12 @@ public interface ETypePropertyParent<T> extends Expr<T> {
 
 
     }*/
-    Optional<ETypePropertyParent> getParent();
-    String getInstanceName();
 
-    default ETypeObject<T>  withNewParent(ETypePropertyParent newParent){
-        throw new ToDo();
-    }
+	Optional<ETypePropertyParent> getParent();
+
+	String getInstanceName();
+
+	default ETypeObject<T> withNewParent(ETypePropertyParent newParent) {
+		throw new ToDo();
+	}
 }

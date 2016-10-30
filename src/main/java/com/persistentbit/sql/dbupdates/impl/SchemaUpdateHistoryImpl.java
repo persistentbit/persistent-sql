@@ -5,7 +5,10 @@ import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.dbupdates.SchemaUpdateHistory;
 import com.persistentbit.sql.transactions.TransactionRunner;
 
-import java.sql.*;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 /**
  * Implements A {@link SchemaUpdateHistory} interface by using a db table<br>
@@ -59,10 +62,18 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 	public boolean tableExists(String tableName) {
 		return runner.trans(c -> {
 
-			try(Statement stat = c.createStatement()){
-				stat.executeQuery("select count(*) from " + tableName);
-				return true;
-			}catch(SQLException e){
+
+			DatabaseMetaData dbm = c.getMetaData();
+
+			try(ResultSet rs = dbm.getTables(null, null,
+											 tableName, null
+			)) {
+				while(rs.next()) {
+					String tn = rs.getString("table_name");
+					if(tableName.equalsIgnoreCase(tableName)) {
+						return true;
+					}
+				}
 				return false;
 			}
 		});

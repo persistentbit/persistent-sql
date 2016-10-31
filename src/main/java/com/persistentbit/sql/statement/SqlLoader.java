@@ -9,10 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -58,7 +55,7 @@ public class SqlLoader{
 	private void load(InputStream in) {
 		try(BufferedReader r = new BufferedReader(new InputStreamReader(in))) {
 			String                    name         = null;
-			Map<String, List<String>> fileSnippets = new HashMap<>();
+			Map<String, List<String>> fileSnippets = new LinkedHashMap<>();
 			BiConsumer<String, String> toSnippets = (n, c) -> {
 				if(n != null && c != null) {
 					List<String> existing = fileSnippets.get(n);
@@ -142,7 +139,7 @@ public class SqlLoader{
 	 * @return true if group exists
 	 */
 	public boolean hasSnippet(String name) {
-		return snippets.containsKey(name);
+		return snippets.containsKey(name.toLowerCase());
 	}
 
 	/**

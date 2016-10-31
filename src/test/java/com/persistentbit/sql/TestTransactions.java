@@ -11,7 +11,7 @@ import java.sql.PreparedStatement;
  * Date: 13/07/16
  * Time: 19:36
  */
-public class TestTransactions extends TestWithTransactions {
+public class TestTransactions extends AbstractTestWithTransactions{
 
     @Test
     public void testTrans(){

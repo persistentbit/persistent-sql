@@ -2,6 +2,7 @@ package com.persistentbit.sql.dbupdates;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
+import com.persistentbit.core.logging.PLog;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.dbupdates.impl.SchemaUpdateHistoryImpl;
 import com.persistentbit.sql.statement.SqlLoader;
@@ -12,7 +13,6 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.logging.Logger;
 
 /**
  * Class used to create, update or drop all tables
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class DbUpdater{
 
 	public static final String dropAllSnippetName = "DropAll";
-	protected final Logger log = Logger.getLogger(getClass().getName());
+	protected final PLog                log;
 	protected final TransactionRunner   runner;
 	protected final String              packageName;
 	protected final SqlLoader           sqlLoader;
@@ -38,6 +38,7 @@ public class DbUpdater{
 	public DbUpdater(TransactionRunner runner, String packageName, String sqlResourceName,
 					 SchemaUpdateHistory updateHistory
 	) {
+		this.log = PLog.get(getClass());
 		this.runner = runner;
 		this.packageName = packageName;
 		this.sqlLoader = new SqlLoader(sqlResourceName);
@@ -63,7 +64,7 @@ public class DbUpdater{
 		//Loop over all snippets and execute
 		sqlLoader.getAllSnippetNames().forEach(name -> runner.trans((c) -> {
 			//Skip Drop all snippet
-			if(name.equals(dropAllSnippetName)) {
+			if(name.equalsIgnoreCase(dropAllSnippetName)) {
 				return;
 			}
 			//Is Snippet already executed ?
@@ -79,7 +80,7 @@ public class DbUpdater{
 					throw new PersistSqlException(e);
 				}
 			});
-			sqlLoader.getAll(name).forEach(sql -> executeSql(c, sql, name));
+			sqlLoader.getAll(name).forEach(sql -> executeSql(c, name, sql));
 			updateHistory.setDone(packageName, name);
 		}));
 
@@ -95,22 +96,34 @@ public class DbUpdater{
 				stat.execute(sql);
 			}
 		} catch(SQLException e) {
-			throw new PersistSqlException("Error executing " + getFullName(name), e);
+			throw new PersistSqlException("Error executing " + getFullName(name) + ": " + sql);
 		}
 	}
 
 	/**
 	 * Executes the snippet 'DropAll' and removes
-	 * the update history for this package
+	 * the update history for this package.<br>
+	 *
+	 * @return true if dropAll executed without errors
 	 */
-	public void dropAll() {
-		runner.trans(c -> {
-			if(sqlLoader.hasSnippet(dropAllSnippetName) == false) {
-				throw new PersistSqlException("Can't find SQL code 'DropAll' in " + sqlLoader);
-			}
-			PList<String> sqlList = sqlLoader.getAll(dropAllSnippetName);
-			sqlList.forEach(sql -> executeSql(c, dropAllSnippetName, sql));
-			updateHistory.removeUpdateHistory(packageName);
-		});
+	public boolean dropAll() {
+
+		if(sqlLoader.hasSnippet(dropAllSnippetName) == false) {
+			throw new PersistSqlException("Can't find SQL code 'DropAll' in " + sqlLoader);
+		}
+		PList<String> sqlList = sqlLoader.getAll(dropAllSnippetName);
+		boolean allOk = sqlList.map(sql ->
+										runner.trans(c -> {
+											try {
+												executeSql(c, dropAllSnippetName, sql);
+												return true;
+											} catch(Exception e) {
+												log.error("Error executing sql '" + sql + "': " + e.getMessage());
+												return false;
+											}
+										})
+		).find(ok -> ok == false).orElse(true);
+		updateHistory.removeUpdateHistory(packageName);
+		return allOk;
 	}
 }

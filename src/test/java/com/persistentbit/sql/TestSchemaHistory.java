@@ -8,7 +8,7 @@ import org.junit.Test;
  * Date: 14/07/16
  * Time: 22:36
  */
-public class TestSchemaHistory extends TestWithTransactions {
+public class TestSchemaHistory extends AbstractTestWithTransactions{
 
     @Test
     public void testa(){

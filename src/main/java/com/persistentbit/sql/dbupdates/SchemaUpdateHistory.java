@@ -4,9 +4,8 @@ package com.persistentbit.sql.dbupdates;
  * Service interface to keep track of database schema updates.<br>
  *
  * @see DbUpdater
- * User: petermuys
- * Date: 14/07/16
- * Time: 21:28
+ * @author Peter Muys
+ * @since 14/07/16
  */
 public interface SchemaUpdateHistory{
 
@@ -27,4 +26,10 @@ public interface SchemaUpdateHistory{
 	 * @param updateName  The name of the update (ex. create_initial_tables)
 	 */
 	void setDone(String packageName, String updateName);
+
+	/**
+	 * removes the update history for a given package.<br>
+	 * @param packageName The packageName to remove the history for
+	 */
+	void removeUpdateHistory(String packageName);
 }

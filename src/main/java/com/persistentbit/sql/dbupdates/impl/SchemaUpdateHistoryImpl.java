@@ -114,5 +114,18 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 		});
 	}
 
+	@Override
+	public void removeUpdateHistory(String packageName) {
+		runner.trans(c -> {
+			String sql = "delete from " + tableName + " where package_name = ?";
+			if(tableExists(tableName)){
+				try(PreparedStatement s = c.prepareStatement(sql)){
+					s.setString(1,packageName);
+					s.executeUpdate();
+				}
+			}
+		});
+
+	}
 }
 

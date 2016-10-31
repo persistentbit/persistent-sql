@@ -3,6 +3,7 @@ package com.persistentbit.sql.statement;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.POrderedMap;
+import com.persistentbit.core.logging.PLog;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,35 +14,50 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * User: petermuys
- * Date: 18/06/16
- * Time: 18:54
+ * Loads SQL statement from a java resource.<br>
+ * The SQL statements are grouped and named by using:<br>
+ * {@code
+ * -->><NameOfTheGroup>
+ * SQL statements separated by ';'
+ * -->>
+ * }
+ *
+ * @author Peter Muys
+ * @since 18/06/16
  */
 public class SqlLoader{
 
-	static private final Logger                            log      = Logger.getLogger(SqlLoader.class.getName());
+	private static final PLog log = PLog.get(SqlLoader.class);
 	private final String resourcePath;
-	private              POrderedMap<String, List<String>> snippets = POrderedMap.empty();
+	private POrderedMap<String, PList<String>> snippets = POrderedMap.empty();
 
+	/**
+	 * Create a new SqlLoader for the given resource.
+	 *
+	 * @param resourcePath The resource name
+	 */
 	public SqlLoader(String resourcePath) {
 		this.resourcePath = resourcePath;
 		InputStream in = SqlLoader.class.getResourceAsStream(resourcePath);
 		if(in == null) {
-			log.warning("Can't find Sql resource '" + resourcePath + "'");
+			log.error("Can't find Sql resource '" + resourcePath + "'");
 		}
 		else {
 			load(in);
 		}
 	}
 
-	public void load(InputStream in) {
+	@Override
+	public String toString() {
+		return "SqlLoader[" + resourcePath + "]";
+	}
+
+	private void load(InputStream in) {
 		try(BufferedReader r = new BufferedReader(new InputStreamReader(in))) {
 			String                    name         = null;
-			String                    current      = null;
 			Map<String, List<String>> fileSnippets = new HashMap<>();
 			BiConsumer<String, String> toSnippets = (n, c) -> {
 				if(n != null && c != null) {
@@ -55,14 +71,10 @@ public class SqlLoader{
 			};
 			for(String line : r.lines().collect(Collectors.toList())) {
 				if(line.trim().startsWith("-->>")) {
-					toSnippets.accept(name, current);
-					current = null;
+					toSnippets.accept(name, null);
 					name = line.trim().substring(4).trim().toLowerCase();
 					if(name.isEmpty()) {
 						name = null;
-					}
-					else {
-						log.fine("-->>" + name);
 					}
 				}
 				else {
@@ -72,12 +84,12 @@ public class SqlLoader{
 					}
 				}
 			}
-			toSnippets.accept(name, current);
+			toSnippets.accept(name, null);
 
 			for(Map.Entry<String, List<String>> entry : fileSnippets.entrySet()) {
 				List<String> allCurrent = new ArrayList<>();
 				String       delimiter  = ";";
-				current = "";
+				String       current    = "";
 				for(String line : entry.getValue()) {
 					line = line.trim();
 					if(line.toUpperCase().startsWith("DELIMITER")) {
@@ -98,7 +110,7 @@ public class SqlLoader{
 					allCurrent.add(current);
 				}
 
-				snippets = snippets.put(entry.getKey(), allCurrent);
+				snippets = snippets.put(entry.getKey(), PList.from(allCurrent));
 
 			}
 		} catch(IOException e) {
@@ -107,17 +119,40 @@ public class SqlLoader{
 
 	}
 
-	static public void main(String... args) {
-		SqlLoader l = new SqlLoader("/dbupdates/create_nextid.sql");
-
-	}
-
+	/**
+	 * Get all the SQL statements for a given group name
+	 *
+	 * @param name The name of the statement group
+	 *
+	 * @return All statements for the group
+	 *
+	 * @throws IllegalArgumentException when there is no group with the given name
+	 * @see #hasSnippet
+	 */
 	public PList<String> getAll(String name) {
-		return PList.from(snippets.getOpt(name.toLowerCase())
-							  .orElseThrow(() -> new IllegalArgumentException("Can't find snippet '" + name + "' in  '" + resourcePath + "'")));
+		return snippets.getOpt(name.toLowerCase())
+					   .orElseThrow(() -> new IllegalArgumentException("Can't find snippet '" + name + "' in  '" + resourcePath + "'"));
 	}
 
+	/**
+	 * Check if a given group(snippet) name exists.<br>
+	 *
+	 * @param name The name of the group(snippet)
+	 *
+	 * @return true if group exists
+	 */
+	public boolean hasSnippet(String name) {
+		return snippets.containsKey(name);
+	}
+
+	/**
+	 * Get all group(snippet) names.<br>
+	 *
+	 * @return The list of names
+	 */
 	public PList<String> getAllSnippetNames() {
 		return snippets.keys().plist();
 	}
+
+
 }

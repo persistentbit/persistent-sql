@@ -27,12 +27,12 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 	 * @param runner The SQL runner to use
 	 */
 	public SchemaUpdateHistoryImpl(TransactionRunner runner) {
-		this(runner, "SCHEMA_HISTORY");
+		this(runner, "schema_history");
 	}
 
 	/**
 	 * @param runner    The SQL runner for the db updates
-	 * @param tableName The table name for the schema history table. WARNING: BEST USE A ALL UPPERCASE TABLE NAME!
+	 * @param tableName The table name for the schema history table.
 	 */
 	public SchemaUpdateHistoryImpl(TransactionRunner runner, String tableName) {
 		this.runner = runner;
@@ -60,7 +60,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 
 	private void createTableIfNotExist() {
 		runner.trans(c -> {
-			if(tableExists(tableName)) {
+			if(schemaHistoryTableExists()) {
 				return;
 			}
 			try(Statement stat = c.createStatement()) {
@@ -77,7 +77,11 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 
 	}
 
-	public boolean tableExists(String tableName) {
+	private boolean schemaHistoryTableExists() {
+		return tableExists(tableName) || tableExists(tableName.toLowerCase()) || tableExists(tableName.toUpperCase());
+	}
+
+	private boolean tableExists(String tableName) {
 		return runner.trans(c -> {
 
 
@@ -102,7 +106,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 	public PList<String> getUpdatesDone(String packageName) {
 		return runner.trans(c -> {
 			PList<String> result = PList.empty();
-			if(tableExists(tableName)) {
+			if(schemaHistoryTableExists()) {
 				try(PreparedStatement stat = c.prepareStatement("select update_name from " + tableName +
 																	" where package_name=?")) {
 					stat.setString(1, packageName);
@@ -140,7 +144,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 	public void removeUpdateHistory(String packageName) {
 		runner.trans(c -> {
 			String sql = "delete from " + tableName + " where package_name = ?";
-			if(tableExists(tableName)) {
+			if(schemaHistoryTableExists()) {
 				//delete all records for the package
 				try(PreparedStatement s = c.prepareStatement(sql)) {
 					s.setString(1, packageName);

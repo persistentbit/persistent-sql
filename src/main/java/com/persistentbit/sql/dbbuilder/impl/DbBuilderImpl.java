@@ -1,10 +1,11 @@
-package com.persistentbit.sql.dbupdates;
+package com.persistentbit.sql.dbbuilder.impl;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.logging.PLog;
 import com.persistentbit.sql.PersistSqlException;
-import com.persistentbit.sql.dbupdates.impl.SchemaUpdateHistoryImpl;
+import com.persistentbit.sql.dbbuilder.DbBuilder;
+import com.persistentbit.sql.dbbuilder.SchemaUpdateHistory;
 import com.persistentbit.sql.statement.SqlLoader;
 import com.persistentbit.sql.transactions.TransactionRunner;
 
@@ -15,14 +16,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- * Class used to create, update or drop all tables
- * in a database.<br>
  *
  * @author Peter Muys
  * @see SchemaUpdateHistory
  * @since 18/06/16
  */
-public class DbUpdater{
+public class DbBuilderImpl implements DbBuilder{
 
 	public static final String dropAllSnippetName = "DropAll";
 	protected final PLog                log;
@@ -31,12 +30,12 @@ public class DbUpdater{
 	protected final SqlLoader           sqlLoader;
 	protected final SchemaUpdateHistory updateHistory;
 
-	public DbUpdater(TransactionRunner runner, String packageName, String sqlResourceName) {
+	public DbBuilderImpl(TransactionRunner runner, String packageName, String sqlResourceName) {
 		this(runner, packageName, sqlResourceName, new SchemaUpdateHistoryImpl(runner));
 	}
 
-	public DbUpdater(TransactionRunner runner, String packageName, String sqlResourceName,
-					 SchemaUpdateHistory updateHistory
+	public DbBuilderImpl(TransactionRunner runner, String packageName, String sqlResourceName,
+						 SchemaUpdateHistory updateHistory
 	) {
 		this.log = PLog.get(getClass());
 		this.runner = runner;
@@ -45,19 +44,15 @@ public class DbUpdater{
 		this.updateHistory = updateHistory;
 	}
 
-	/**
-	 * Execute all the database update methods not registered in the SchemaHistory table.<br>
-	 * If there is a declared method in this class with the same name,
-	 * then that method is executed with a {@link Connection} as argument.<br>
-	 */
-	public void update() {
+	@Override
+	public void buildOrUpdate() {
 		//First, find all declared method on this class
 		Class<?> cls = this.getClass();
 
 		PMap<String, Method> declaredMethods = PMap.empty();
 
 		for(Method m : cls.getDeclaredMethods()) {
-			declaredMethods = declaredMethods.put(m.getName(), m);
+			declaredMethods = declaredMethods.put(m.getName().toLowerCase(), m);
 		}
 		PMap<String, Method> methods = declaredMethods;
 
@@ -106,6 +101,7 @@ public class DbUpdater{
 	 *
 	 * @return true if dropAll executed without errors
 	 */
+	@Override
 	public boolean dropAll() {
 
 		if(sqlLoader.hasSnippet(dropAllSnippetName) == false) {
@@ -125,5 +121,10 @@ public class DbUpdater{
 		).find(ok -> ok == false).orElse(true);
 		updateHistory.removeUpdateHistory(packageName);
 		return allOk;
+	}
+
+	@Override
+	public boolean hasUpdatesThatAreDone() {
+		return updateHistory.getUpdatesDone(packageName).isEmpty() == false;
 	}
 }

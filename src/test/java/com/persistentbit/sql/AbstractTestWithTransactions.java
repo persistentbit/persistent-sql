@@ -13,23 +13,28 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractTestWithTransactions{
     protected Logger log = Logger.getLogger(this.getClass().getName());
-    protected InMemConnectionProvider dbConnector;
+    protected InMemConnectionProvider    dbConnector;
     protected TransactionRunnerPerThread trans;
-    protected TestDbUpdater updater;
-    protected SqlLoader loader;
+    protected TestDbBuilderImpl          builder;
+    protected SqlLoader                  loader;
 
     @Before
     public void setupTransactions() {
         dbConnector = new InMemConnectionProvider();
         trans = new TransactionRunnerPerThread(dbConnector);
-        updater = new TestDbUpdater(trans);
+        builder = new TestDbBuilderImpl(trans);
         loader = new SqlLoader("/db/Tests.sql");
-        updater.dropAll();
-        updater.update();
+        if(builder.hasUpdatesThatAreDone()) {
+            builder.dropAll();
+        }
+        builder.buildOrUpdate();
+        assert builder.javaUpdaterCalled;
     }
     @After
     public void closeTransactions() {
-        updater.dropAll();
+        if(builder.hasUpdatesThatAreDone()) {
+            builder.dropAll();
+        }
         trans = null;
         dbConnector.close();
         dbConnector = null;

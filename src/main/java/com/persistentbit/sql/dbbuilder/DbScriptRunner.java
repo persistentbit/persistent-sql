@@ -1,4 +1,4 @@
-package com.persistentbit.sql.dbupdates;
+package com.persistentbit.sql.dbbuilder;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.statement.SqlLoader;

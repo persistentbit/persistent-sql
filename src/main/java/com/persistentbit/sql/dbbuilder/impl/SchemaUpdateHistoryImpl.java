@@ -1,8 +1,9 @@
-package com.persistentbit.sql.dbupdates.impl;
+package com.persistentbit.sql.dbbuilder.impl;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.logging.PLog;
 import com.persistentbit.sql.PersistSqlException;
-import com.persistentbit.sql.dbupdates.SchemaUpdateHistory;
+import com.persistentbit.sql.dbbuilder.SchemaUpdateHistory;
 import com.persistentbit.sql.transactions.TransactionRunner;
 
 import java.sql.DatabaseMetaData;
@@ -26,18 +27,35 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 	 * @param runner The SQL runner to use
 	 */
 	public SchemaUpdateHistoryImpl(TransactionRunner runner) {
-		this(runner, "schema_history");
+		this(runner, "SCHEMA_HISTORY");
 	}
 
 	/**
 	 * @param runner    The SQL runner for the db updates
-	 * @param tableName The table name for the schema history table
+	 * @param tableName The table name for the schema history table. WARNING: BEST USE A ALL UPPERCASE TABLE NAME!
 	 */
 	public SchemaUpdateHistoryImpl(TransactionRunner runner, String tableName) {
 		this.runner = runner;
 		this.tableName = tableName;
 
 
+	}
+
+	@Override
+	public boolean isDone(String packageName, String updateName) {
+		createTableIfNotExist();
+		int count = runner.trans(c -> {
+			try(PreparedStatement stat = c.prepareStatement("select count(1) from " + tableName +
+																" where package_name=?  and update_name=?")) {
+				stat.setString(1, packageName);
+				stat.setString(2, updateName);
+				try(ResultSet rs = stat.executeQuery()) {
+					rs.next();
+					return rs.getInt(1);
+				}
+			}
+		});
+		return count > 0;
 	}
 
 	private void createTableIfNotExist() {
@@ -81,20 +99,24 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 	}
 
 	@Override
-	public boolean isDone(String packageName, String updateName) {
-		createTableIfNotExist();
-		int count = runner.trans(c -> {
-			try(PreparedStatement stat = c.prepareStatement("select count(1) from " + tableName +
-																" where package_name=?  and update_name=?")) {
-				stat.setString(1, packageName);
-				stat.setString(2, updateName);
-				try(ResultSet rs = stat.executeQuery()) {
-					rs.next();
-					return rs.getInt(1);
+	public PList<String> getUpdatesDone(String packageName) {
+		return runner.trans(c -> {
+			PList<String> result = PList.empty();
+			if(tableExists(tableName)) {
+				try(PreparedStatement stat = c.prepareStatement("select update_name from " + tableName +
+																	" where package_name=?")) {
+					stat.setString(1, packageName);
+
+					try(ResultSet rs = stat.executeQuery()) {
+						while(rs.next()) {
+							result = result.plus(rs.getString(1));
+						}
+
+					}
 				}
 			}
+			return result;
 		});
-		return count > 0;
 	}
 
 	@Override
@@ -118,11 +140,28 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 	public void removeUpdateHistory(String packageName) {
 		runner.trans(c -> {
 			String sql = "delete from " + tableName + " where package_name = ?";
-			if(tableExists(tableName)){
-				try(PreparedStatement s = c.prepareStatement(sql)){
-					s.setString(1,packageName);
+			if(tableExists(tableName)) {
+				//delete all records for the package
+				try(PreparedStatement s = c.prepareStatement(sql)) {
+					s.setString(1, packageName);
 					s.executeUpdate();
 				}
+				//check if there are other records left
+				//and if not -> delete the history table
+				try(PreparedStatement s = c.prepareStatement("select count(1) from " + tableName)) {
+					int count = 0;
+					try(ResultSet rs = s.executeQuery()) {
+						rs.next();
+						count = rs.getInt(1);
+					}
+					if(count == 0) {
+						try(PreparedStatement ds = c.prepareStatement("drop table " + tableName)) {
+							ds.executeUpdate();
+						}
+					}
+
+				}
+
 			}
 		});
 

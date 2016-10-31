@@ -1,5 +1,7 @@
 package com.persistentbit.sql;
 
+import com.persistentbit.sql.dbbuilder.SchemaUpdateHistory;
+import com.persistentbit.sql.dbbuilder.impl.SchemaUpdateHistoryImpl;
 import org.junit.Test;
 
 
@@ -13,13 +15,18 @@ public class TestSchemaHistory extends AbstractTestWithTransactions{
     @Test
     public void testa(){
         assert trans != null;
-        /* TODO check waarom dit niet meer werkt
+
         trans.trans(c -> {
-            SchemaUpdateHistory uh = new SchemaUpdateHistoryImpl(trans);
-            assert uh.isDone("com.persistbit.persist-sql","testupdatehistory") == false;
-            uh.setDone("com.persistbit.persist-sql","testupdatehistory");
-            assert uh.isDone("com.persistbit.persist-sql","testupdatehistory");
-        });*/
+            String              packageName = "com.persistbit.persist-sql";
+            SchemaUpdateHistory uh          = new SchemaUpdateHistoryImpl(trans);
+            assert uh.isDone(packageName, "testupdatehistory") == false;
+            uh.setDone(packageName, "testupdatehistory");
+            assert uh.isDone(packageName, "testupdatehistory");
+            uh.removeUpdateHistory(packageName + "_not");
+            assert uh.isDone(packageName, "testupdatehistory");
+            uh.removeUpdateHistory(packageName);
+            assert uh.isDone(packageName, "testupdatehistory") == false;
+        });
 
 
     }

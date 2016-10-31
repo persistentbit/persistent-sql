@@ -2,6 +2,8 @@
   DROP TABLE test_table;
   DROP TABLE db_update_test;
   DROP TABLE person;
+DROP TABLE invoice;
+DROP TABLE invoice_line;
 
 -->>first_update
 create table db_update_test(

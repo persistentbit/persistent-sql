@@ -17,7 +17,6 @@ import com.persistentbit.sql.transactions.TransactionRunner;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
 import com.persistentbit.substema.compiler.SubstemaUtils;
 import com.persistentbit.substema.compiler.values.*;
-import com.persistentbit.substema.compiler.values.expr.RConstEnum;
 import com.persistentbit.substema.javagen.*;
 
 import java.time.LocalDate;
@@ -25,27 +24,21 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.function.Function;
 
-/**
- * Created by petermuys on 14/09/16.
- */
-public class DbJavaGen{
+import static com.persistentbit.sql.staticsql.codegen.DbAnnotationsUtils.*;
 
-	static public final String packageDbAnnotations   = "com.persistentbit.sql.annotations";
-	static public final RClass rclassTable            = new RClass(packageDbAnnotations, "Table");
-	static public final RClass rclassColumn           = new RClass(packageDbAnnotations, "Column");
-	static public final RClass rclassAutoGen          = new RClass(packageDbAnnotations, "AutoGen");
-	static public final RClass rclassKey              = new RClass(packageDbAnnotations, "Key");
-	static public final RClass rclassNameToLower      = new RClass(packageDbAnnotations, "NameToLower");
-	static public final RClass rclassNameToUpper      = new RClass(packageDbAnnotations, "NameToUpper");
-	static public final RClass rclassCamelToSnake     = new RClass(packageDbAnnotations, "NameCamelToSnake");
-	static public final RClass rclassNameRemovePrefix = new RClass(packageDbAnnotations, "NameRemovePrefix");
-	static public final RClass rclassPrefix           = new RClass(packageDbAnnotations, "NamePrefix");
-	static public final RClass rclassPostfix          = new RClass(packageDbAnnotations, "NamePostfix");
-	static public final RClass rclassNoPrefix         = new RClass(packageDbAnnotations, "NoPrefix");
-	private final JavaGenOptions options;
-	private final RSubstema      substema;
+/**
+ * Generate Java code for a Database Substema
+ *
+ * @author Peter Muys
+ * @since 14/09/16
+ */
+public final class DbJavaGen{
+
+
+	private final JavaGenOptions   options;
+	private final RSubstema        substema;
 	private final SubstemaCompiler compiler;
-	private       PSet<RClass>     allExternalValueClasses;
+	private final PSet<RClass>     allExternalValueClasses;
 
 	private DbJavaGen(JavaGenOptions options, String packageName, SubstemaCompiler compiler) {
 		this.options = options;
@@ -69,7 +62,7 @@ public class DbJavaGen{
 	 *
 	 * @return PList with all the generated java files
 	 */
-	static public PList<GeneratedJava> generate(JavaGenOptions options, String packageName, SubstemaCompiler compiler) {
+	public static PList<GeneratedJava> generate(JavaGenOptions options, String packageName, SubstemaCompiler compiler) {
 		return new DbJavaGen(options, packageName, compiler).generateService();
 	}
 
@@ -99,8 +92,8 @@ public class DbJavaGen{
 					//must be an enum;
 					return null;
 				}
-				RSubstema   substema = compiler.compile(c.getPackageName());
-				RValueClass vc       =
+				RSubstema substema = compiler.compile(c.getPackageName());
+				RValueClass vc =
 					substema.getValueClasses().find(evc -> evc.getTypeSig().getName().equals(c)).orElse(null);
 				if(vc == null) {
 					return null;
@@ -141,7 +134,7 @@ public class DbJavaGen{
 	 * @param found list of found external classes
 	 * @param cls   The class to process
 	 *
-	 * @return
+	 * @return Set of RClass
 	 */
 	private PSet<RClass> findExternalDefinitions(PSet<RClass> found, RClass cls) {
 		if(found.contains(cls)) {
@@ -169,22 +162,7 @@ public class DbJavaGen{
 		return found;
 	}
 
-	/**
-	 * Find a  value class internally or externally...
-	 *
-	 * @param cls the RClass to find
-	 *
-	 * @return The Optional cls
-	 */
-	private RValueClass findValueClass(RClass cls) {
-		if(cls.getPackageName() == substema.getPackageName()) {
-			return getValueClass(cls)
-				.orElseThrow(() -> new PersistSqlException("Can't find Internal Value class " + cls));
-		}
-		RSubstema ns = compiler.compile(cls.getPackageName());
-		return ns.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls))
-			.orElseThrow(() -> new PersistSqlException("Can't find Value class " + cls));
-	}
+
 
 	/**
 	 * Return the optional RValueClass defined in the current substema by checking the RClass
@@ -197,28 +175,14 @@ public class DbJavaGen{
 		return substema.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls));
 	}
 
-	/**
-	 * Return the optional REnum defined in the substema substem by checking the RClass
-	 *
-	 * @param cls The RClass to find
-	 *
-	 * @return empty or some REnum
-	 */
-	private Optional<REnum> getEnum(RClass cls) {
-		return substema.getEnums().find(vc -> vc.getName().equals(cls));
-	}
 
-	private enum NameType{
-		column, table
-	}
+	private final class Generator extends AbstractJavaGenerator{
 
-	private class Generator extends AbstractJavaGenerator{
-
-		private PSet<RClass> imports = PSet.empty();
-		private SourceGen    header  = new SourceGen();
+		private final PSet<RClass> imports = PSet.empty();
+		private final SourceGen    header  = new SourceGen();
 
 
-		public Generator(SubstemaCompiler compiler, String packageName) {
+		private Generator(SubstemaCompiler compiler, String packageName) {
 			super(compiler, packageName);
 
 
@@ -229,7 +193,7 @@ public class DbJavaGen{
 			RClass cls   = toExprClass(vcCls);
 
 			Function<String, String> tableNameConverter =
-				createNameConverter(substema.getPackageDef().getAnnotations(), NameType.table);
+				createSubstemaToDbNameConverter(substema.getPackageDef().getAnnotations(), NameType.table, atUtils);
 
 			addImport(vcCls);
 			addImport(Expr.class);
@@ -340,9 +304,7 @@ public class DbJavaGen{
 				bs("static public PList<Expr<?>> asValues(" + vcCls.getClassName() + " v)");
 				{
 					println("PList<Expr<?>> r = PList.empty();");
-					vc.getProperties().forEach(p -> {
-						println(generateValueExpr(p));
-					});
+					vc.getProperties().forEach(p -> println(generateValueExpr(p)));
 					println("return r;");
 				}
 				be();
@@ -352,9 +314,7 @@ public class DbJavaGen{
 				bs("public PList<Expr<?>> _expand()");
 				{
 					println("PList<Expr<?>> res = PList.empty();");
-					vc.getProperties().forEach(p -> {
-						println("res = res.plusAll(" + p.getName() + "._expand());");
-					});
+					vc.getProperties().forEach(p -> println("res = res.plusAll(" + p.getName() + "._expand());"));
 					println("return res;");
 				}
 				be();
@@ -367,16 +327,16 @@ public class DbJavaGen{
 					.getSimpleName() + " _cache)");
 				{
 					vc.getProperties().forEach(p -> {
-						RClass pcls = p.getValueType().getTypeSig().getName();
+						RClass propCls = p.getValueType().getTypeSig().getName();
 
-						String javaClassName = JavaGenUtils.toString(packageName, pcls);
-						//For internal Substem classes
-						if(SubstemaUtils.isSubstemaClass(pcls)) {
-							if(pcls.equals(SubstemaUtils.dateTimeRClass)) {
+						String javaClassName = JavaGenUtils.toString(packageName, propCls);
+						//For internal Substema classes
+						if(SubstemaUtils.isSubstemaClass(propCls)) {
+							if(propCls.equals(SubstemaUtils.dateTimeRClass)) {
 								addImport(LocalDateTime.class);
 								javaClassName = LocalDateTime.class.getSimpleName();
 							}
-							if(pcls.equals(SubstemaUtils.dateRClass)) {
+							if(propCls.equals(SubstemaUtils.dateRClass)) {
 								addImport(LocalDate.class);
 								javaClassName = LocalDate.class.getSimpleName();
 							}
@@ -385,20 +345,21 @@ public class DbJavaGen{
 						}
 						else {
 
-							if(getInternalOrExternalEnum(pcls).isPresent()) {
+							if(getInternalOrExternalEnum(propCls).isPresent()) {
 								//For Enums
 								//Gender gender = Gender.valueOf(rowReader.readNext(String.class));
-								addImport(pcls);
+								addImport(propCls);
 								String enumStringName = "_" + p.getName() + "String";
 								println("String " + enumStringName + " = _rowReader.readNext(String.class);");
-								println(pcls.getClassName() + " " + p
-									.getName() + " = " + enumStringName + "== null ? null : " + pcls
+								println(propCls.getClassName() + " " + p
+									.getName() + " = " + enumStringName + "== null ? null : " + propCls
 									.getClassName() + ".valueOf(" + enumStringName + ");");
 							}
 							else {
-								addImport(pcls);
-								javaClassName = JavaGenUtils.toString(packageName, pcls.withPackageName(packageName));
-								RClass nc = toExprClass(pcls);
+								addImport(propCls);
+								javaClassName =
+									JavaGenUtils.toString(packageName, propCls.withPackageName(packageName));
+								RClass nc = toExprClass(propCls);
 								addImport(nc);
 								println(javaClassName + " " + p.getName() + " = this." + p
 									.getName() + ".read(_rowReader,_cache);");
@@ -415,9 +376,8 @@ public class DbJavaGen{
 					}
 					println("return _cache.updatedFromCache(" + vcCls.getClassName() + ".build(b-> b");
 					indent();
-					vc.getProperties().forEach(p -> {
-						println(".set" + StringUtils.firstUpperCase(p.getName()) + "(" + p.getName() + ")");
-					});
+					vc.getProperties().forEach(p -> println(".set" + StringUtils.firstUpperCase(p.getName()) + "(" + p
+						.getName() + ")"));
 					outdent();
 					println("));");
 
@@ -449,67 +409,8 @@ public class DbJavaGen{
 			return toGenJava(cls);
 		}
 
-		private RClass toExprClass(RClass cls) {
-			return cls.withClassName("_" + cls.getClassName()).withPackageName(packageName);
-		}
-
-		private Function<String, String> createNameConverter(PList<RAnnotation> annotations, NameType type) {
-			//Find all anotations
-			PList<RAnnotation> nameAt = annotations.filter(a ->
-															   a.getName().equals(rclassCamelToSnake) ||
-																   a.getName().equals(rclassNameToLower) ||
-																   a.getName().equals(rclassNameToUpper) ||
-																   a.getName().equals(rclassPostfix) ||
-																   a.getName().equals(rclassPrefix) ||
-																   a.getName().equals(rclassNameRemovePrefix)
-			);
-			Function<String, String> res = i -> i;
-			for(RAnnotation at : nameAt) {
-				RConstEnum cenum      = (RConstEnum) atUtils.getProperty(at, "type").get();
-				String     atTypeName = cenum.getEnumValue();
-
-				boolean ok = (type == NameType.table && atTypeName.equals("table")) ||
-					(type == NameType.column && atTypeName.equals("column")) ||
-					atTypeName.equals("all");
-				if(ok == false) {
-					continue;
-				}
-				switch(at.getName().getClassName()) {
-					case "NameToLower":
-						res = res.andThen(s -> s.toLowerCase());
-						break;
-					case "NameToUpper":
-						res = res.andThen(s -> s.toUpperCase());
-						break;
-					case "NameCamelToSnake":
-						res = res.andThen(s -> StringUtils.camelCaseTo_snake(s));
-						break;
-					case "NamePrefix":
-						String prefix = atUtils.getStringProperty(at, "value").orElse(null);
-						res = res.andThen(s -> prefix + s);
-						break;
-					case "NamePostfix":
-						String postFix = atUtils.getStringProperty(at, "value").orElse(null);
-						res = res.andThen(s -> s + postFix);
-						break;
-					case "NameRemovePrefix":
-						res = res.andThen(s -> {
-							String delPrefix = atUtils.getStringProperty(at, "value").orElse(null);
-							if(s.startsWith(delPrefix)) {
-								return s.substring(delPrefix.length());
-							}
-							return s;
-						});
-						break;
-					default:
-						throw new PersistSqlException("Unknown:" + cenum.getEnumClass());
-				}
-			}
-			return res;
-		}
-
 		/**
-		 * Generate the javacode to transform a real property value to an Expr
+		 * Generate the java code to transform a real property value to an Expr
 		 *
 		 * @param p The RProperty
 		 *
@@ -545,24 +446,6 @@ public class DbJavaGen{
 				RClass nc = toExprClass(cls);
 				addImport(nc);
 				return "r = r.plusAll(" + JavaGenUtils.toString(packageName, nc) + ".asValues(" + getter + "));";
-			}
-		}
-
-		/**
-		 * Try to find an enum for a given RClass.<br>
-		 * if the RClass is for a diferent package, than that package is resolved.
-		 *
-		 * @param cls the RClass for the enum.
-		 *
-		 * @return the Optional REnum for the class
-		 */
-		private Optional<REnum> getInternalOrExternalEnum(RClass cls) {
-			if(cls.getPackageName().equals(packageName) == false) {
-				RSubstema ss = compiler.compile(cls.getPackageName());
-				return ss.getEnums().find(e -> e.getName().getClassName().equals(cls.getClassName()));
-			}
-			else {
-				return getEnum(cls);
 			}
 		}
 
@@ -604,7 +487,7 @@ public class DbJavaGen{
 			RProperty autoGenProp =
 				vc.getProperties().find(p -> atUtils.getOneAnnotation(p.getAnnotations(), rclassAutoGen).isPresent())
 					.orElse(null);
-			String    vcName      = vc.getTypeSig().getName().getClassName();
+			String vcName = vc.getTypeSig().getName().getClassName();
 			bs("public " + vcName + " insert(" + vcName + " newRow)");
 			{
 				if(autoGenProp == null) {
@@ -725,7 +608,6 @@ public class DbJavaGen{
 		}
 
 		private String getValGetter(RProperty p, String valueName) {
-			RClass cls    = p.getValueType().getTypeSig().getName();
 			String getter = valueName + ".get" + StringUtils.firstUpperCase(p.getName()) + "()";
 			if(p.getValueType().isRequired() == false) {
 				getter = getter + ".orElse(null)";
@@ -757,19 +639,19 @@ public class DbJavaGen{
 				be();
 
 				valueClasses.forEach(vc -> {
-					RClass cls  = vc.getTypeSig().getName();
-					RClass ecls = toExprClass(cls);
-					addImport(ecls);
+					RClass cls     = vc.getTypeSig().getName();
+					RClass exprCls = toExprClass(cls);
+					addImport(exprCls);
 					boolean isTableClass = atUtils.hasAnnotation(vc.getAnnotations(), rclassTable);
 					if(isTableClass) {
-						println("public " + JavaGenUtils.toString(packageName, ecls) + " " + StringUtils
+						println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
 							.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
-							.toString(packageName, ecls) + "(this); }");
+							.toString(packageName, exprCls) + "(this); }");
 					}
 					else {
-						println("public " + JavaGenUtils.toString(packageName, ecls) + " " + StringUtils
+						println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
 							.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
-							.toString(packageName, ecls) + "(); }");
+							.toString(packageName, exprCls) + "(); }");
 					}
 
 				});
@@ -779,6 +661,10 @@ public class DbJavaGen{
 			return toGenJava(dbCls);
 		}
 
+		private RClass toExprClass(RClass cls) {
+			return cls.withClassName("_" + cls.getClassName()).withPackageName(packageName);
+		}
+
 		/**
 		 * Generate the java code for a property of a db table description value class;
 		 *
@@ -786,12 +672,12 @@ public class DbJavaGen{
 		 */
 		private void generateProperty(RProperty property) {
 			Function<String, String> columnNameConverter =
-				createNameConverter(substema.getPackageDef().getAnnotations(), NameType.column);
-			String                   type;
-			String                   value;
-			RClass                   cls                 = property.getValueType().getTypeSig().getName();
-			String                   columnName          = property.getName();
-			RAnnotation              columnAt            =
+				createSubstemaToDbNameConverter(substema.getPackageDef().getAnnotations(), NameType.column, atUtils);
+			String type;
+			String value;
+			RClass cls        = property.getValueType().getTypeSig().getName();
+			String columnName = property.getName();
+			RAnnotation columnAt =
 				atUtils.getOneAnnotation(property.getAnnotations(), rclassColumn).orElse(null);
 			if(columnAt != null) {
 				columnName = atUtils.getStringProperty(columnAt, "name").orElse(columnName);
@@ -846,7 +732,7 @@ public class DbJavaGen{
 					addImport(ExprPropertyEnum.class);
 					String valueName = ExprPropertyEnum.class.getSimpleName();
 
-					type = ExprPropertyEnum.class.getSimpleName() + "<" + cls.getClassName() + ">";
+					type = valueName + "<" + cls.getClassName() + ">";
 					value = "new " + type + "(" + cls.getClassName() + ".class,this,\"" + property
 						.getName() + "\", \"" + columnName + "\");";
 				}
@@ -877,14 +763,60 @@ public class DbJavaGen{
 			println("public " + type + " " + property.getName() + " = " + value);
 		}
 
+		/**
+		 * Try to find an enum for a given RClass.<br>
+		 * if the RClass is for a different package, than that package is resolved.
+		 *
+		 * @param cls the RClass for the enum.
+		 *
+		 * @return the Optional REnum for the class
+		 */
+		private Optional<REnum> getInternalOrExternalEnum(RClass cls) {
+			if(cls.getPackageName().equals(packageName) == false) {
+				RSubstema ss = compiler.compile(cls.getPackageName());
+				return ss.getEnums().find(e -> e.getName().getClassName().equals(cls.getClassName()));
+			}
+			else {
+				return getEnum(cls);
+			}
+		}
+
+		/**
+		 * Find a  value class internally or externally...
+		 *
+		 * @param cls the RClass to find
+		 *
+		 * @return The Optional cls
+		 */
+		private RValueClass findValueClass(RClass cls) {
+			if(cls.getPackageName().equals(substema.getPackageName())) {
+				return getValueClass(cls)
+					.orElseThrow(() -> new PersistSqlException("Can't find Internal Value class " + cls));
+			}
+			RSubstema ns = compiler.compile(cls.getPackageName());
+			return ns.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls))
+				.orElseThrow(() -> new PersistSqlException("Can't find Value class " + cls));
+		}
+
+		/**
+		 * Return the optional REnum defined in the substema substema by checking the RClass
+		 *
+		 * @param cls The RClass to find
+		 *
+		 * @return empty or some REnum
+		 */
+		private Optional<REnum> getEnum(RClass cls) {
+			return substema.getEnums().find(vc -> vc.getName().equals(cls));
+		}
+
 		private String toString(RTypeSig sig) {
 			return toString(sig, false);
 		}
 
 		private String toString(RTypeSig sig, boolean asPrimitive) {
-			String gen   =
-				sig.getGenerics().isEmpty() ? "" : sig.getGenerics().map(g -> toString(g)).toString("<", ",", ">");
-			String pname = sig.getName().getPackageName();
+			String gen =
+				sig.getGenerics().isEmpty() ? "" : sig.getGenerics().map(this::toString).toString("<", ",", ">");
+			String packName = sig.getName().getPackageName();
 			String name  = sig.getName().getClassName();
 
 			switch(name) {
@@ -927,7 +859,7 @@ public class DbJavaGen{
 					break;
 
 				default:
-					addImport(new RClass(pname, name));
+					addImport(new RClass(packName, name));
 					break;
 			}
 

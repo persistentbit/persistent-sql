@@ -1,17 +1,12 @@
 import com.persistentbit.sql.annotations;
 
 @NameRemovePrefix(value="S",type=NameType.table)
+@NamePrefix(value="SQLTEST_",type=NameType.table)
 @NameCamelToSnake
 @NameToUpper
 package;
 
-@Table
-case class SDbUpdateTest {
-	@Key
-	@AutoGen
-	id: Integer;
-	name: ?String;
-}
+
 
 @Table("INVOICE")
 case class SInvoice {
@@ -21,4 +16,12 @@ case class SInvoice {
 	invoiceNummer: String;
 	fromPersonId: Integer;
 	toPersonId: Integer;
+}
+
+@Table
+case class SDbUpdateTest {
+	@Key
+	@AutoGen
+	id: Integer;
+	name: ?String;
 }

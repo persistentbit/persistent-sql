@@ -7,8 +7,6 @@ import com.persistentbit.sql.staticsql.codegen.DbAnnotationsUtils;
 import com.persistentbit.substema.compiler.AnnotationsUtils;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
 import com.persistentbit.substema.compiler.values.*;
-import com.persistentbit.substema.compiler.values.expr.RConst;
-import com.persistentbit.substema.compiler.values.expr.RConstString;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -191,13 +189,13 @@ public class DbSubstemaGen{
 		return baseSubstema.getValueClasses().find(vc -> {
 			RAnnotation tableAnnotation =
 				vc.getAnnotations().find(at -> at.getName().getClassName().equals("Table")).orElse(null);
+
 			if(tableAnnotation == null) {
 				return false;
 			}
-			RConst definedName = tableAnnotation.getValues().find(t -> "name".equals(t._1)).map(t -> t._2).orElse(null);
+			String definedName = atUtils.getStringProperty(tableAnnotation, "name").orElse(null);
 			if(definedName != null) {
-				RConstString definedNameString = (RConstString) definedName;
-				return "tableName".equals(definedNameString.getValue());
+				return "tableName".equals(definedName);
 			}
 			String vcTableName = mapSubstemaTableNameToDbName.apply(vc.getTypeSig().getName().getClassName());
 			return tableName.equals(vcTableName);

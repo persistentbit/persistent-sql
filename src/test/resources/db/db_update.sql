@@ -1,5 +1,5 @@
 -->>DropAll
-DROP TABLE test_table;
+DROP TABLE sqltest_table;
 DROP TABLE db_update_test;
 DROP TABLE person;
 DROP TABLE invoice;
@@ -11,7 +11,7 @@ CREATE TABLE db_update_test (
   name VARCHAR(256)
 );
 -->>create_test_table
-CREATE TABLE test_table (
+CREATE TABLE sqltest_table (
   id           INT PRIMARY KEY NOT NULL GENERATED ALWAYS AS IDENTITY ( START WITH 1, INCREMENT BY 1),
   created_date TIMESTAMP       NOT NULL,
   module_name  VARCHAR(80)     NOT NULL,
@@ -40,3 +40,4 @@ CREATE TABLE invoice_line (
   product    VARCHAR(256)
 );
 -->>
+

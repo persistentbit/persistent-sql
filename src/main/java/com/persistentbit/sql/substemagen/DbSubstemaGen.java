@@ -214,6 +214,23 @@ public class DbSubstemaGen {
                 valueClasses.filter(vc -> baseSubstemaHasMatchingTable(vc.getTypeSig().getName().getClassName()) == false);
     }
 
+    /**
+     * Try to use an embeddable class in generated state classes
+     * @param packageName The packageName of the embedded class
+     * @param className The className of the embedded class
+     */
+    public void mergeEmbedded(String packageName, String className){
+        RSubstema substema = substemaCompiler.compile(packageName);
+        RValueClass embeddable = substema.getValueClasses().find(vc -> vc.getTypeSig().getName().getClassName().equals(className) && vc.)
+    }
+
+    private void mergeEmbedded(RValueClass embeddable){
+        valueClasses = valueClasses.map(gen -> mergeEmbedded(gen,embeddable));
+    }
+    private RValueClass mergeEmbedded(RValueClass generated, RValueClass embeddable){
+        return generated;
+    }
+
     private boolean baseSubstemaHasMatchingTable(String valueClassName) {
         String tableName = mapSubstemaTableNameToDbName.apply(valueClassName);
         return baseSubstema.getValueClasses().find(vc -> {

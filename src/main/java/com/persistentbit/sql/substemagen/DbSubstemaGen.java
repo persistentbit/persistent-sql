@@ -132,17 +132,17 @@ public class DbSubstemaGen{
 
 					String  name            = rs.getString("COLUMN_NAME");
 					int     data_type       = rs.getInt("DATA_TYPE"); //java.sql.Types
-					String  typeName        = rs.getString("TYPE_NAME"); //datasource dependent
-					int     columnSize      = rs.getInt("COLUMN_SIZE");
-					Integer decimalDigits   = (Integer) rs.getObject("DECIMAL_DIGITS");
-					String  defaultValue    = rs.getString("COLUMN_DEF");
-					int     ordinalPos      = rs.getInt("ORDINAL_POSITION");
-					int     charOctetLength = rs.getInt("CHAR_OCTET_LENGTH");
+					//String  typeName        = rs.getString("TYPE_NAME"); //datasource dependent
+					//int     columnSize      = rs.getInt("COLUMN_SIZE");
+					//Integer decimalDigits   = (Integer) rs.getObject("DECIMAL_DIGITS");
+					//String  defaultValue    = rs.getString("COLUMN_DEF");
+					//int     ordinalPos      = rs.getInt("ORDINAL_POSITION");
+					//int     charOctetLength = rs.getInt("CHAR_OCTET_LENGTH");
 					boolean isNullable      = "YES".equals(rs.getString("IS_NULLABLE"));
-					String  scopeTable      = rs.getString("SCOPE_TABLE");
-					Object  scopeDataType   = rs.getObject("SOURCE_DATA_TYPE");
+					//String  scopeTable      = rs.getString("SCOPE_TABLE");
+					//Object  scopeDataType   = rs.getObject("SOURCE_DATA_TYPE");
 					boolean isAutoIncrement = "YES".equals(rs.getString("IS_AUTOINCREMENT"));
-					Integer decimal_digits  = rs.getInt("DECIMAL_DIGITS");
+					//Integer decimal_digits  = rs.getInt("DECIMAL_DIGITS");
 					String  remarks         = rs.getString("REMARKS");
 					SqlType sqlType;
 					try {
@@ -173,6 +173,13 @@ public class DbSubstemaGen{
 							propAnnotations =
 								propAnnotations.plus(new RAnnotation(DbAnnotationsUtils.rclassColumn, nameValue));
 						}
+
+						if(remarks != null && remarks.isEmpty() == false) {
+							propAnnotations = propAnnotations
+								.plus(new RAnnotation(SubstemaUtils.docRClass, PMap.<String, RConst>empty()
+									.put("info", new RConstString(remarks))));
+						}
+
 						RProperty prop = new RProperty(
 							propName, valueType, propAnnotations);
 
@@ -198,14 +205,12 @@ public class DbSubstemaGen{
 			}
 
 
-			RValueClass vc =
-				new RValueClass(
-					new RTypeSig(new RClass(packageName, reverseTableName)),
-					properties,
-					PList.empty(), //interfaceClasses
-					annotations
-				);
-			return vc;
+			return new RValueClass(
+				new RTypeSig(new RClass(packageName, reverseTableName)),
+				properties,
+				PList.empty(), //interfaceClasses
+				annotations
+			);
 
 		} catch(SQLException se) {
 			RtSqlException.map(se);
@@ -278,15 +283,10 @@ public class DbSubstemaGen{
 	}
 
 	private RValueClass mergeEmbedded(RValueClass generated, RValueClass embeddable) {
-		//ToDo implement this
+
 		PList<Tuple2<String, RValueType>> embCols = getFullColumnList(embeddable);
 
-		//embCols.forEach(System.out::println);
-		//System.out.println();
-
 		PList<Tuple2<String, RValueType>> genCols = getFullColumnList(generated);
-		genCols.forEach(System.out::println);
-		//System.out.println();
 
 		PMap<String, PList<String>> found = PMap.empty();    //key = prefix name value = embedded columnName
 		for(Tuple2<String, RValueType> genCol : genCols) {
@@ -321,28 +321,32 @@ public class DbSubstemaGen{
 			}
 			//Now we need add the embedded object as a property
 			PList<RAnnotation> annotations          = PList.empty();
-			String             substamaPropertyName =
+			String substemaPropertyName =
 				prefix.isEmpty() ? "" : mapColumnNameToSubstemaName.apply(prefix.substring(0, prefix.length() - 1));
-			if(substamaPropertyName.isEmpty()) {
+			if(substemaPropertyName.isEmpty()) {
 				//If the prefix name is empty...
-				substamaPropertyName = StringUtils.firstLowerCase(embeddable.getTypeSig().getName().getClassName());
-				RAnnotation colAt = new RAnnotation(DbAnnotationsUtils.rclassColumn, PMap.<String, RConst>empty()
-					.put("name", new RConstString("")));
+				substemaPropertyName = StringUtils.firstLowerCase(embeddable.getTypeSig().getName().getClassName());
+				RAnnotation colAt = new RAnnotation(DbAnnotationsUtils.rclassNoPrefix, PMap.empty());
 				annotations = annotations.plus(colAt);
 			}
-			RProperty newProperty = new RProperty(substamaPropertyName, new RValueType(embeddable
-																						   .getTypeSig(), areAllFieldNullable == false), annotations);
+			RProperty newProperty = new RProperty(
+				substemaPropertyName,
+				new RValueType(embeddable.getTypeSig(), areAllFieldNullable == false),
+				annotations
+			);
 			generated = generated.withProperties(generated.getProperties().plus(newProperty));
 		}
-
-
-		//found.forEach(System.out::println);
-		//System.out.println("---------");
-		//System.out.println();
 
 		return generated;
 	}
 
+	/**
+	 * Flatten the properties in a value class
+	 *
+	 * @param vc The Value class
+	 *
+	 * @return A list with all column names and there value type
+	 */
 	private PList<Tuple2<String, RValueType>> getFullColumnList(RValueClass vc) {
 		PList<Tuple2<String, RValueType>> res = PList.empty();
 

@@ -136,6 +136,18 @@ public final class DbAnnotationsUtils {
         // First NameToUpper => Gives a lower case name.
         // Then NameCamelToSnake => gives a camelCase name
 
+        PList<RAnnotation> prefixAt = sortedAt.filter(at -> at.getName().getClassName().equals("NamePrefix"));
+        for(RAnnotation at : prefixAt) {
+            String     prefix     = atUtils.getStringProperty(at, "value").orElse(null);
+            RConstEnum constEnum  = (RConstEnum) atUtils.getProperty(at, "type").get();
+            String     atTypeName = constEnum.getEnumValue();
+            boolean ok = (type == NameType.table && atTypeName.equals("table")) ||
+                (type == NameType.column && atTypeName.equals("column")) ||
+                atTypeName.equals("all");
+            if(ok) {
+                res = res.andThen(s -> s.startsWith(prefix) ? s.substring(prefix.length()) : s);
+            }
+        }
 
         if (sortedAt.find(at -> at.getName().getClassName().equals("NameToUpper")).isPresent()) {
             res = res.andThen(String::toLowerCase);
@@ -167,8 +179,9 @@ public final class DbAnnotationsUtils {
                     //Already done before
                     break;
                 case "NamePrefix":
-                    String prefix = atUtils.getStringProperty(at, "value").orElse(null);
-                    res = res.andThen(s -> s.startsWith(prefix) ? s.substring(prefix.length()) : s);
+                    //String prefix = atUtils.getStringProperty(at, "value").orElse(null);
+                    //res = res.andThen(s -> s.startsWith(prefix) ? s.substring(prefix.length()) : s);
+                    //Already done before
                     break;
                 case "NamePostfix":
                     String postFix = atUtils.getStringProperty(at, "value").orElse(null);

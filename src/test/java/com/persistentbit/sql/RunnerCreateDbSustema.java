@@ -1,22 +1,32 @@
 package com.persistentbit.sql;
 
 import com.persistentbit.sql.substemagen.DbSubstemaGen;
+import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
 import com.persistentbit.substema.compiler.values.RSubstema;
 import com.persistentbit.substema.dependencies.DependencySupplier;
 import com.persistentbit.substema.substemagen.SubstemaSourceGenerator;
-import org.junit.Test;
 
 /**
- * Test Substema code gen from database definition.
+ * Create Substema Source code for the test db
  *
  * @author petermuys
- * @since 1/11/16
+ * @since 2/11/16
  */
-public class DbSubstemaGenTest extends AbstractTestWithTransactions{
+public class RunnerCreateDbSustema{
 
-	@Test
-	public void testCodeGen() {
+	public static void main(String[] args) {
+		InMemConnectionProvider dbConnector = new InMemConnectionProvider();
+
+		TransactionRunnerPerThread trans   = new TransactionRunnerPerThread(dbConnector);
+		TestDbBuilderImpl          builder = new TestDbBuilderImpl(trans);
+
+		if(builder.hasUpdatesThatAreDone()) {
+			builder.dropAll();
+		}
+		builder.buildOrUpdate();
+
+
 		SubstemaCompiler compiler     = new SubstemaCompiler(new DependencySupplier().withResources());
 		RSubstema        baseSubstema = compiler.compile("com.persistentbit.sql.test");
 		DbSubstemaGen    gen          = new DbSubstemaGen(dbConnector, baseSubstema, compiler, null, null);
@@ -31,8 +41,5 @@ public class DbSubstemaGenTest extends AbstractTestWithTransactions{
 			codeGen.addValueClass(vc);
 		});
 		System.out.println(codeGen);
-
-
 	}
-
 }

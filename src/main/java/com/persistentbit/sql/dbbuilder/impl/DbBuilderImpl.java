@@ -91,7 +91,7 @@ public class DbBuilderImpl implements DbBuilder{
 				stat.execute(sql);
 			}
 		} catch(SQLException e) {
-			throw new PersistSqlException("Error executing " + getFullName(name) + ": " + sql);
+			throw new PersistSqlException("Error executing " + getFullName(name) + ": " + sql, e);
 		}
 	}
 

@@ -1,7 +1,6 @@
 import com.persistentbit.sql.annotations;
 
 @NameRemovePrefix(value="S",type=NameType.table)
-@NamePrefix(value="SQLTEST_",type=NameType.table)
 @NameCamelToSnake
 @NameToUpper
 package;
@@ -25,3 +24,73 @@ case class SDbUpdateTest {
 	id: Integer;
 	name: ?String;
 }
+
+case class Address{
+    street:String;
+    houseNumber:Integer;
+    busNumber:?String;
+    postalcode:String;
+    city:String;
+    country:String;
+}
+
+
+/*
+    GENERATED FROM DB...
+*/
+@Table
+case class SCompany {
+	@Key
+	@AutoGen
+	id: Integer;
+	adres: Address;
+}
+
+@Table
+case class SInvoice {
+	@Key
+	@AutoGen
+	id: Integer;
+	invoiceNummer: String;
+	fromCompanyId: Integer;
+	toCompanyId: Integer;
+}
+
+@Table
+case class SInvoiceLine {
+	@Key
+	@AutoGen
+	id: Integer;
+	invoiceId: Integer;
+	product: ?String;
+}
+
+@Table
+case class SPerson {
+	@Key
+	@AutoGen
+	id: Integer;
+	userName: String;
+	password: String;
+	@Column(name = "")
+	address: Address;
+}
+
+@Table
+case class SSchemaHistory {
+	createddate: DateTime;
+	packageName: String;
+	updateName: String;
+}
+
+@Table
+case class SSqltestTable {
+	@Key
+	@AutoGen
+	id: Integer;
+	createdDate: DateTime;
+	moduleName: String;
+	className: String;
+	methodName: String;
+}
+

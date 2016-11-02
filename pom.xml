@@ -36,6 +36,7 @@
     <properties>
         <junit.version>4.12</junit.version>
         <substema.version>1.0.0-SNAPSHOT</substema.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <distributionManagement>

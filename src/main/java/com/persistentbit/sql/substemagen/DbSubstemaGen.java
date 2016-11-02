@@ -8,6 +8,8 @@ import com.persistentbit.sql.staticsql.codegen.DbAnnotationsUtils;
 import com.persistentbit.substema.compiler.AnnotationsUtils;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
 import com.persistentbit.substema.compiler.values.*;
+import com.persistentbit.substema.compiler.values.expr.RConst;
+import com.persistentbit.substema.compiler.values.expr.RConstString;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -37,6 +39,7 @@ public class DbSubstemaGen {
     private final Function<String, String> mapTableNameToSubstemaName;
 
     private final Function<String, String> mapSubstemaTableNameToDbName;
+    private final Function<String, String> mapSubstemaColumnNameToDbName;
 
     private PList<RValueClass> valueClasses = PList.empty();
 
@@ -59,6 +62,9 @@ public class DbSubstemaGen {
         this.mapSubstemaTableNameToDbName = DbAnnotationsUtils
                 .createSubstemaToDbNameConverter(
                         baseSubstema.getPackageDef().getAnnotations(), DbAnnotationsUtils.NameType.table, atUtils);
+        this.mapSubstemaColumnNameToDbName = DbAnnotationsUtils
+                .createSubstemaToDbNameConverter(
+                        baseSubstema.getPackageDef().getAnnotations(), DbAnnotationsUtils.NameType.column, atUtils);
     }
 
 
@@ -153,9 +159,15 @@ public class DbSubstemaGen {
                             propAnnotations =
                                     propAnnotations.plus(new RAnnotation(DbAnnotationsUtils.rclassAutoGen, PMap.empty()));
                         }
-
+                        String propName = mapColumnNameToSubstemaName.apply(name);
+                        if(mapSubstemaColumnNameToDbName.apply(propName).equals(name) == false){
+                            PMap<String,RConst> nameValue = PMap.empty();
+                            nameValue = nameValue.put("name",new RConstString(name));
+                            propAnnotations = propAnnotations.plus(new RAnnotation(DbAnnotationsUtils.rclassColumn,nameValue));
+                        }
                         RProperty prop = new RProperty(
-                                mapColumnNameToSubstemaName.apply(name), valueType, propAnnotations);
+                                propName, valueType, propAnnotations);
+
                         properties = properties.plus(prop);
                     } else {
                         //TODO find a better solution
@@ -165,10 +177,21 @@ public class DbSubstemaGen {
             }
 
             PList<RAnnotation> annotations = PList.empty();
-            annotations = annotations.plus(new RAnnotation(DbAnnotationsUtils.rclassTable, PMap.empty()));
+
+            String reverseTableName = mapTableNameToSubstemaName.apply(tableName);
+            if(mapSubstemaTableNameToDbName.apply(reverseTableName).equals(tableName) == false){
+                PMap<String,RConst> nameValue = PMap.empty();
+                nameValue = nameValue.put("name",new RConstString(tableName));
+                annotations =annotations.plus(new RAnnotation(DbAnnotationsUtils.rclassTable,nameValue));
+            } else {
+                annotations = annotations.plus(new RAnnotation(DbAnnotationsUtils.rclassTable, PMap.empty()));
+            }
+
+
+
             RValueClass vc =
                     new RValueClass(
-                            new RTypeSig(new RClass(packageName, mapTableNameToSubstemaName.apply(tableName))),
+                            new RTypeSig(new RClass(packageName, reverseTableName)),
                             properties,
                             PList.empty(), //interfaceClasses
                             annotations

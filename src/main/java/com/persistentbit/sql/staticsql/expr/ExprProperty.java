@@ -61,16 +61,20 @@ public class ExprProperty<T> implements ETypePropertyParent<T>{
 	@Override
 	public String _fullColumnName(ExprToSqlContext context) {
 		String res = parent._fullColumnName(context);
-		if(res.isEmpty() == false) {
+		String colName = getColumnName();
+		if(res.isEmpty() == false && colName.isEmpty() == false) {
 			res = res + "_";
 		}
-		return res + getColumnName();
+		return res + colName;
 	}
 
 	@Override
 	public String _asParentName(ExprToSqlContext context, String propertyName) {
-
-		return getParent().get()._asParentName(context, getColumnName() + "_" + propertyName);
+		String colName = getColumnName();
+		if(colName.isEmpty() == false){
+			colName += "_";
+		}
+		return getParent().get()._asParentName(context,colName + propertyName);
 	}
 
 	public Optional<ETypePropertyParent> getParent() {

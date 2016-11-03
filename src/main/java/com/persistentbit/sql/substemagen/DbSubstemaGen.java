@@ -308,7 +308,7 @@ public class DbSubstemaGen {
                 }
                 return vc;
             }
-            return newValueClass;
+            return null;
         }).filterNulls().plusAll(valueClasses).plist();
         return baseSubstema.withValueClasses(newVcList);
     }

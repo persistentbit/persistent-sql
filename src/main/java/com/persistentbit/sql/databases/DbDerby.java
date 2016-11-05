@@ -46,4 +46,8 @@ public class DbDerby extends AbstractDbType{
 		return "TIMESTAMP('" + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(dateTime) + "')";
 	}
 
+	@Override
+	public String setCurrentSchemaStatement(String schema) {
+		return "SET CURRENT SCHEMA " + schema;
+	}
 }

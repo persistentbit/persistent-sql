@@ -36,4 +36,8 @@ public class DbMySql extends AbstractDbType{
 		return sql + " LIMIT " + limit + " OFFSET " + offset;
 	}
 
+	@Override
+	public String setCurrentSchemaStatement(String schema) {
+		return "USE " + schema;
+	}
 }

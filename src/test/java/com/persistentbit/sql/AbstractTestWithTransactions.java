@@ -1,5 +1,6 @@
 package com.persistentbit.sql;
 
+import com.persistentbit.sql.databases.DbDerby;
 import com.persistentbit.sql.statement.SqlLoader;
 import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 import org.junit.After;
@@ -22,7 +23,7 @@ public abstract class AbstractTestWithTransactions{
     public void setupTransactions() {
         dbConnector = new InMemConnectionProvider();
         trans = new TransactionRunnerPerThread(dbConnector);
-        builder = new TestDbBuilderImpl(trans);
+        builder = new TestDbBuilderImpl(new DbDerby(),null,trans);
         loader = new SqlLoader("/db/Tests.sql");
         if(builder.hasUpdatesThatAreDone()) {
             builder.dropAll();

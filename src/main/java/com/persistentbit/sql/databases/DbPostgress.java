@@ -35,4 +35,9 @@ public class DbPostgress extends AbstractDbType{
 	public String sqlWithLimitAndOffset(long limit, long offset, String sql) {
 		return sql + " LIMIT " + limit + " OFFSET " + offset;
 	}
+
+	@Override
+	public String setCurrentSchemaStatement(String schema) {
+		return "SET SEARCH_PATH TO " + schema + ", PUBLIC";
+	}
 }

@@ -74,5 +74,6 @@ public interface DbType{
 		return "LCASE(" + value + ")";
 	}
 
+	String setCurrentSchemaStatement(String schema);
 
 }

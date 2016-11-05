@@ -1,6 +1,7 @@
 package com.persistentbit.sql.dbbuilder;
 
 import java.sql.Connection;
+import java.util.Optional;
 
 /**
  * Class used to create, update or drop all tables
@@ -31,4 +32,6 @@ public interface DbBuilder{
 	 * @return true if 1 update is done for this builder
 	 */
 	boolean hasUpdatesThatAreDone();
+
+
 }

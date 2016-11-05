@@ -19,4 +19,8 @@ public class DbH2 extends AbstractDbType{
 	public String sqlWithLimitAndOffset(long limit, long offset, String sql) {
 		return sql + " LIMIT " + limit + " OFFSET " + offset;
 	}
+	@Override
+	public String setCurrentSchemaStatement(String schema) {
+		return "SET SCHEMA " + schema;
+	}
 }

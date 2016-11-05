@@ -1,5 +1,6 @@
 package com.persistentbit.sql;
 
+import com.persistentbit.sql.databases.DbDerby;
 import com.persistentbit.sql.substemagen.DbSubstemaGen;
 import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
@@ -19,7 +20,7 @@ public class RunnerCreateDbSustema{
 		InMemConnectionProvider dbConnector = new InMemConnectionProvider();
 
 		TransactionRunnerPerThread trans   = new TransactionRunnerPerThread(dbConnector);
-		TestDbBuilderImpl          builder = new TestDbBuilderImpl(trans);
+		TestDbBuilderImpl          builder = new TestDbBuilderImpl(new DbDerby(), null, trans);
 
 		if(builder.hasUpdatesThatAreDone()) {
 			builder.dropAll();

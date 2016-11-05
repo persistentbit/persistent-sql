@@ -4,6 +4,7 @@ import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.logging.PLog;
 import com.persistentbit.sql.PersistSqlException;
+import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.dbbuilder.DbBuilder;
 import com.persistentbit.sql.dbbuilder.SchemaUpdateHistory;
 import com.persistentbit.sql.statement.SqlLoader;
@@ -25,19 +26,23 @@ public class DbBuilderImpl implements DbBuilder{
 
 	public static final String dropAllSnippetName = "DropAll";
 	protected final PLog                log;
+	protected final DbType dbType;
+	protected final String schema;
 	protected final TransactionRunner   runner;
 	protected final String              packageName;
 	protected final SqlLoader           sqlLoader;
 	protected final SchemaUpdateHistory updateHistory;
 
-	public DbBuilderImpl(TransactionRunner runner, String packageName, String sqlResourceName) {
-		this(runner, packageName, sqlResourceName, new SchemaUpdateHistoryImpl(runner));
+	public DbBuilderImpl(DbType dbType,String schema,TransactionRunner runner, String packageName, String sqlResourceName) {
+		this(dbType,schema,runner, packageName, sqlResourceName, new SchemaUpdateHistoryImpl(runner));
 	}
 
-	public DbBuilderImpl(TransactionRunner runner, String packageName, String sqlResourceName,
+	public DbBuilderImpl(DbType dbType,String schema,TransactionRunner runner, String packageName, String sqlResourceName,
 						 SchemaUpdateHistory updateHistory
 	) {
 		this.log = PLog.get(getClass());
+		this.dbType = dbType;
+		this.schema = schema;
 		this.runner = runner;
 		this.packageName = packageName;
 		this.sqlLoader = new SqlLoader(sqlResourceName);
@@ -88,6 +93,9 @@ public class DbBuilderImpl implements DbBuilder{
 	private void executeSql(Connection c, String name, String sql) {
 		try {
 			try(Statement stat = c.createStatement()) {
+				if(schema != null){
+					stat.execute(dbType.setCurrentSchemaStatement(schema));
+				}
 				stat.execute(sql);
 			}
 		} catch(SQLException e) {

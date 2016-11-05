@@ -63,3 +63,38 @@ annotation NamePostfix{
     value:String;
 }
 
+/*
+    **********************   DB IMPORT ANNOTATIONS
+*/
+
+
+annotation DbImportExcludeTables{
+    tableNamePattern:String;
+}
+annotation DbImportExcludeColumns{
+    tableNamePattern:String;
+    columnNamePattern:String;
+}
+
+annotation DbImportMergeEmbedded{
+    tableNamePattern:String = ".*";
+    columnNamePattern:String = ".*";
+    className:String;
+}
+
+annotation DbImportSetTableSubstemaName{
+    tableName:String;
+    substemaName:String;
+}
+
+annotation DbImportSetColumnSubstemaName{
+    tableNamePattern:String = ".*";
+    columnName:String;
+    substemaName:String;
+}
+
+annotation DbImportUseEnum{
+    tableNamePattern:String = ".*";
+    columnNamePattern:String;
+    enumClassName:String;
+}

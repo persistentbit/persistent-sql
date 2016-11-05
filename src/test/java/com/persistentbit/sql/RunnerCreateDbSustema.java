@@ -34,7 +34,7 @@ public class RunnerCreateDbSustema{
 
 		gen.mergeWithBase();
 
-		gen.mergeEmbedded("com.persistentbit.sql.test", "Address");
+		gen.mergeEmbedded(".*", ".*", "com.persistentbit.sql.test", "Address");
 
 		SubstemaSourceGenerator codeGen = new SubstemaSourceGenerator();
 		gen.getValueClasses().forEach(vc -> {

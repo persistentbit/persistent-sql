@@ -21,10 +21,9 @@ public class DbSubstemaGenTest extends AbstractTestWithTransactions{
 		RSubstema        baseSubstema = compiler.compile("com.persistentbit.sql.test");
 		DbSubstemaGen    gen          = new DbSubstemaGen(dbConnector, baseSubstema, compiler, null, null);
 		gen.loadTables();
-
 		//gen.mergeWithBase();
 
-		gen.mergeEmbedded("com.persistentbit.sql.test", "Address");
+		gen.mergeEmbedded(".*", ".*", "com.persistentbit.sql.test", "Address");
 		baseSubstema = gen.replaceBase(true);
 		SubstemaSourceGenerator codeGen = new SubstemaSourceGenerator();
 		codeGen.addSubstema(baseSubstema);

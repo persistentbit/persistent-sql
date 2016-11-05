@@ -3,6 +3,7 @@ import com.persistentbit.sql.annotations;
 @NameRemovePrefix(value="S",type=NameType.table)
 @NameCamelToSnake
 @NameToUpper
+@DbImportExcludeTables("schema_history")
 package;
 
 

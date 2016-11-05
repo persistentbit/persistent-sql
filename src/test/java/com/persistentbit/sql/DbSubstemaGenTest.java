@@ -22,16 +22,13 @@ public class DbSubstemaGenTest extends AbstractTestWithTransactions{
 		DbSubstemaGen    gen          = new DbSubstemaGen(dbConnector, baseSubstema, compiler, null, null);
 		gen.loadTables();
 
-		gen.mergeWithBase();
+		//gen.mergeWithBase();
 
 		gen.mergeEmbedded("com.persistentbit.sql.test", "Address");
-
+		baseSubstema = gen.replaceBase(true);
 		SubstemaSourceGenerator codeGen = new SubstemaSourceGenerator();
-		gen.getValueClasses().forEach(vc -> {
-			codeGen.addValueClass(vc);
-		});
+		codeGen.addSubstema(baseSubstema);
 		System.out.println(codeGen);
-
 
 	}
 

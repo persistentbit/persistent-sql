@@ -11,19 +11,24 @@ import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
 import java.util.Optional;
 
 /**
- * Created by petermuys on 8/10/16.
+ * Sql Builder for update statements.
+ *
+ * @author Peter Muys
+ * @since 8/10/16
  */
 public class UpdateSqlBuilder{
 
 	private final DbType                       dbType;
+	private final String                       schema;
 	private final Update                       update;
 	private final PMap<ETypeObject, TableInst> tables;
 
-	public UpdateSqlBuilder(DbType dbType, Update update) {
+	public UpdateSqlBuilder(DbType dbType, String schema, Update update) {
 		this.dbType = dbType;
+		this.schema = schema;
 		this.update = update;
 		PMap<ETypeObject, TableInst> allUsed = PMap.empty();
-		allUsed.put(update.getTable(), new TableInst(update.getTable().getInstanceName(), update.getTable()));
+		allUsed.put(update.getTable(), new TableInst(update.getTable().getFullTableName(schema), update.getTable()));
 		tables = allUsed;
 	}
 
@@ -32,9 +37,9 @@ public class UpdateSqlBuilder{
 	}
 
 	public String generate() {
-		ExprToSqlContext context = new ExprToSqlContext(dbType);
+		ExprToSqlContext context = new ExprToSqlContext(dbType, schema);
 		String           nl      = "\r\n";
-		String           res     = "UPDATE " + update.getTable()._getTableName() + " AS " + context
+		String res = "UPDATE " + update.getTable().getFullTableName(schema) + " AS " + context
 			.uniqueInstanceName(update.getTable(), update.getTable()._getTableName()) + nl;
 		res += " SET ";
 		PList<Tuple2<Expr<?>, Expr<?>>> sets = update.getSet();

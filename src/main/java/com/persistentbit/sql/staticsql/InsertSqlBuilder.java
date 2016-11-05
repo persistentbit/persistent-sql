@@ -7,33 +7,40 @@ import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
 
 /**
- * Created by petermuys on 2/10/16.
+ * Builder for SQL insert statements.<br>
+ *
+ * @author Peter Muys
+ * @since 2/10/16
  */
 public class InsertSqlBuilder{
 
 	private final DbType dbType;
+	private final String schema;
 	private final Insert insert;
 	private final Expr   generatedKeys;
 
-	public InsertSqlBuilder(DbType dbType, Insert insert) {
-		this(dbType, insert, null);
+	public InsertSqlBuilder(DbType dbType, String schema, Insert insert) {
+		this(dbType, schema, insert, null);
 	}
 
-	public InsertSqlBuilder(DbType dbType, Insert insert, Expr generatedKeys) {
+	public InsertSqlBuilder(DbType dbType, String schema, Insert insert, Expr generatedKeys) {
 		this.dbType = dbType;
+		this.schema = schema;
 		this.insert = insert;
 		this.generatedKeys = generatedKeys;
 	}
 
 	public String generate() {
-		ExprToSqlContext context = new ExprToSqlContext(dbType);
-		context.uniqueInstanceName(insert.getInto(), insert.getInto().getInstanceName());
+		ExprToSqlContext context = new ExprToSqlContext(dbType, schema);
+		context.uniqueInstanceName(insert.getInto(), insert.getInto().getFullTableName(schema));
 		String nl        = "\r\n";
 		String res       = "";
 		String tableName = insert.getInto()._getTableName();
-		res += "INSERT INTO " + insert.getInto()._getTableName() + " ";
+		res += "INSERT INTO " + insert.getInto().getFullTableName(schema) + " ";
+		@SuppressWarnings("unchecked")
 		PList<Tuple2<String, Expr>> all                  = insert.getInto()._all();
 		PList<Expr>                 expanded             = all.map(e -> e._2._expand()).<Expr>flatten().plist();
+		@SuppressWarnings("unchecked")
 		PList<Expr>                 expandedGenerated    = generatedKeys._expand();
 		PList<Expr>                 expandedNotGenerated = expanded.filter(e -> expandedGenerated.contains(e) == false);
 
@@ -41,6 +48,7 @@ public class InsertSqlBuilder{
 		res += "(" + names.toString(", ") + ")" + nl;
 		res += "VALUES \r\n";
 		res += insert.getValues().map(v -> {
+			@SuppressWarnings("unchecked")
 			PList<Expr> vals      = v._expand();
 			PList<Expr> valsNoGen = PList.empty();
 			for(int t = 0; t < expanded.size(); t++) {
@@ -53,6 +61,6 @@ public class InsertSqlBuilder{
 		}).toString(",\r\n");
 
 
-		return res.toString();
+		return res;
 	}
 }

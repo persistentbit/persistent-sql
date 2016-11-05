@@ -263,7 +263,15 @@ public final class DbJavaGen{
 
 				println("");
 				println("@Override");
-				println("public String toString() { return getInstanceName(); }");
+				if(isTableClass) {
+					println("public String toString() { return getFullTableName(_db.getSchema().orElse(null)); }");
+				}
+				else {
+					println("public String toString() { return _getTableName(); }");
+				}
+
+
+
 
 				println("");
 
@@ -630,11 +638,39 @@ public final class DbJavaGen{
 			addImport(DbSql.class);
 			addImport(TransactionRunner.class);
 			addImport(DbType.class);
+			String schemaName =
+				atUtils.getOneAnnotation(substema.getPackageDef().getAnnotations(), rclassSchema)
+					.map(at -> atUtils.getStringProperty(at, "name").map(n -> "\"" + n + "\"").orElse(null))
+					.orElse(null);
+			generateJavaDoc(substema.getPackageDef().getAnnotations());
 			bs("public class Db extends DbSql");
 			{
+				println("/**");
+				println(" * @param dbType Database flavor");
+				println(" * @param trans The transaction runner");
+				println(" * @see " + DbType.class.getSimpleName());
+				println(" * @see " + TransactionRunner.class.getSimpleName());
+				println(" */");
+				bs("public Db(DbType dbType, " + TransactionRunner.class.getSimpleName() + " trans, String schema)");
+				{
+					println("super(dbType, trans , schema);");
+				}
+				be();
+				println("/**");
+				if(schemaName != null) {
+					println(" * Create a Db instance with schema name " + schemaName + "<br>");
+				}
+				else {
+					println(" * Create a Db instance without a schema name<br>");
+				}
+				println(" * @param dbType Database flavor");
+				println(" * @param trans The transaction runner");
+				println(" * @see " + DbType.class.getSimpleName());
+				println(" * @see " + TransactionRunner.class.getSimpleName());
+				println(" */");
 				bs("public Db(DbType dbType, " + TransactionRunner.class.getSimpleName() + " trans)");
 				{
-					println("super(dbType, trans);");
+					println("this(dbType, trans ," + schemaName + ");");
 				}
 				be();
 
@@ -644,11 +680,17 @@ public final class DbJavaGen{
 					addImport(exprCls);
 					boolean isTableClass = atUtils.hasAnnotation(vc.getAnnotations(), rclassTable);
 					if(isTableClass) {
+						println("/**");
+						println(" * Create a new database Table or View instance");
+						println(" * @see " + exprCls.getFullName());
+						println(" * @see " + cls.getFullName());
+						println(" */");
 						println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
 							.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
 							.toString(packageName, exprCls) + "(this); }");
 					}
 					else {
+						generateJavaDoc(vc.getAnnotations());
 						println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
 							.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
 							.toString(packageName, exprCls) + "(); }");

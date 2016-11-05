@@ -12,19 +12,33 @@ import com.persistentbit.sql.transactions.TransactionRunner;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Optional;
 
 /**
- * Created by petermuys on 3/10/16.
+ * Represents a DB instance
+ *
+ * @author Peter Muys
+ * @since 3/10/16
  */
 public class DbSql{
 
-	static private final PLog log = PLog.get(DbSql.class);
+	private static final PLog log = PLog.get(DbSql.class);
 	public final  TransactionRunner run;
 	private final DbType            dbType;
+	private final String            schema;
 
 	public DbSql(DbType dbType, TransactionRunner run) {
+		this(dbType, run, null);
+	}
+
+	public DbSql(DbType dbType, TransactionRunner run, String schema) {
 		this.dbType = dbType;
 		this.run = run;
+		this.schema = schema;
+	}
+
+	public Optional<String> getSchema() {
+		return Optional.ofNullable(schema);
 	}
 
 
@@ -42,7 +56,7 @@ public class DbSql{
 	}
 
 	public int run(Insert insert) {
-		InsertSqlBuilder b   = new InsertSqlBuilder(dbType, insert);
+		InsertSqlBuilder b   = new InsertSqlBuilder(dbType, schema, insert);
 		String           sql = b.generate();
 		log.debug(sql);
 		return run.trans(c -> {
@@ -64,7 +78,7 @@ public class DbSql{
 	}
 
 	public <T> T run(InsertWithGeneratedKeys<T> ik) {
-		InsertSqlBuilder b   = new InsertSqlBuilder(dbType, ik.getInsert(), ik.getGenerated());
+		InsertSqlBuilder b   = new InsertSqlBuilder(dbType, schema, ik.getInsert(), ik.getGenerated());
 		String           sql = b.generate();
 		log.debug(sql);
 		return run.trans(c -> {
@@ -84,7 +98,7 @@ public class DbSql{
 	}
 
 	public <T> PList<T> run(ETypeSelection<T> selection) {
-		QuerySqlBuilder b   = new QuerySqlBuilder(selection, dbType);
+		QuerySqlBuilder b   = new QuerySqlBuilder(selection, dbType, schema);
 		String          sql = b.generate();
 		log.debug(sql);
 		return run.trans(c -> {
@@ -103,7 +117,7 @@ public class DbSql{
 	}
 
 	public int run(Update update) {
-		UpdateSqlBuilder b   = new UpdateSqlBuilder(dbType, update);
+		UpdateSqlBuilder b   = new UpdateSqlBuilder(dbType, schema, update);
 		String           sql = b.generate();
 		log.debug(sql);
 		return run.trans(c -> {
@@ -113,7 +127,7 @@ public class DbSql{
 	}
 
 	public int run(Delete delete) {
-		DeleteSqlBuilder b   = new DeleteSqlBuilder(dbType, delete);
+		DeleteSqlBuilder b   = new DeleteSqlBuilder(dbType, schema, delete);
 		String           sql = b.generate();
 		log.debug(sql);
 		return run.trans(c -> {

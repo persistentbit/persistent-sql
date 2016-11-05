@@ -171,7 +171,7 @@ public class ExprToSql{}
 //    @Override
 //    public String visit(ETypeObject v) {
 //        if(v.getParent().isPresent() == false){
-//            return instanceName.apply(v).orElse(v.getInstanceName());
+//            return instanceName.apply(v).orElse(v.getFullTableName());
 //        } else {
 //            return visit((Expr)v.getParent().get());
 //        }

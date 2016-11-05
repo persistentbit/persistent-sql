@@ -35,7 +35,7 @@ public class ExprProperty<T> implements ETypePropertyParent<T>{
 	}
 
 	@Override
-	public String getInstanceName() {
+	public String getFullTableName(String schema) {
 		return columnName;
 	}
 

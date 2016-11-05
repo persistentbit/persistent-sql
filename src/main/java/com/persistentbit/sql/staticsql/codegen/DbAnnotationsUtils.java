@@ -22,6 +22,7 @@ public final class DbAnnotationsUtils{
 
 	public static final String packageDbAnnotations = "com.persistentbit.sql.annotations";
 
+	public static final RClass rclassSchema  = new RClass(packageDbAnnotations, "Schema");
 	public static final RClass rclassTable   = new RClass(packageDbAnnotations, "Table");
 	public static final RClass rclassColumn  = new RClass(packageDbAnnotations, "Column");
 	public static final RClass rclassAutoGen = new RClass(packageDbAnnotations, "AutoGen");
@@ -39,6 +40,8 @@ public final class DbAnnotationsUtils{
 
 	public static final RClass rclassDbImportExcludeTables         =
 		new RClass(packageDbAnnotations, "DbImportExcludeTables");
+	public static final RClass rclassDbImportIncludeTables         =
+		new RClass(packageDbAnnotations, "DbImportIncludeTables");
 	public static final RClass rclassDbImportExcludeColumns        =
 		new RClass(packageDbAnnotations, "DbImportExcludeColumns");
 	public static final RClass rclassDbImportMergeEmbedded         =

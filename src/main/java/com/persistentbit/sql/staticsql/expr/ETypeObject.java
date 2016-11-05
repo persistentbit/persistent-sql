@@ -19,8 +19,8 @@ public interface ETypeObject<T> extends ETypePropertyParent<T>{
 		return new EMapper<T, R>(this, mapper);
 	}
 
-	default String getInstanceName() {
-		return _getTableName();
+	default String getFullTableName(String schema) {
+		return (schema == null ? "" : schema + ".") + _getTableName();
 	}
 
 	String _getTableName();

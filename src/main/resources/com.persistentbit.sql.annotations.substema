@@ -1,6 +1,11 @@
 
-annotation Table{
+
+annotation Schema{
     name:String;
+}
+
+annotation Table{
+    name:?String;
 }
 
 annotation Column{
@@ -67,7 +72,9 @@ annotation NamePostfix{
     **********************   DB IMPORT ANNOTATIONS
 */
 
-
+annotation DbImportIncludeTables{
+    tableNamePattern:String;
+}
 annotation DbImportExcludeTables{
     tableNamePattern:String;
 }

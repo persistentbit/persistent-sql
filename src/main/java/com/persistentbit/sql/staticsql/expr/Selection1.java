@@ -9,7 +9,9 @@ import com.persistentbit.sql.staticsql.RowReader;
 
 
 /**
- * Created by petermuys on 14/10/16.
+ * Represent a SQL selection of 1 value.
+ * @since 14/10/16
+ * @author Peter Muys
  */
 public class Selection1<T1> extends BaseSelection<T1>{
 

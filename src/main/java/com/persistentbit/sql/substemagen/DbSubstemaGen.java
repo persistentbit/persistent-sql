@@ -52,6 +52,7 @@ public class DbSubstemaGen{
 	private final Function<String, String> mapSubstemaColumnNameToDbName;
 
 	private PList<Pattern>                  excludeTablePatterns       = PList.empty();
+	private PList<Pattern>                  includeTablePatterns       = PList.empty();
 	private PList<Tuple2<Pattern, Pattern>> excludeTableColumnPatterns = PList.empty();
 
 	private PMap<String, String>                   substemaNameForTableName       = PMap.empty();
@@ -83,6 +84,15 @@ public class DbSubstemaGen{
 		this.mapSubstemaColumnNameToDbName = DbAnnotationsUtils
 			.createSubstemaToDbNameConverter(
 				baseSubstema.getPackageDef().getAnnotations(), DbAnnotationsUtils.NameType.column, atUtils);
+	}
+
+	/**
+	 * Include tables to be generated based on the table name
+	 *
+	 * @param tablePattern Regular expression of table names to include
+	 */
+	public void includeTables(String tablePattern) {
+		includeTablePatterns = includeTablePatterns.plus(Pattern.compile(tablePattern));
 	}
 
 	/**
@@ -122,28 +132,27 @@ public class DbSubstemaGen{
 		));
 	}
 
-	/**
-	 * Load the definition of all the tables (matching "%").
-	 *
-	 * @see #loadTables(String)
-	 */
-	public void loadTables() {
-		loadTables("%");
-	}
 
 	/**
-	 * Load the definition of all the tables matching the supplied table name pattern.<br>
-	 *
-	 * @param pattern The pattern for the table name.  Use '%' to match all
+	 * Load the definition of the tables<br>
 	 */
-	public void loadTables(String pattern) {
+	public void loadTables() {
 		List<String> tableNames = new ArrayList<>();
+
 		handlePreBuildAnnotations();
 		try(Connection c = connectionSupplier.get()) {
 			DatabaseMetaData md = c.getMetaData();
-			ResultSet        rs = md.getTables(catalogName, schemaName, pattern, new String[]{"TABLE", "VIEW"});
+			ResultSet        rs = md.getTables(catalogName, schemaName, "%", new String[]{"TABLE", "VIEW"});
 			while(rs.next()) {
 				String tableName = rs.getString("TABLE_NAME");
+				if(includeTablePatterns.isEmpty() == false) {
+					//Filter on included
+					if(includeTablePatterns.find(pattern -> pattern.matcher(tableName).matches())
+						.isPresent() == false) {
+						log.info("Skipping table " + tableName);
+						continue;
+					}
+				}
 				if(excludeTablePatterns.find(p -> p.matcher(tableName).matches()).isPresent() == false) {
 					tableNames.add(tableName);
 				}
@@ -173,6 +182,10 @@ public class DbSubstemaGen{
 			if(cls.equals(DbAnnotationsUtils.rclassDbImportExcludeTables)) {
 				String tableNamePattern = getStringProperty(at, "tableNamePattern");
 				excludeTables(tableNamePattern);
+			}
+			else if(cls.equals(DbAnnotationsUtils.rclassDbImportIncludeTables)) {
+				String tableNamePattern = getStringProperty(at, "tableNamePattern");
+				includeTables(tableNamePattern);
 			}
 			else if(cls.equals(DbAnnotationsUtils.rclassDbImportExcludeColumns)) {
 				String tableNamePattern  = getStringProperty(at, "tableNamePattern");

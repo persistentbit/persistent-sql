@@ -13,9 +13,9 @@ public interface ETypePropertyParent<T> extends Expr<T>{
 
 	String _asParentName(ExprToSqlContext context, String propertyName);/*{
 		if(getParent().isPresent()){
-            return getParent().get()._asParentName(context) + "_" + getInstanceName();
+            return getParent().get()._asParentName(context) + "_" + getFullTableName();
         }
-        String name = context.uniqueInstanceName(this,getInstanceName());
+        String name = context.uniqueInstanceName(this,getFullTableName());
         return name + ".";
 
 
@@ -24,7 +24,7 @@ public interface ETypePropertyParent<T> extends Expr<T>{
 
 	Optional<ETypePropertyParent> getParent();
 
-	String getInstanceName();
+	String getFullTableName(String schema);
 
 	default ETypeObject<T> withNewParent(ETypePropertyParent newParent) {
 		throw new ToDo();

@@ -8,32 +8,38 @@ import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
 
 /**
- * Created by petermuys on 2/10/16.
+ * Builder for a SQL Select statement<br>
+ *
+ * @author Peter Muys
+ * @since 2/10/16
  */
 public class QuerySqlBuilder{
 
 	private final ETypeSelection s;
 	private final Query          q;
 	private final DbType         type;
+	private final String         schema;
 
-	public QuerySqlBuilder(ETypeSelection s, DbType type) {
+	public QuerySqlBuilder(ETypeSelection s, DbType type, String schema) {
 		this.s = s;
 		this.q = s.getQuery();
 		this.type = type;
-
+		this.schema = schema;
 	}
 
 	public String generate() {
-		return generate(new ExprToSqlContext(type), false);
+		return generate(new ExprToSqlContext(type, schema), false);
 	}
 
 	public String generate(ExprToSqlContext context, boolean asSubQuery) {
-		String         nl      = "\r\n";
-		String         selName = context.uniqueInstanceName(s, "s");
-		PList<Expr<?>> exp     = s._expand();
+		String nl      = "\r\n";
+		String selName = context.uniqueInstanceName(s, "s");
+		@SuppressWarnings("unchecked")
+		PList<Expr<?>> exp = s._expand();
 
 		String selItems;
 		if(asSubQuery) {
+			@SuppressWarnings("unchecked")
 			PList<BaseSelection<?>.SelectionProperty<?>> selection = s.selections();
 			selItems = selection
 				.map(s -> s._getExpr()._toSql(context) + " AS " + s.getPropertyName()).toString(", ");
@@ -43,8 +49,8 @@ public class QuerySqlBuilder{
 		}
 		String distinct = q.distinct ? "DISTINCT " : "";
 		String sql      = "SELECT " + distinct + selItems + nl;
-		sql += "FROM " + q.getFrom()._getTableName() + " AS " + context
-			.uniqueInstanceName(q.getFrom(), q.getFrom().getInstanceName()) + " ";
+		sql += "FROM " + q.getFrom().getFullTableName(schema) + " AS " + context
+			.uniqueInstanceName(q.getFrom(), q.getFrom().getFullTableName(schema)) + " ";
 		sql += q.getJoins().map(j -> joinToString(context, j)).toString(nl);
 		sql += q.getWhere().map(w -> nl + "WHERE " + w._toSql(context)).orElse("");
 
@@ -79,8 +85,8 @@ public class QuerySqlBuilder{
 				throw new IllegalArgumentException(join.getType().toString());
 
 		}
-		res += " " + join.getTable()._getTableName() + " " + context
-			.uniqueInstanceName(join.getTable(), join.getTable().getInstanceName());
+		res += " " + join.getTable().getFullTableName(schema) + " " + context
+			.uniqueInstanceName(join.getTable(), join.getTable().getFullTableName(schema));
 		res += join.getJoinExpr().map(e -> " ON " + e._toSql(context)).get();
 		return res;
 	}

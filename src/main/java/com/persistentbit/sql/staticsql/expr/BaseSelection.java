@@ -49,16 +49,11 @@ public abstract class BaseSelection<T> implements ETypeSelection<T>{
 
 	@Override
 	public String _toSql(ExprToSqlContext context) {
-		QuerySqlBuilder b = new QuerySqlBuilder(this, context.getDbType());
+		QuerySqlBuilder b = new QuerySqlBuilder(this, context.getDbType(), context.getSchema().orElse(null));
 		return b.generate(context, true);
 	}
 
 
-
-    /*@Override
-	public String _toSql(ExprToSqlContext context) {
-        return selections().map(s -> s.expr._toSql(context) + " AS " + s.getPropertyName()).toString(", ");
-    }*/
 
 	public class SelectionProperty<E> implements Expr<E>{
 

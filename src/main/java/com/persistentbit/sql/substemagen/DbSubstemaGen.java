@@ -142,13 +142,14 @@ public class DbSubstemaGen{
 	 */
 	public void loadTables() {
 		List<String> tableNames = new ArrayList<>();
-
+		log.info("IMPORTING META DATA FROM DB");
 		handlePreBuildAnnotations();
 		try(Connection c = connectionSupplier.get()) {
 			DatabaseMetaData md = c.getMetaData();
 			ResultSet        rs = md.getTables(null, schema, "%", new String[]{"TABLE", "VIEW"});
 			while(rs.next()) {
 				String tableName = rs.getString("TABLE_NAME");
+				log.info("Found table " + tableName);
 				if(includeTablePatterns.isEmpty() == false) {
 					//Filter on included
 					if(includeTablePatterns.find(pattern -> pattern.matcher(tableName).matches())
@@ -403,7 +404,7 @@ public class DbSubstemaGen{
 					))
 				)
 			);
-
+			log.info("Imported table " + tableName);
 			return new RValueClass(
 				new RTypeSig(new RClass(packageName, substemaName)),
 				properties,

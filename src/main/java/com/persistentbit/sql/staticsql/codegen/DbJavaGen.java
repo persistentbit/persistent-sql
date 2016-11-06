@@ -202,7 +202,7 @@ public final class DbJavaGen{
 			boolean isTableClass = atUtils.hasAnnotation(vc.getAnnotations(), rclassTable);
 
 			// ********   Table Definition class
-
+			generateJavaDoc(vc.getAnnotations());
 			bs("public class " + cls.getClassName() + " implements ETypeObject<" + vcCls.getClassName() + ">");
 			{
 				// ************ Construction & Parent Expression
@@ -727,6 +727,8 @@ public final class DbJavaGen{
 			else {
 				columnName = columnNameConverter.apply(columnName);
 			}
+			generateJavaDoc(property.getAnnotations());
+
 			if(SubstemaUtils.isNumberClass(cls)) {
 				addImport(ETypeNumber.class);
 				addImport(ExprPropertyNumber.class);

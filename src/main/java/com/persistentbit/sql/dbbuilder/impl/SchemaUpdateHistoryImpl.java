@@ -16,36 +16,60 @@ import java.sql.Statement;
  */
 public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 
-	static private PLog log = PLog.get(SchemaUpdateHistoryImpl.class);
+	private static final PLog log = PLog.get(SchemaUpdateHistoryImpl.class);
 	private final TransactionRunner runner;
+	private final String            schema;
 	private final String            tableName;
 
 
 	/**
-	 * Creates an instance with 'schema_history' as table name
+	 * Creates an instance with 'schema_history' as table name and no schema name
 	 *
 	 * @param runner The SQL runner to use
 	 */
 	public SchemaUpdateHistoryImpl(TransactionRunner runner) {
-		this(runner, "schema_history");
+		this(runner, null, "schema_history");
 	}
 
 	/**
+	 * Create an instance with 'schema_history' and the provided schema name
+	 *
+	 * @param runner The SQL runner to use
+	 * @param schema The schema name or null if none
+	 */
+	public SchemaUpdateHistoryImpl(TransactionRunner runner, String schema) {
+		this(runner, schema, "schema_history");
+	}
+
+
+	/**
 	 * @param runner    The SQL runner for the db updates
+	 * @param schema    The name of the Schema.
 	 * @param tableName The table name for the schema history table.
 	 */
-	public SchemaUpdateHistoryImpl(TransactionRunner runner, String tableName) {
+	public SchemaUpdateHistoryImpl(TransactionRunner runner, String schema, String tableName) {
 		this.runner = runner;
+		this.schema = schema;
 		this.tableName = tableName;
+	}
 
-
+	/**
+	 * Get the full table name by appending the schema to the tableName if it is defined
+	 *
+	 * @return The full name in the form of 'schemaName.tableName'
+	 */
+	private String getFullTableName() {
+		if(schema == null) {
+			return tableName;
+		}
+		return schema + "." + tableName;
 	}
 
 	@Override
 	public boolean isDone(String packageName, String updateName) {
 		createTableIfNotExist();
 		int count = runner.trans(c -> {
-			try(PreparedStatement stat = c.prepareStatement("select count(1) from " + tableName +
+			try(PreparedStatement stat = c.prepareStatement("select count(1) from " + getFullTableName() +
 																" where package_name=?  and update_name=?")) {
 				stat.setString(1, packageName);
 				stat.setString(2, updateName);
@@ -64,7 +88,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 				return;
 			}
 			try(Statement stat = c.createStatement()) {
-				stat.execute("CREATE TABLE " + tableName + " (" +
+				stat.execute("CREATE TABLE " + getFullTableName() + " (" +
 								 "  createdDate TIMESTAMP          NOT NULL DEFAULT current_timestamp," +
 								 "  package_name  VARCHAR(80)        NOT NULL," +
 								 "  update_name  VARCHAR(80)        NOT NULL," +
@@ -87,7 +111,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 
 			DatabaseMetaData dbm = c.getMetaData();
 
-			try(ResultSet rs = dbm.getTables(null, null,
+			try(ResultSet rs = dbm.getTables(null, schema,
 											 tableName, null
 			)) {
 				while(rs.next()) {
@@ -107,7 +131,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 		return runner.trans(c -> {
 			PList<String> result = PList.empty();
 			if(schemaHistoryTableExists()) {
-				try(PreparedStatement stat = c.prepareStatement("select update_name from " + tableName +
+				try(PreparedStatement stat = c.prepareStatement("select update_name from " + getFullTableName() +
 																	" where package_name=?")) {
 					stat.setString(1, packageName);
 
@@ -126,7 +150,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 	@Override
 	public void setDone(String packageName, String updateName) {
 		createTableIfNotExist();
-		String sql = "insert into " + tableName +
+		String sql = "insert into " + getFullTableName() +
 			"(package_name,update_name) values(?,?)";
 		runner.trans(c -> {
 			try(PreparedStatement s = c.prepareStatement(sql)) {
@@ -136,14 +160,13 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 					throw new PersistSqlException("Expected 1 update for " + packageName + "." + updateName);
 				}
 			}
-			return;
 		});
 	}
 
 	@Override
 	public void removeUpdateHistory(String packageName) {
 		runner.trans(c -> {
-			String sql = "delete from " + tableName + " where package_name = ?";
+			String sql = "delete from " + getFullTableName() + " where package_name = ?";
 			if(schemaHistoryTableExists()) {
 				//delete all records for the package
 				try(PreparedStatement s = c.prepareStatement(sql)) {
@@ -152,14 +175,14 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 				}
 				//check if there are other records left
 				//and if not -> delete the history table
-				try(PreparedStatement s = c.prepareStatement("select count(1) from " + tableName)) {
+				try(PreparedStatement s = c.prepareStatement("select count(1) from " + getFullTableName())) {
 					int count = 0;
 					try(ResultSet rs = s.executeQuery()) {
 						rs.next();
 						count = rs.getInt(1);
 					}
 					if(count == 0) {
-						try(PreparedStatement ds = c.prepareStatement("drop table " + tableName)) {
+						try(PreparedStatement ds = c.prepareStatement("drop table " + getFullTableName())) {
 							ds.executeUpdate();
 						}
 					}

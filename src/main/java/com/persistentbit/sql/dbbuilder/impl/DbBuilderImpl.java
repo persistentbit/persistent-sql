@@ -2,6 +2,7 @@ package com.persistentbit.sql.dbbuilder.impl;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
+import com.persistentbit.core.exceptions.RtSqlException;
 import com.persistentbit.core.logging.PLog;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.databases.DbType;
@@ -34,10 +35,11 @@ public class DbBuilderImpl implements DbBuilder{
 	protected final SchemaUpdateHistory updateHistory;
 
 	public DbBuilderImpl(DbType dbType,String schema,TransactionRunner runner, String packageName, String sqlResourceName) {
-		this(dbType,schema,runner, packageName, sqlResourceName, new SchemaUpdateHistoryImpl(runner));
+		this(dbType, schema, runner, packageName, sqlResourceName, new SchemaUpdateHistoryImpl(runner, schema));
 	}
 
-	public DbBuilderImpl(DbType dbType,String schema,TransactionRunner runner, String packageName, String sqlResourceName,
+	public DbBuilderImpl(DbType dbType, String schema, TransactionRunner runner,
+						 String packageName, String sqlResourceName,
 						 SchemaUpdateHistory updateHistory
 	) {
 		this.log = PLog.get(getClass());
@@ -72,6 +74,10 @@ public class DbBuilderImpl implements DbBuilder{
 				return;
 			}
 			log.info("DBUpdate for  " + getFullName(name));
+
+			//Set the default schema if it is defined.
+			setDefaultSchema(c);
+
 			//If a method with this name exists -> execute it
 			methods.getOpt(name).ifPresent(m -> {
 				try {
@@ -93,9 +99,6 @@ public class DbBuilderImpl implements DbBuilder{
 	private void executeSql(Connection c, String name, String sql) {
 		try {
 			try(Statement stat = c.createStatement()) {
-				if(schema != null){
-					stat.execute(dbType.setCurrentSchemaStatement(schema));
-				}
 				stat.execute(sql);
 			}
 		} catch(SQLException e) {
@@ -118,6 +121,7 @@ public class DbBuilderImpl implements DbBuilder{
 		PList<String> sqlList = sqlLoader.getAll(dropAllSnippetName);
 		boolean allOk = sqlList.map(sql ->
 										runner.trans(c -> {
+											setDefaultSchema(c);
 											try {
 												executeSql(c, dropAllSnippetName, sql);
 												return true;
@@ -129,6 +133,22 @@ public class DbBuilderImpl implements DbBuilder{
 		).find(ok -> ok == false).orElse(true);
 		updateHistory.removeUpdateHistory(packageName);
 		return allOk;
+	}
+
+	/**
+	 * If a schema name is defined in the constructor,
+	 * then this function will set the default schema for the connection.<br>
+	 *
+	 * @param c The connection to set.
+	 */
+	private void setDefaultSchema(Connection c) {
+		if(schema != null) {
+			RtSqlException.tryRun(() -> {
+				try(Statement stat = c.createStatement()) {
+					stat.execute(dbType.setCurrentSchemaStatement(schema));
+				}
+			});
+		}
 	}
 
 	@Override

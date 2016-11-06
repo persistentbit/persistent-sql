@@ -22,6 +22,8 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +44,6 @@ public class DbSubstemaGen{
 	private final Supplier<Connection>     connectionSupplier;
 	private final RSubstema                baseSubstema;
 	private final String                   catalogName;
-	private final String                   schemaName;
 	private final SubstemaCompiler         substemaCompiler;
 	private final AnnotationsUtils         atUtils;
 	private final Function<String, String> mapColumnNameToSubstemaName;
@@ -59,19 +60,19 @@ public class DbSubstemaGen{
 	private PList<Tuple3<Pattern, String, String>> substemaNameForTableColumnName = PList.empty();
 	private PList<Tuple3<Pattern, Pattern, REnum>> mapEnums                       = PList.empty();
 
+	private String schema;
 
 	private PList<RValueClass> valueClasses = PList.empty();
 
 	public DbSubstemaGen(Supplier<Connection> connectionSupplier, RSubstema baseSubstema,
 						 SubstemaCompiler substemaCompiler,
-						 String catalogName, String schemaName
+						 String catalogName
 	) {
 		this.connectionSupplier = connectionSupplier;
 		this.baseSubstema = baseSubstema;
 		this.substemaCompiler = substemaCompiler;
 		this.atUtils = new AnnotationsUtils(substemaCompiler);
 		this.catalogName = catalogName;
-		this.schemaName = schemaName;
 		this.mapColumnNameToSubstemaName = DbAnnotationsUtils
 			.createDbNameToSubstemaNameConverter(
 				baseSubstema.getPackageDef().getAnnotations(), DbAnnotationsUtils.NameType.column, atUtils);
@@ -84,6 +85,10 @@ public class DbSubstemaGen{
 		this.mapSubstemaColumnNameToDbName = DbAnnotationsUtils
 			.createSubstemaToDbNameConverter(
 				baseSubstema.getPackageDef().getAnnotations(), DbAnnotationsUtils.NameType.column, atUtils);
+	}
+
+	public void setSchema(String schema) {
+		this.schema = schema;
 	}
 
 	/**
@@ -142,7 +147,7 @@ public class DbSubstemaGen{
 		handlePreBuildAnnotations();
 		try(Connection c = connectionSupplier.get()) {
 			DatabaseMetaData md = c.getMetaData();
-			ResultSet        rs = md.getTables(catalogName, schemaName, "%", new String[]{"TABLE", "VIEW"});
+			ResultSet        rs = md.getTables(catalogName, schema, "%", new String[]{"TABLE", "VIEW"});
 			while(rs.next()) {
 				String tableName = rs.getString("TABLE_NAME");
 				if(includeTablePatterns.isEmpty() == false) {
@@ -166,7 +171,7 @@ public class DbSubstemaGen{
 		}
 		for(String name : tableNames) {
 
-			valueClasses = valueClasses.plus(table(name));
+			valueClasses = valueClasses.plus(generateSubstemaForTable(name));
 		}
 		handlePostBuildAnnotations();
 	}
@@ -208,6 +213,9 @@ public class DbSubstemaGen{
 				String columnNamePattern = getStringProperty(at, "columnNamePattern");
 				String enumClassName     = getStringProperty(at, "enumClassName");
 				setEnum(tableNamePattern, columnNamePattern, enumClassName);
+			}
+			else if(cls.equals(DbAnnotationsUtils.rclassSchema)) {
+				schema = getStringProperty(at, "name");
 			}
 		});
 	}
@@ -256,7 +264,7 @@ public class DbSubstemaGen{
 	}
 
 
-	private RValueClass table(String tableName) {
+	private RValueClass generateSubstemaForTable(String tableName) {
 		PList<Pattern> columnExcludesForTable = excludeTableColumnPatterns
 			.filter(t -> t._1.matcher(tableName).matches())
 			.map(t -> t._2);
@@ -273,7 +281,7 @@ public class DbSubstemaGen{
 			//GET PRIMARY KEYS FOR TABLE
 
 			PMap<String, Integer> primKeys = PMap.empty();
-			try(ResultSet rs = md.getPrimaryKeys(catalogName, schemaName, tableName)) {
+			try(ResultSet rs = md.getPrimaryKeys(catalogName, schema, tableName)) {
 				while(rs.next()) {
 					String name   = rs.getString("COLUMN_NAME");
 					int    keySeq = rs.getInt("KEY_SEQ");
@@ -286,7 +294,7 @@ public class DbSubstemaGen{
 			String           packageName = baseSubstema.getPackageName();
 
 			//GET COLUMNS
-			try(ResultSet rs = md.getColumns(catalogName, schemaName, tableName, "%")) {
+			try(ResultSet rs = md.getColumns(catalogName, schema, tableName, "%")) {
 				while(rs.next()) {
 
 					String name = rs.getString("COLUMN_NAME");
@@ -384,7 +392,18 @@ public class DbSubstemaGen{
 			else {
 				annotations = annotations.plus(new RAnnotation(DbAnnotationsUtils.rclassTable, PMap.empty()));
 			}
-
+			//Lets generate some documentation for the value class.
+			String schemaAndTableName = schema != null ? schema + "." + tableName : tableName;
+			annotations = annotations.plus(
+				new RAnnotation(
+					SubstemaUtils.docRClass,
+					PMap.<String, RConst>empty().put("info", new RConstString(
+						"\nThis immutable value class contains the data for a record in the table '" + schemaAndTableName + "'.<br>\n"
+							+ "Generated from the database on " + LocalDateTime.now()
+							.format(DateTimeFormatter.ISO_DATE_TIME) + "<br>\n"
+					))
+				)
+			);
 
 			return new RValueClass(
 				new RTypeSig(new RClass(packageName, substemaName)),
@@ -477,9 +496,9 @@ public class DbSubstemaGen{
 	/**
 	 * Try to use an embeddable class in generated state classes
 	 *
-	 * @param tablePatternName table names that need to be checked
+	 * @param tablePatternName  table names that need to be checked
 	 * @param columnPatternName column names that need to be checked
-	 * @param embedCls The embedded class
+	 * @param embedCls          The embedded class
 	 */
 	public void mergeEmbedded(String tablePatternName, String columnPatternName, RClass embedCls) {
 
@@ -528,9 +547,11 @@ public class DbSubstemaGen{
 
 	/**
 	 * Try to replace properties in a Value Class with an embedded Value Class
+	 *
 	 * @param columnNamePattern Pattern for the column names that need to be checked.
-	 * @param generated The Value Class generated from the db
-	 * @param embeddable The Value class that needs to be embedded
+	 * @param generated         The Value Class generated from the db
+	 * @param embeddable        The Value class that needs to be embedded
+	 *
 	 * @return The new version of the Value class
 	 */
 	private RValueClass mergeEmbedded(Pattern columnNamePattern, RValueClass generated, RValueClass embeddable) {

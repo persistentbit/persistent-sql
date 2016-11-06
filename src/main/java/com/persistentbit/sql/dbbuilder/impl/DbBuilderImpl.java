@@ -19,6 +19,9 @@ import java.sql.Statement;
 
 /**
  * A {@link DbBuilder} implementation that uses resource files to create/update/drop a database schema.<br>
+ * If a snippet exists with the name DropAll, then that snippet will be used in the {@link #dropAll()} method.<br>
+ * if a snippet exists with the name OnceBefore, then tat snippit will be run once before
+ * every call to {@link #buildOrUpdate()} and {@link #dropAll()}.<br>
  *
  * @author Peter Muys
  * @see SchemaUpdateHistory
@@ -26,7 +29,9 @@ import java.sql.Statement;
  */
 public class DbBuilderImpl implements DbBuilder{
 
-	public static final String dropAllSnippetName = "DropAll";
+	public static final String onceBeforeSnippetName = "OnceBefore";
+	public static final String dropAllSnippetName    = "DropAll";
+
 	protected final PLog                log;
 	protected final DbType dbType;
 	protected final String schema;
@@ -74,6 +79,7 @@ public class DbBuilderImpl implements DbBuilder{
 
 	@Override
 	public void buildOrUpdate() {
+		runOnceBefore();
 		//First, find all declared method on this class
 		Class<?> cls = this.getClass();
 
@@ -86,8 +92,8 @@ public class DbBuilderImpl implements DbBuilder{
 
 		//Loop over all snippets and execute
 		sqlLoader.getAllSnippetNames().forEach(name -> runner.trans((c) -> {
-			//Skip Drop all snippet
-			if(name.equalsIgnoreCase(dropAllSnippetName)) {
+			//Skip Drop all and once before snippet
+			if(name.equalsIgnoreCase(dropAllSnippetName) || name.equalsIgnoreCase(onceBeforeSnippetName)) {
 				return;
 			}
 			//Is Snippet already executed ?
@@ -117,6 +123,13 @@ public class DbBuilderImpl implements DbBuilder{
 		return packageName + "." + updateName;
 	}
 
+	/**
+	 * Execute an sql statement.
+	 *
+	 * @param c    The connection to use
+	 * @param name The name of the snippet for error reporting
+	 * @param sql  The sql statement
+	 */
 	private void executeSql(Connection c, String name, String sql) {
 		try {
 			try(Statement stat = c.createStatement()) {
@@ -125,6 +138,25 @@ public class DbBuilderImpl implements DbBuilder{
 		} catch(SQLException e) {
 			throw new PersistSqlException("Error executing " + getFullName(name) + ": " + sql, e);
 		}
+	}
+
+	/**
+	 * Run the snippet with the name OnceBefore ({@link #onceBeforeSnippetName})
+	 */
+	private void runOnceBefore() {
+		if(sqlLoader.hasSnippet(onceBeforeSnippetName) == false) {
+			return; //we are done here
+		}
+		PList<String> sqlList = sqlLoader.getAll(onceBeforeSnippetName);
+		sqlList.forEach(sql ->
+							runner.trans(c -> {
+								try {
+									executeSql(c, onceBeforeSnippetName, sql);
+								} catch(Exception e) {
+									log.error("Error executing sql '" + sql + "': " + e.getMessage());
+					}
+				})
+		);
 	}
 
 	/**
@@ -139,6 +171,7 @@ public class DbBuilderImpl implements DbBuilder{
 		if(sqlLoader.hasSnippet(dropAllSnippetName) == false) {
 			throw new PersistSqlException("Can't find SQL code 'DropAll' in " + sqlLoader);
 		}
+		runOnceBefore();
 		PList<String> sqlList = sqlLoader.getAll(dropAllSnippetName);
 		boolean allOk = sqlList.map(sql ->
 										runner.trans(c -> {

@@ -2,25 +2,62 @@ package com.persistentbit.sql.databases;
 
 /**
  * A DbType for a PostgreSQL database.
+ *
  * @author Peter Muys
- * @since 19/07/2016
  * @see DbType
+ * @since 19/07/2016
  */
 public class DbPostgres extends AbstractDbType{
+
+	/**
+	 * The default tcp/ip connection port
+	 */
+	public static final int defaultPort = 5432;
 
 	public DbPostgres() {
 		super("PostgreSQL");
 	}
 
-	public static String connectionUrlLocal(String db) {
-		return connectionUrl("localhost", db);
+	/**
+	 * Create a jdbc connection url
+	 *
+	 * @param db     The database name
+	 * @param schema The OPTIONAL schema name
+	 *
+	 * @return The connection url using the default port on localhost
+	 */
+	public static String connectionUrlLocal(String db, String schema) {
+		return connectionUrl("localhost", db, schema);
 	}
 
-	public static String connectionUrl(String host, String db) {
-		return connectionUrl(host, 5432, db);
+
+	/**
+	 * Create a jdbc connection Url
+	 *
+	 * @param host   The host name or ip address
+	 * @param db     The database name
+	 * @param schema The OPTIONAL schema name
+	 *
+	 * @return The jdbc connection url using the default port
+	 */
+	public static String connectionUrl(String host, String db, String schema) {
+		return connectionUrl(host, defaultPort, db, schema);
 	}
 
-	public static String connectionUrl(String host, int port, String db) {
+	/**
+	 * Create a jdbc connection Url
+	 *
+	 * @param host   The host name or ip address
+	 * @param port   The connection port
+	 * @param db     The database name
+	 * @param schema The OPTIONAL schema name
+	 *
+	 * @return The jdbc connection url
+	 */
+	public static String connectionUrl(String host, int port, String db, String schema) {
+		if(schema != null) {
+			return "jdbc:postgresql://" + host + ":" + port + "/" + db + "?currentSchema=" + schema;
+		}
 		return "jdbc:postgresql://" + host + ":" + port + "/" + db;
 	}
 

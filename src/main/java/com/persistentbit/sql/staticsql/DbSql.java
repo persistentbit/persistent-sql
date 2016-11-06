@@ -37,15 +37,30 @@ public class DbSql{
 		this.schema = schema;
 	}
 
+	/**
+	 * Get the schema name
+	 *
+	 * @return The Optional schema name
+	 */
 	public Optional<String> getSchema() {
 		return Optional.ofNullable(schema);
 	}
 
 
+	/**
+	 * Create a new Sql Query object for the given Table
+	 * @param typeObject The query root table or view
+	 * @return The Query object
+	 */
 	public Query queryFrom(ETypeObject typeObject) {
 		return Query.from(this, typeObject);
 	}
 
+	/**
+	 * Create a new Sql Update object for the given Table
+	 * @param typeObject The table to update
+	 * @return The Update object
+	 */
 	public Update update(ETypeObject typeObject) { return new Update(this, typeObject); }
 
 	public Delete deleteFrom(ETypeObject typeObject) { return new Delete(this, typeObject); }

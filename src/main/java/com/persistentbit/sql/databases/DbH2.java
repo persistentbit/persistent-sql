@@ -1,8 +1,10 @@
 package com.persistentbit.sql.databases;
 
 /**
+ * A DbType for a H2 database.
  * @author Peter Muys
  * @since 19/07/2016
+ * @see DbType
  */
 public class DbH2 extends AbstractDbType{
 

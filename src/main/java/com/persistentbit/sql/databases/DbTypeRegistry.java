@@ -23,7 +23,7 @@ public class DbTypeRegistry{
 
 
 	public DbTypeRegistry() {
-		register(new DbDerby(), new DbH2(), new DbMySql(), new DbPostgress());
+		register(new DbDerby(), new DbH2(), new DbMySql(), new DbPostgres());
 	}
 
 	public DbTypeRegistry register(DbType... types) {

@@ -1,28 +1,30 @@
 package com.persistentbit.sql.databases;
 
 /**
+ * A DbType for a PostgreSQL database.
  * @author Peter Muys
  * @since 19/07/2016
+ * @see DbType
  */
-public class DbPostgress extends AbstractDbType{
+public class DbPostgres extends AbstractDbType{
 
-	public DbPostgress() {
+	public DbPostgres() {
 		super("PostgreSQL");
 	}
 
-	static public String connectionUrlLocal(String db) {
+	public static String connectionUrlLocal(String db) {
 		return connectionUrl("localhost", db);
 	}
 
-	static public String connectionUrl(String host, String db) {
+	public static String connectionUrl(String host, String db) {
 		return connectionUrl(host, 5432, db);
 	}
 
-	static public String connectionUrl(String host, int port, String db) {
+	public static String connectionUrl(String host, int port, String db) {
 		return "jdbc:postgresql://" + host + ":" + port + "/" + db;
 	}
 
-	static public String getDriverClassName() {
+	public static String getDriverClassName() {
 		return "org.postgresql.Driver";
 	}
 

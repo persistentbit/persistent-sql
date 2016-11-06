@@ -1,8 +1,10 @@
 package com.persistentbit.sql.databases;
 
 /**
+ * DbType for a MySql database
  * @author Peter Muys
  * @since 19/07/2016
+ * @see DbType
  */
 public class DbMySql extends AbstractDbType{
 
@@ -10,19 +12,19 @@ public class DbMySql extends AbstractDbType{
 		super("MySQL");
 	}
 
-	static public String connectionUrl(String db) {
+	public static String connectionUrl(String db) {
 		return connectionUrl("localhost", 3306, db);
 	}
 
-	static public String connectionUrl(String host, int port, String db) {
+	public static String connectionUrl(String host, int port, String db) {
 		return "jdbc:mysql://" + host + ":" + port + "/" + db;
 	}
 
-	static public String connectionUrl(String host, String db) {
+	public static String connectionUrl(String host, String db) {
 		return connectionUrl(host, 3306, db);
 	}
 
-	static public String getDriverClassName() {
+	public static String getDriverClassName() {
 		return "com.mysql.jdbc.Driver";
 	}
 

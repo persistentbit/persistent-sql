@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
+ * A {@link DbBuilder} implementation that uses resource files to create/update/drop a database schema.<br>
  *
  * @author Peter Muys
  * @see SchemaUpdateHistory
@@ -34,10 +35,30 @@ public class DbBuilderImpl implements DbBuilder{
 	protected final SqlLoader           sqlLoader;
 	protected final SchemaUpdateHistory updateHistory;
 
+
+	/**
+	 * Create a new {@link DbBuilder} with the given parameters and a default
+	 * {@link SchemaUpdateHistoryImpl} to keep track of the updates already done.
+	 *
+	 * @param dbType          The Database Type
+	 * @param schema          The Optional schema name.
+	 * @param runner          The Transaction runner to use
+	 * @param packageName     The packageName, used to keep track of the updates already done.
+	 * @param sqlResourceName The name of the java resource file containing the sql statements
+	 */
 	public DbBuilderImpl(DbType dbType,String schema,TransactionRunner runner, String packageName, String sqlResourceName) {
 		this(dbType, schema, runner, packageName, sqlResourceName, new SchemaUpdateHistoryImpl(runner, schema));
 	}
 
+	/**
+	 *
+	 * @param dbType The Database Type
+	 * @param schema The Optional schema name.
+	 * @param runner The Transaction runner to use
+	 * @param packageName The packageName, used to keep track of the updates already done.
+	 * @param sqlResourceName The name of the java resource file containing the sql statements
+	 * @param updateHistory The {@link SchemaUpdateHistory} to use
+	 */
 	public DbBuilderImpl(DbType dbType, String schema, TransactionRunner runner,
 						 String packageName, String sqlResourceName,
 						 SchemaUpdateHistory updateHistory

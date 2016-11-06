@@ -30,7 +30,7 @@ public class RunnerCreateDbSustema{
 
 		SubstemaCompiler compiler     = new SubstemaCompiler(new DependencySupplier().withResources());
 		RSubstema        baseSubstema = compiler.compile("com.persistentbit.sql.test");
-		DbSubstemaGen    gen          = new DbSubstemaGen(dbConnector, baseSubstema, compiler, null, null);
+		DbSubstemaGen    gen          = new DbSubstemaGen(dbConnector, baseSubstema, compiler);
 		gen.loadTables();
 
 		gen.mergeWithBase();

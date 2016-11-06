@@ -10,7 +10,7 @@ public abstract class AbstractDbType implements DbType{
 
 	private final String databaseName;
 
-	public AbstractDbType(String databaseName) {
+	protected AbstractDbType(String databaseName) {
 		this.databaseName = databaseName;
 	}
 

@@ -5,8 +5,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
+ * A DbType for an Apache Derby database.
  * @author Peter Muys
  * @since 19/07/2016
+ * @see DbType
  */
 public class DbDerby extends AbstractDbType{
 
@@ -14,15 +16,15 @@ public class DbDerby extends AbstractDbType{
 		super("Apache Derby");
 	}
 
-	static public String urlInMemory(String name) {
+	public static String urlInMemory(String name) {
 		return "jdbc:derby:memory:" + name + ";create=true";
 	}
 
-	static public String url(String filePath) {
+	public static String url(String filePath) {
 		return "jdbc:derby:" + filePath.replace('\\', '/') + ";create=true";
 	}
 
-	static public String getDriverClassName() {
+	public static String getDriverClassName() {
 		return "org.apache.derby.jdbc.EmbeddedDriver";
 	}
 

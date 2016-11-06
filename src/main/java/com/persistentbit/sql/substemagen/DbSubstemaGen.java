@@ -43,7 +43,7 @@ public class DbSubstemaGen{
 	public static final PLog log = PLog.get(DbSubstemaGen.class);
 	private final Supplier<Connection>     connectionSupplier;
 	private final RSubstema                baseSubstema;
-	private final String                   catalogName;
+
 	private final SubstemaCompiler         substemaCompiler;
 	private final AnnotationsUtils         atUtils;
 	private final Function<String, String> mapColumnNameToSubstemaName;
@@ -65,14 +65,13 @@ public class DbSubstemaGen{
 	private PList<RValueClass> valueClasses = PList.empty();
 
 	public DbSubstemaGen(Supplier<Connection> connectionSupplier, RSubstema baseSubstema,
-						 SubstemaCompiler substemaCompiler,
-						 String catalogName
+						 SubstemaCompiler substemaCompiler
 	) {
 		this.connectionSupplier = connectionSupplier;
 		this.baseSubstema = baseSubstema;
 		this.substemaCompiler = substemaCompiler;
 		this.atUtils = new AnnotationsUtils(substemaCompiler);
-		this.catalogName = catalogName;
+
 		this.mapColumnNameToSubstemaName = DbAnnotationsUtils
 			.createDbNameToSubstemaNameConverter(
 				baseSubstema.getPackageDef().getAnnotations(), DbAnnotationsUtils.NameType.column, atUtils);
@@ -147,7 +146,7 @@ public class DbSubstemaGen{
 		handlePreBuildAnnotations();
 		try(Connection c = connectionSupplier.get()) {
 			DatabaseMetaData md = c.getMetaData();
-			ResultSet        rs = md.getTables(catalogName, schema, "%", new String[]{"TABLE", "VIEW"});
+			ResultSet        rs = md.getTables(null, schema, "%", new String[]{"TABLE", "VIEW"});
 			while(rs.next()) {
 				String tableName = rs.getString("TABLE_NAME");
 				if(includeTablePatterns.isEmpty() == false) {
@@ -281,7 +280,7 @@ public class DbSubstemaGen{
 			//GET PRIMARY KEYS FOR TABLE
 
 			PMap<String, Integer> primKeys = PMap.empty();
-			try(ResultSet rs = md.getPrimaryKeys(catalogName, schema, tableName)) {
+			try(ResultSet rs = md.getPrimaryKeys(null, schema, tableName)) {
 				while(rs.next()) {
 					String name   = rs.getString("COLUMN_NAME");
 					int    keySeq = rs.getInt("KEY_SEQ");
@@ -294,7 +293,7 @@ public class DbSubstemaGen{
 			String           packageName = baseSubstema.getPackageName();
 
 			//GET COLUMNS
-			try(ResultSet rs = md.getColumns(catalogName, schema, tableName, "%")) {
+			try(ResultSet rs = md.getColumns(null, schema, tableName, "%")) {
 				while(rs.next()) {
 
 					String name = rs.getString("COLUMN_NAME");

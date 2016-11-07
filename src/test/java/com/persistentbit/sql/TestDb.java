@@ -12,10 +12,11 @@ import java.sql.Connection;
  * Time: 19:02
  */
 public class TestDb {
-    private InMemConnectionProvider dbConnector;
+
+    private InMemConnectionSupplier dbConnector;
     @Before
     public void setupConnection() {
-        dbConnector = new InMemConnectionProvider();
+        dbConnector = new InMemConnectionSupplier();
     }
     @After
     public void closeConnection() {

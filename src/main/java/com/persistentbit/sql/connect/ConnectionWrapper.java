@@ -6,13 +6,13 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 /**
- * Used by {@link PooledConnectionProvider} to wrap extra functionality around a {@link Connection}
+ * Used by {@link PooledConnectionSupplier} to wrap extra functionality around a {@link Connection}
  *
  * @author Peter Muys
- * @see PooledConnectionProvider
+ * @see PooledConnectionSupplier
  * @since 13/07/2016
  */
-public class ConnectionWrapper implements Connection{
+class ConnectionWrapper implements Connection{
 
 	private final Connection master;
 	private final ConnectionHandler handler;

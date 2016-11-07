@@ -14,14 +14,14 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractTestWithTransactions{
     protected Logger log = Logger.getLogger(this.getClass().getName());
-    protected InMemConnectionProvider    dbConnector;
+    protected InMemConnectionSupplier    dbConnector;
     protected TransactionRunnerPerThread trans;
     protected TestDbBuilderImpl          builder;
     protected SqlLoader                  loader;
 
     @Before
     public void setupTransactions() {
-        dbConnector = new InMemConnectionProvider();
+        dbConnector = new InMemConnectionSupplier();
         trans = new TransactionRunnerPerThread(dbConnector);
         builder = new TestDbBuilderImpl(new DbDerby(),null,trans);
         loader = new SqlLoader("/db/Tests.sql");

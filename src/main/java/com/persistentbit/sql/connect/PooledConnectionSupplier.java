@@ -18,9 +18,9 @@ import java.util.logging.Logger;
  * @author Peter Muys
  * @since 13/07/2016
  */
-public class PooledConnectionProvider implements Supplier<Connection>{
+public class PooledConnectionSupplier implements Supplier<Connection>{
 
-	static private final Logger log = Logger.getLogger(PooledConnectionProvider.class.getName());
+	static private final Logger log = Logger.getLogger(PooledConnectionSupplier.class.getName());
 
 	private final Supplier<Connection>      supplier;
 	private final Consumer<Connection>      resetter;
@@ -29,7 +29,7 @@ public class PooledConnectionProvider implements Supplier<Connection>{
 	private       int                       activeConnections;
 
 
-	public PooledConnectionProvider(Supplier<Connection> supplier, int poolSize) {
+	public PooledConnectionSupplier(Supplier<Connection> supplier, int poolSize) {
 		this(supplier, poolSize, (c) -> {
 			try {
 				c.setAutoCommit(false);
@@ -39,7 +39,7 @@ public class PooledConnectionProvider implements Supplier<Connection>{
 		});
 	}
 
-	public PooledConnectionProvider(Supplier<Connection> supplier, int poolSize,
+	public PooledConnectionSupplier(Supplier<Connection> supplier, int poolSize,
 									Consumer<Connection> connectionResetter
 	) {
 		this.supplier = supplier;

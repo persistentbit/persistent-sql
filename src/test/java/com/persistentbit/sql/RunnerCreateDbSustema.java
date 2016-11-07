@@ -17,7 +17,7 @@ import com.persistentbit.substema.substemagen.SubstemaSourceGenerator;
 public class RunnerCreateDbSustema{
 
 	public static void main(String[] args) {
-		InMemConnectionProvider dbConnector = new InMemConnectionProvider();
+		InMemConnectionSupplier dbConnector = new InMemConnectionSupplier();
 
 		TransactionRunnerPerThread trans   = new TransactionRunnerPerThread(dbConnector);
 		TestDbBuilderImpl          builder = new TestDbBuilderImpl(new DbDerby(), null, trans);

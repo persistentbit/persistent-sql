@@ -12,11 +12,11 @@ import java.util.function.Supplier;
  *
  * @author Peter Muys
  */
-public class DatasourceConnectionProvider implements Supplier<Connection>{
+public class DatasourceConnectionSupplier implements Supplier<Connection>{
 
 	private final DataSource dataSource;
 
-	public DatasourceConnectionProvider(DataSource dataSource) {
+	public DatasourceConnectionSupplier(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
 

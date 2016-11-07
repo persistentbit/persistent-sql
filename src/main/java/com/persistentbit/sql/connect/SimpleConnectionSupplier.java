@@ -14,17 +14,17 @@ import java.util.function.Supplier;
  * @author Peter Muys
  * @since 13/07/2016
  */
-public class SimpleConnectionProvider implements Supplier<Connection>{
+public class SimpleConnectionSupplier implements Supplier<Connection>{
 
 	private final String url;
 	private final String userName;
 	private final String passWord;
 
-	public SimpleConnectionProvider(String driverClass, String url) {
+	public SimpleConnectionSupplier(String driverClass, String url) {
 		this(driverClass, url, null, null);
 	}
 
-	public SimpleConnectionProvider(String driverClass, String url, String userName, String password) {
+	public SimpleConnectionSupplier(String driverClass, String url, String userName, String password) {
 		try {
 			Driver driver = (Driver) Class.forName(driverClass).newInstance();
 			DriverManager.registerDriver(driver);

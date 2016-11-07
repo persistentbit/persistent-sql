@@ -24,6 +24,6 @@ public interface MixinEq<T extends Expr>{
 	}
 
 	default ETypeBoolean isNotNull() {
-		return new ExprIsNull((T) this, false);
+		return new ExprIsNull((T) this, true);
 	}
 }

@@ -1,11 +1,7 @@
 package com.persistentbit.sql.databases;
 
 import com.persistentbit.core.logging.PLog;
-import com.persistentbit.sql.PersistSqlException;
 
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,14 +15,14 @@ import java.util.Optional;
  */
 public interface DbType{
 
-	static void registerDriver(String driverClass) {
-		try {
-			Driver driver = (Driver) Class.forName(driverClass).newInstance();
-			DriverManager.registerDriver(driver);
-		} catch(InstantiationException | IllegalAccessException | ClassNotFoundException | SQLException e) {
-			throw new PersistSqlException(e);
-		}
-	}
+
+	/**
+	 * Register the jdbc driver class for this database<br>
+	 */
+	void registerDriver();
+
+
+
 
 	/**
 	 * Try to create a DbType instance for a given database name.<br>

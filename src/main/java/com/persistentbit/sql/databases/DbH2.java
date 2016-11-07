@@ -25,4 +25,10 @@ public class DbH2 extends AbstractDbType{
 	public String setCurrentSchemaStatement(String schema) {
 		return "SET SCHEMA " + schema;
 	}
+
+
+	@Override
+	public void registerDriver() {
+		registerDriver("org.h2.Driver");
+	}
 }

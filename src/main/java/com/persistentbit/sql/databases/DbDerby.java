@@ -52,4 +52,11 @@ public class DbDerby extends AbstractDbType{
 	public String setCurrentSchemaStatement(String schema) {
 		return "SET CURRENT SCHEMA " + schema;
 	}
+
+	@Override
+	public void registerDriver() {
+		registerDriver(getDriverClassName());
+	}
+
+
 }

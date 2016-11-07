@@ -42,4 +42,9 @@ public class DbMySql extends AbstractDbType{
 	public String setCurrentSchemaStatement(String schema) {
 		return "USE " + schema;
 	}
+
+	@Override
+	public void registerDriver() {
+		registerDriver(getDriverClassName());
+	}
 }

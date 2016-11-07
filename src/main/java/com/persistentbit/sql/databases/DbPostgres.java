@@ -79,4 +79,9 @@ public class DbPostgres extends AbstractDbType{
 	public String setCurrentSchemaStatement(String schema) {
 		return "SET SEARCH_PATH TO " + schema + ", PUBLIC";
 	}
+
+	@Override
+	public void registerDriver() {
+		registerDriver(getDriverClassName());
+	}
 }

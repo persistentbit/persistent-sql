@@ -2,6 +2,10 @@ package com.persistentbit.sql.databases;
 
 import com.persistentbit.sql.PersistSqlException;
 
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
 /**
  * @author Peter Muys
  * @since 19/07/2016
@@ -28,4 +32,13 @@ public abstract class AbstractDbType implements DbType{
 		throw new PersistSqlException("Not Yet implemented for " + this.getClass().getSimpleName());
 	}
 
+
+	static void registerDriver(String driverClass) {
+		try {
+			Driver driver = (Driver) Class.forName(driverClass).newInstance();
+			DriverManager.registerDriver(driver);
+		} catch(InstantiationException | IllegalAccessException | ClassNotFoundException | SQLException e) {
+			throw new PersistSqlException(e);
+		}
+	}
 }

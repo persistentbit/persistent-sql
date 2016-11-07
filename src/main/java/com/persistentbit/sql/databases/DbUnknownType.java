@@ -26,4 +26,9 @@ public class DbUnknownType extends AbstractDbType{
 	public String setCurrentSchemaStatement(String schema) {
 		throw new ToDo("Can't set the schema to '" + schema + "' for an unknown dbType");
 	}
+
+	@Override
+	public void registerDriver() {
+		throw new ToDo("Can't register an unknown driver");
+	}
 }

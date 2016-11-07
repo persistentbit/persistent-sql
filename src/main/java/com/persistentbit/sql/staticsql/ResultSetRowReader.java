@@ -1,5 +1,7 @@
 package com.persistentbit.sql.staticsql;
 
+import com.persistentbit.core.exceptions.RtSqlException;
+
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,7 +10,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Created by petermuys on 3/10/16.
+ * RowReader implementation that
+ * reads from a {@link ResultSet}
+ *
+ * @since 3/10/16
+ * @author Peter Muys
  */
 public class ResultSetRowReader implements RowReader{
 
@@ -37,10 +43,11 @@ public class ResultSetRowReader implements RowReader{
 
 			return rs.getObject(index++, cls);
 		} catch(SQLException e) {
-			throw new RuntimeException("SQL error while reading column " + index + " from resultset", e);
+			throw new RtSqlException("SQL error while reading column " + index + " from resultset", e);
 		}
 
 	}
+
 
 	public ResultSetRowReader nextRow() {
 		index = 1;

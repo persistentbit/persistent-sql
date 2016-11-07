@@ -10,98 +10,98 @@ import com.persistentbit.sql.staticsql.RowReader;
 import java.util.Optional;
 
 /**
- * Created by petermuys on 14/10/16.
+ * @author Peter Muys
+ * @since 14/10/16
  */
-public abstract class BaseSelection<T> implements ETypeSelection<T>{
+public abstract class BaseSelection<T> implements ETypeSelection<T> {
 
-	private final Query query;
+    private final Query query;
 
-	public BaseSelection(Query query, Expr<T> selection) {
-		this.query = query;
-	}
+    public BaseSelection(Query query, Expr<T> selection) {
+        this.query = query;
+    }
 
-	@Override
-	public ETypeObject<T> withNewParent(ETypePropertyParent newParent) {
-		throw new ToDo();
-	}
+    @Override
+    public ETypeObject<T> withNewParent(ETypePropertyParent newParent) {
+        throw new ToDo();
+    }
 
-	public Query getQuery() {
-		return query;
-	}
+    public Query getQuery() {
+        return query;
+    }
 
-	public Optional<T> getOneResult() {
-		return getResult().headOpt();
-	}
+    public Optional<T> getOneResult() {
+        return getResult().headOpt();
+    }
 
-	public PList<T> getResult() {
-		return query.getDbSql().run(this);
-	}
+    public PList<T> getResult() {
+        return query.getDbSql().run(this);
+    }
 
-	@Override
-	public String _asParentName(ExprToSqlContext context, String propertyName) {
-		return context.uniqueInstanceName(this, "Selection") + "." + propertyName;
-	}
+    @Override
+    public String _asParentName(ExprToSqlContext context, String propertyName) {
+        return context.uniqueInstanceName(this, "Selection") + "." + propertyName;
+    }
 
-	@Override
-	public PList<Expr<?>> _asExprValues(T value) {
-		throw new ToDo();
-	}
+    @Override
+    public PList<Expr<?>> _asExprValues(T value) {
+        throw new ToDo();
+    }
 
-	@Override
-	public String _toSql(ExprToSqlContext context) {
-		QuerySqlBuilder b = new QuerySqlBuilder(this, context.getDbType(), context.getSchema().orElse(null));
-		return b.generate(context, true);
-	}
-
-
-
-	public class SelectionProperty<E> implements Expr<E>{
-
-		private String  propertyName;
-		private Expr<E> expr;
-
-		public SelectionProperty(String propertyName, Expr<E> expr) {
-			this.propertyName = propertyName;
-			this.expr = expr;
-		}
-
-		@Override
-		public String toString() {
-			return "Selection." + propertyName;
-		}
+    @Override
+    public String _toSql(ExprToSqlContext context) {
+        QuerySqlBuilder b = new QuerySqlBuilder(this, context.getDbType(), context.getSchema().orElse(null));
+        return b.generate(context, true);
+    }
 
 
-		public ETypeObject getParent() {
-			return BaseSelection.this;
-		}
+    public class SelectionProperty<E> implements Expr<E> {
 
-		public String getColumnName() {
-			return propertyName;
-		}
+        private String propertyName;
+        private Expr<E> expr;
 
-		public String getPropertyName() {
-			return propertyName;
-		}
+        public SelectionProperty(String propertyName, Expr<E> expr) {
+            this.propertyName = propertyName;
+            this.expr = expr;
+        }
+
+        @Override
+        public String toString() {
+            return "Selection." + propertyName;
+        }
 
 
-		@Override
-		public E read(RowReader _rowReader, ExprRowReaderCache _cache) {
-			return expr.read(_rowReader, _cache);
-		}
+        public ETypeObject getParent() {
+            return BaseSelection.this;
+        }
 
-		@Override
-		public String _toSql(ExprToSqlContext context) {
-			return _asParentName(context, propertyName);
+        public String getColumnName() {
+            return propertyName;
+        }
 
-		}
+        public String getPropertyName() {
+            return propertyName;
+        }
 
-		@Override
-		public PList<Expr<?>> _expand() {
-			return PList.val(expr);
-		}
 
-		public Expr<E> _getExpr() {
-			return expr;
-		}
-	}
+        @Override
+        public E read(RowReader _rowReader, ExprRowReaderCache _cache) {
+            return expr.read(_rowReader, _cache);
+        }
+
+        @Override
+        public String _toSql(ExprToSqlContext context) {
+            return _asParentName(context, propertyName);
+
+        }
+
+        @Override
+        public PList<Expr<?>> _expand() {
+            return PList.val(expr);
+        }
+
+        public Expr<E> _getExpr() {
+            return expr;
+        }
+    }
 }

@@ -25,4 +25,5 @@ public interface ETypeSelection<T> extends ETypeObject<T>, ETypeList<T>{
 
 	PList<BaseSelection<?>.SelectionProperty<?>> selections();
 
+
 }

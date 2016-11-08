@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PByteList;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.staticsql.ENumberGroup;
 
@@ -36,6 +37,10 @@ public class Sql{
 	static public ExprConstNumber<Double> val(Double number) {
 		return new ExprConstNumber<>(Double.class, number);
 	}
+
+	static public ExprBinary val(PByteList bin) { return new ExprBinary(bin); }
+
+	static public ExprBinary val(byte[] binData) { return new ExprBinary(PByteList.from(binData)); }
 
 
 	static public ETypeString val(String value) {

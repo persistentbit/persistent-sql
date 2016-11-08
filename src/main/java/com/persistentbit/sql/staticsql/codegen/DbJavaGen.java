@@ -1,6 +1,7 @@
 package com.persistentbit.sql.staticsql.codegen;
 
 
+import com.persistentbit.core.collections.PByteList;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
@@ -436,6 +437,7 @@ public final class DbJavaGen{
 				|| cls.equals(SubstemaUtils.booleanRClass)
 				|| cls.equals(SubstemaUtils.stringRClass)
 				|| SubstemaUtils.isDateClass(cls)
+				|| cls.equals(SubstemaUtils.binaryRClass)
 				) {
 				return "r = r.plus(Sql.val(" + getter + "));";
 			}
@@ -763,6 +765,13 @@ public final class DbJavaGen{
 				type = "ETypeDate";
 				value = "new ExprPropertyDate(this,\"" + property.getName() + "\", \"" + columnName + "\");";
 
+			}
+			else if(cls.equals(SubstemaUtils.binaryRClass)){
+				addImport(PByteList.class);
+				addImport(Expr.class);
+				addImport(ExprProperty.class);
+				type = "Expr<PByteList>";
+				value = "new ExprProperty<PByteList>(PByteList.class,this,\"" + property.getName() + "\", \"" + columnName + "\");";
 			}
 			else {
 				if(cls.getPackageName().isEmpty()) {

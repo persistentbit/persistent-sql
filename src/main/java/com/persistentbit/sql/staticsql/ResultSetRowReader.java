@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql;
 
+import com.persistentbit.core.collections.PByteList;
 import com.persistentbit.core.exceptions.RtSqlException;
 
 import java.sql.Date;
@@ -39,6 +40,9 @@ public class ResultSetRowReader implements RowReader{
 				Timestamp ts = rs.getObject(index++, Timestamp.class);
 				if(ts == null) { return null; }
 				return (T) ts.toLocalDateTime();
+			} else if(cls.equals(PByteList.class)){
+				byte[] bytes = rs.getBytes(index++);
+				return (T)(bytes == null ? null : PByteList.from(bytes));
 			}
 
 			return rs.getObject(index++, cls);

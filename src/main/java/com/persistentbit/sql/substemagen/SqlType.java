@@ -1,6 +1,5 @@
 package com.persistentbit.sql.substemagen;
 
-import com.persistentbit.core.collections.PList;
 import com.persistentbit.substema.compiler.values.RClass;
 import com.persistentbit.substema.compiler.values.RTypeSig;
 
@@ -30,12 +29,12 @@ public enum SqlType{
 	sDate(Types.DATE, dateRClass),
 	sTime(Types.TIME),
 	sTimestamp(Types.TIMESTAMP, dateTimeRClass),
-	sBinary(Types.BINARY, new RTypeSig(listRClass, PList.val(new RTypeSig(byteRClass)))),
-	sVarBinary(Types.VARBINARY, new RTypeSig(listRClass, PList.val(new RTypeSig(byteRClass)))),
-	sLongVarBinary(Types.LONGVARBINARY, new RTypeSig(listRClass, PList.val(new RTypeSig(byteRClass)))),
-	sBlob(Types.BLOB, new RTypeSig(listRClass, PList.val(new RTypeSig(byteRClass)))),
-	sClob(Types.CLOB, new RTypeSig(listRClass, PList.val(new RTypeSig(byteRClass)))),
-	sNClob(Types.NCLOB),
+	sBinary(Types.BINARY, binaryRClass),
+	sVarBinary(Types.VARBINARY, binaryRClass),
+	sLongVarBinary(Types.LONGVARBINARY, binaryRClass),
+	sBlob(Types.BLOB, binaryRClass),
+	sClob(Types.CLOB, stringRClass),
+	sNClob(Types.NCLOB, binaryRClass),
 	sBoolean(Types.BOOLEAN, booleanRClass),
 	sNChar(Types.NCHAR, stringRClass),
 	sNVarChar(Types.NVARCHAR, stringRClass),

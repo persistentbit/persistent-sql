@@ -7,15 +7,18 @@ import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
 /**
- * Created by petermuys on 3/10/16.
+ * Represent a Tuple of 5 {@link Expr} rendered as a Sql comma separated list
+ *
+ * @author Peter Muys
+ * @since 3/10/16
  */
 public class ETuple5<T1, T2, T3, T4, T5> implements Expr<Tuple5<T1, T2, T3, T4, T5>>{
 
-	private Expr<T1> v1;
-	private Expr<T2> v2;
-	private Expr<T3> v3;
-	private Expr<T4> v4;
-	private Expr<T5> v5;
+	private final Expr<T1> v1;
+	private final Expr<T2> v2;
+	private final Expr<T3> v3;
+	private final Expr<T4> v4;
+	private final Expr<T5> v5;
 
 
 	public ETuple5(Expr<T1> v1, Expr<T2> v2, Expr<T3> v3, Expr<T4> v4, Expr<T5> v5) {

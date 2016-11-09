@@ -7,11 +7,17 @@ import com.persistentbit.sql.staticsql.expr.mixins.MixinEq;
 import java.time.LocalDate;
 
 /**
+ * A {@link LocalDate} {@link Expr} type with default methods
  *
  * @author Peter Muys
  * @since  4/10/16
  */
 public interface ETypeDate extends Expr<LocalDate>, MixinEq<ETypeDate>{
+
+	@Override
+	default LocalDate read(RowReader _rowReader, ExprRowReaderCache _cache) {
+		return _rowReader.readNext(LocalDate.class);
+	}
 
 	default ETypeBoolean eq(LocalDate date) {
 		return eq(new ExprDate(date));
@@ -21,10 +27,6 @@ public interface ETypeDate extends Expr<LocalDate>, MixinEq<ETypeDate>{
 		return notEq(new ExprDate(date));
 	}
 
-	@Override
-	default LocalDate read(RowReader _rowReader, ExprRowReaderCache _cache) {
-		return _rowReader.readNext(LocalDate.class);
-	}
 
 	default ETypeBoolean between(Expr<LocalDate> left, LocalDate right) {
 		return between(left, Sql.val(right));

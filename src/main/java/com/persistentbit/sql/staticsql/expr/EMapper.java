@@ -7,12 +7,16 @@ import com.persistentbit.sql.staticsql.RowReader;
 import java.util.function.Function;
 
 /**
- * Created by petermuys on 2/10/16.
+ * A Mapper converts an {@link Expr} of type T to
+ * an {@link Expr} of type R by applying a mapper function
+ * T -> R
+ * @author Peter Muys
+ * @since 2/10/16
  */
 public class EMapper<T, R> implements Expr<R>{
 
-	private Expr<T>        expr;
-	private Function<T, R> mapper;
+	private final Expr<T>        expr;
+	private final Function<T, R> mapper;
 
 	public EMapper(Expr<T> expr, Function<T, R> mapper) {
 		this.expr = expr;
@@ -30,12 +34,6 @@ public class EMapper<T, R> implements Expr<R>{
 
 	@Override
 	public R read(RowReader _rowReader, ExprRowReaderCache _cache) {
-		/*T value = expr.read(_rowReader,_cache);
-        if(_cache.contains(value) == false){
-            cache.remove(value);
-        }
-        value = updatedFromCache(value);
-        return mapper.getMapper().apply(value);*/
 
 		//TODO look to remove cached unmapped value if this is
 		//The first time it is used

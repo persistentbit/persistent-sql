@@ -60,10 +60,10 @@ public interface ETypeString extends Expr<String>, MixinEq<ETypeString>{
 	//************************* UPPER / LOWER case
 
 	default ETypeString toUpperCase() {
-		return new EStringUpperLower(true, this);
+		return new EStringUpperLower(EStringUpperLower.Type.toUpperCase, this);
 	}
 
 	default ETypeString toLowerCase() {
-		return new EStringUpperLower(false, this);
+		return new EStringUpperLower(EStringUpperLower.Type.toLowerCase, this);
 	}
 }

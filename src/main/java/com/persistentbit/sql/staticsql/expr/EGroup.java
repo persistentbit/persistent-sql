@@ -5,7 +5,10 @@ import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
 /**
- * Created by petermuys on 5/10/16.
+ * A EGroup expression is a {@link Expr} that is translated to sql as '(' value ')'.
+ *
+ * @author Peter Muys
+ * @since 5/10/16
  */
 public class EGroup<T> implements Expr<T>{
 

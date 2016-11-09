@@ -7,7 +7,10 @@ import com.persistentbit.sql.staticsql.expr.mixins.MixinEq;
 import java.time.LocalDateTime;
 
 /**
- * Created by petermuys on 4/10/16.
+ * A {@link LocalDateTime} {@link Expr} type with default methods
+ *
+ * @author Peter Muys
+ * @since 4/10/16
  */
 public interface ETypeDateTime extends Expr<LocalDateTime>, MixinEq<ETypeDateTime>{
 

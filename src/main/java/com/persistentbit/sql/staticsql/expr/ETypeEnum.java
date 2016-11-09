@@ -5,7 +5,9 @@ import com.persistentbit.sql.staticsql.RowReader;
 import com.persistentbit.sql.staticsql.expr.mixins.MixinEq;
 
 /**
- * Created by petermuys on 5/10/16.
+ * Represents an {@link Expr} of a java enum type
+ * @author Peter Muys
+ * @since 5/10/16
  */
 public interface ETypeEnum<T extends Enum<T>> extends Expr<T>, MixinEq<ETypeEnum<T>>{
 

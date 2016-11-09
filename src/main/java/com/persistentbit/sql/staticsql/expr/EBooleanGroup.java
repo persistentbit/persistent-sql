@@ -1,7 +1,9 @@
 package com.persistentbit.sql.staticsql.expr;
 
 /**
- * Created by petermuys on 5/10/16.
+ * A {@link EGroup} for Boolean values
+ * @author Peter Muys
+ * @since 5/10/16
  */
 public class EBooleanGroup extends EGroup<Boolean> implements ETypeBoolean{
 

@@ -17,7 +17,7 @@ public class ExprAndOr implements ETypeBoolean{
 
 	@Override
 	public String toString() {
-		return left.toString() + " " + logicType + " " + right.toString();
+		return left + " " + logicType + " " + right;
 	}
 
 	public ETypeBoolean getLeft() {

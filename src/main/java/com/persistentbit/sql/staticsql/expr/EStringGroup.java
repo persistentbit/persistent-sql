@@ -1,7 +1,9 @@
 package com.persistentbit.sql.staticsql.expr;
 
 /**
- * Created by petermuys on 5/10/16.
+ * Represents a {@link EGroup} of type String
+ * @author Peter Muys
+ * @since 5/10/16
  */
 public class EStringGroup extends EGroup<String> implements ETypeString{
 

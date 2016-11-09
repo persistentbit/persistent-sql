@@ -7,12 +7,14 @@ import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
 /**
- * Created by petermuys on 2/10/16.
+ * Represent a Tuple of 2 {@link Expr} rendered as a Sql comma separated list
+ * @author Peter Muys
+ * @since 2/10/16
  */
 public class ETuple2<T1, T2> implements Expr<Tuple2<T1, T2>>{
 
-	private Expr<T1> v1;
-	private Expr<T2> v2;
+	private final Expr<T1> v1;
+	private final Expr<T2> v2;
 
 	public ETuple2(Expr<T1> v1, Expr<T2> v2) {
 		this.v1 = v1;

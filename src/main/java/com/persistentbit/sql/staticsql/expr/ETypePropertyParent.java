@@ -5,22 +5,13 @@ import com.persistentbit.core.utils.ToDo;
 import java.util.Optional;
 
 /**
- * User: petermuys
- * Date: 14/10/16
- * Time: 18:11
+ * TODOC
+ * @author Peter Muys
+ * @since 14/10/16
  */
 public interface ETypePropertyParent<T> extends Expr<T>{
 
-	String _asParentName(ExprToSqlContext context, String propertyName);/*{
-		if(getParent().isPresent()){
-            return getParent().get()._asParentName(context) + "_" + getFullTableName();
-        }
-        String name = context.uniqueInstanceName(this,getFullTableName());
-        return name + ".";
-
-
-
-    }*/
+	String _asParentName(ExprToSqlContext context, String propertyName);
 
 	Optional<ETypePropertyParent> getParent();
 

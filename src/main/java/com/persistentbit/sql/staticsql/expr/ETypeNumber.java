@@ -1,6 +1,7 @@
 package com.persistentbit.sql.staticsql.expr;
 
 /**
+ * Represents an {@link Expr} of type Number (Integer,Short,Long,Float,Double)
  * @author Peter Muys
  * @since 28/09/2016
  */

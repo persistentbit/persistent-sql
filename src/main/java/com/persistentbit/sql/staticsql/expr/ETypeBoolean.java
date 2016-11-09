@@ -4,6 +4,8 @@ import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
 /**
+ * A Boolean {@link Expr} type with default methods
+ *
  * @author Peter Muys
  * @since 28/09/2016
  */

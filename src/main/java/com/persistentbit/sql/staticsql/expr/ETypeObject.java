@@ -3,10 +3,10 @@ package com.persistentbit.sql.staticsql.expr;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.tuples.Tuple2;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 /**
+ * TODOC
  * @author Peter Muys
  * @since 28/09/2016
  */
@@ -15,10 +15,12 @@ public interface ETypeObject<T> extends ETypePropertyParent<T>{
 
 	PList<Tuple2<String, Expr<?>>> _all();
 
+	@Override
 	default <R> EMapper<T, R> map(Function<T, R> mapper) {
-		return new EMapper<T, R>(this, mapper);
+		return new EMapper<>(this, mapper);
 	}
 
+	@Override
 	default String getFullTableName(String schema) {
 		return (schema == null ? "" : schema + ".") + _getTableName();
 	}
@@ -45,5 +47,4 @@ public interface ETypeObject<T> extends ETypePropertyParent<T>{
 		return context.uniqueInstanceName(this, _getTableName()) + "." + propertyName;
 	}
 
-	Optional<ETypePropertyParent> getParent();
 }

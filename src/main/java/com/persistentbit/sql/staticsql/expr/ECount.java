@@ -4,15 +4,17 @@ import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
 /**
- * User: petermuys
- * Date: 15/10/16
- * Time: 13:42
+ * Represents a Sql count function:<br>
+ * 	COUNT(DISTINCT? what)
+ * @author Peter Muys
+ * @since 15/10/16
  */
 public class ECount implements ETypeNumber<Long>{
 
-	private Expr<?> countWhat;
-	private boolean distinct;
+	private final Expr<?> countWhat;
+	private final boolean distinct;
 
+	@SuppressWarnings("BooleanParameter")
 	public ECount(Expr<?> countWhat, boolean distinct) {
 		this.countWhat = countWhat;
 		this.distinct = distinct;

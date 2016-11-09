@@ -1,11 +1,14 @@
 package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PMap;
+import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
 
+import java.sql.PreparedStatement;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Builder for SQL delete statements.<br>
@@ -34,9 +37,20 @@ public class DeleteSqlBuilder{
 		return tables.getOpt(obj).map(TableInst::getName);
 	}
 
-	public String generate() {
+	public Tuple2<String, Consumer<PreparedStatement>> generate() {
+		ExprToSqlContext context = new ExprToSqlContext(dbType, schema, true);
+		return Tuple2.of(generate(context), prepStat ->
+			context.getParamSetters().zipWithIndex().forEach(t -> t._2.accept(Tuple2.of(prepStat, t._1 + 1)))
+		);
+	}
+
+	public String generateNoParams() {
+		return generate(new ExprToSqlContext(dbType, schema, false));
+	}
+
+	private String generate(ExprToSqlContext context) {
 		String           nl      = "\r\n";
-		ExprToSqlContext context = new ExprToSqlContext(dbType, schema);
+
 		String res = "DELETE FROM  " + delete.getTable().getFullTableName(schema)
 			+ " " + context.uniqueInstanceName(delete.getTable(), delete.getTable()._getTableName())
 			+ nl;

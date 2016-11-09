@@ -1,5 +1,7 @@
 package com.persistentbit.sql.databases;
 
+import com.persistentbit.core.collections.PByteList;
+
 /**
  * A DbType for a PostgreSQL database.
  *
@@ -83,5 +85,10 @@ public class DbPostgres extends AbstractDbType{
 	@Override
 	public void registerDriver() {
 		registerDriver(getDriverClassName());
+	}
+
+	@Override
+	public String asLiteralBlob(PByteList byteList) {
+		return "E'\\x" + byteList.toHexString() + "'";
 	}
 }

@@ -1,6 +1,8 @@
 package com.persistentbit.sql.databases;
 
+import com.persistentbit.core.collections.PByteList;
 import com.persistentbit.core.logging.PLog;
+import com.persistentbit.sql.PersistSqlException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -111,6 +113,10 @@ public interface DbType{
 
 	default String asLiteralDateTime(LocalDateTime dateTime) {
 		return "TIMESTAMP '" + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.nnnnnnnnnn").format(dateTime) + "'";
+	}
+
+	default String asLiteralBlob(PByteList byteList) {
+		throw new PersistSqlException("Can't convert a BLOB to a literal for " + getDatabaseName());
 	}
 
 	default String toUpperCase(String value) {

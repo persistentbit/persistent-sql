@@ -9,7 +9,7 @@ import java.util.function.Function;
 /**
  * A Mapper converts an {@link Expr} of type T to
  * an {@link Expr} of type R by applying a mapper function
- * T -> R
+ * T to R
  * @author Peter Muys
  * @since 2/10/16
  */

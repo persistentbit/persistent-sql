@@ -1,25 +1,33 @@
 package com.persistentbit.sql.staticsql.expr;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
+import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.databases.DbType;
 
+import java.sql.PreparedStatement;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Context used by {@link Expr} instances to generate Sql code
- * @since 14/10/16
+ *
  * @author Peter Muys
+ * @since 14/10/16
  */
 public class ExprToSqlContext{
 
-	private final DbType dbType;
-	private final String schema;
-	private int                nextUniqueId       = 1;
-	private PMap<Expr, String> instanceNameLookup = PMap.empty();
+	private final DbType  dbType;
+	private final String  schema;
+	private final boolean useSqlParams;
+	private int                                                 nextUniqueId       = 1;
+	private PMap<Expr, String>                                  instanceNameLookup = PMap.empty();
+	private PList<Consumer<Tuple2<PreparedStatement, Integer>>> paramSetters       = PList.empty();
 
-	public ExprToSqlContext(DbType dbType, String schema) {
+	public ExprToSqlContext(DbType dbType, String schema, boolean useSqlParams) {
 		this.dbType = dbType;
 		this.schema = schema;
+		this.useSqlParams = useSqlParams;
 	}
 
 	public String uniqueInstanceName(Expr expr, String defaultName) {
@@ -38,5 +46,15 @@ public class ExprToSqlContext{
 
 	public DbType getDbType() {
 		return dbType;
+	}
+
+	public void setParam(Consumer<Tuple2<PreparedStatement, Integer>> re) {
+		if(useSqlParams) {
+			paramSetters = paramSetters.plus(re);
+		}
+	}
+
+	public PList<Consumer<Tuple2<PreparedStatement, Integer>>> getParamSetters() {
+		return paramSetters;
 	}
 }

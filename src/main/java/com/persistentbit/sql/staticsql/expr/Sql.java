@@ -38,9 +38,9 @@ public class Sql{
 		return new ExprConstNumber<>(Double.class, number);
 	}
 
-	static public ExprBinary val(PByteList bin) { return new ExprBinary(bin); }
+	static public ExprConstBinary val(PByteList bin) { return new ExprConstBinary(bin); }
 
-	static public ExprBinary val(byte[] binData) { return new ExprBinary(PByteList.from(binData)); }
+	static public ExprConstBinary val(byte[] binData) { return new ExprConstBinary(PByteList.from(binData)); }
 
 
 	static public ETypeString val(String value) {

@@ -6,6 +6,9 @@ import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
 
+import java.sql.PreparedStatement;
+import java.util.function.Consumer;
+
 /**
  * Builder for SQL insert statements.<br>
  *
@@ -30,8 +33,18 @@ public class InsertSqlBuilder{
 		this.generatedKeys = generatedKeys;
 	}
 
-	public String generate() {
-		ExprToSqlContext context = new ExprToSqlContext(dbType, schema);
+	public Tuple2<String, Consumer<PreparedStatement>> generate() {
+		ExprToSqlContext context = new ExprToSqlContext(dbType, schema, true);
+		return Tuple2.of(generate(context), prepStat ->
+			context.getParamSetters().zipWithIndex().forEach(t -> t._2.accept(Tuple2.of(prepStat, t._1 + 1)))
+		);
+	}
+
+	public String generateNoParams() {
+		return generate(new ExprToSqlContext(dbType, schema, false));
+	}
+
+	private String generate(ExprToSqlContext context) {
 		context.uniqueInstanceName(insert.getInto(), insert.getInto().getFullTableName(schema));
 		String nl        = "\r\n";
 		String res       = "";

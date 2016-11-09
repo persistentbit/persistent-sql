@@ -1,7 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PByteList;
-import com.persistentbit.core.utils.ToDo;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
@@ -11,10 +10,10 @@ import com.persistentbit.sql.staticsql.RowReader;
  * @author Peter Muys
  * @since 8/11/2016
  */
-public class ExprBinary implements Expr<PByteList>{
+public class ExprConstBinary implements Expr<PByteList>{
     private final PByteList value;
 
-    public ExprBinary(PByteList value) {
+    public ExprConstBinary(PByteList value) {
         this.value = value;
     }
 
@@ -30,6 +29,6 @@ public class ExprBinary implements Expr<PByteList>{
 
     @Override
     public String _toSql(ExprToSqlContext context) {
-        throw new ToDo();
+        return context.getDbType().asLiteralBlob(value);
     }
 }

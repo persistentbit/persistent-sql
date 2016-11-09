@@ -8,7 +8,9 @@ import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
 
+import java.sql.PreparedStatement;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Sql Builder for update statements.
@@ -33,12 +35,22 @@ public class UpdateSqlBuilder{
 	}
 
 	private Optional<String> getTableInstance(ETypeObject obj) {
-		return tables.getOpt(obj).map(ti -> ti.getName());
+		return tables.getOpt(obj).map(TableInst::getName);
 	}
 
-	public String generate() {
-		ExprToSqlContext context = new ExprToSqlContext(dbType, schema);
-		String           nl      = "\r\n";
+	public Tuple2<String, Consumer<PreparedStatement>> generate() {
+		ExprToSqlContext context = new ExprToSqlContext(dbType, schema, true);
+		return Tuple2.of(generate(context), prepStat ->
+			context.getParamSetters().zipWithIndex().forEach(t -> t._2.accept(Tuple2.of(prepStat, t._1 + 1)))
+		);
+	}
+
+	public String generateNoParams() {
+		return generate(new ExprToSqlContext(dbType, schema, false));
+	}
+
+	private String generate(ExprToSqlContext context) {
+		String nl = "\r\n";
 		String res = "UPDATE " + update.getTable().getFullTableName(schema) + " AS " + context
 			.uniqueInstanceName(update.getTable(), update.getTable()._getTableName()) + nl;
 		res += " SET ";
@@ -54,7 +66,6 @@ public class UpdateSqlBuilder{
 		if(update.getWhere() != null) {
 			res += nl + " WHERE " + update.getWhere()._toSql(context);
 		}
-
 		return res;
 	}
 

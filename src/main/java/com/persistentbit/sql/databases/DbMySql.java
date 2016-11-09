@@ -1,5 +1,7 @@
 package com.persistentbit.sql.databases;
 
+import com.persistentbit.core.collections.PByteList;
+
 /**
  * DbType for a MySql database
  * @author Peter Muys
@@ -46,5 +48,10 @@ public class DbMySql extends AbstractDbType{
 	@Override
 	public void registerDriver() {
 		registerDriver(getDriverClassName());
+	}
+
+	@Override
+	public String asLiteralBlob(PByteList byteList) {
+		return "0x" + byteList.toHexString();
 	}
 }

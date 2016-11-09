@@ -1,11 +1,15 @@
 package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.BaseSelection;
 import com.persistentbit.sql.staticsql.expr.ETypeSelection;
 import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
+
+import java.sql.PreparedStatement;
+import java.util.function.Consumer;
 
 /**
  * Builder for a SQL Select statement<br>
@@ -27,8 +31,15 @@ public class QuerySqlBuilder{
 		this.schema = schema;
 	}
 
-	public String generate() {
-		return generate(new ExprToSqlContext(type, schema), false);
+	public Tuple2<String, Consumer<PreparedStatement>> generate() {
+		ExprToSqlContext context = new ExprToSqlContext(type, schema, true);
+		return Tuple2.of(generate(context, false), prepStat ->
+			context.getParamSetters().zipWithIndex().forEach(t -> t._2.accept(Tuple2.of(prepStat, t._1 + 1)))
+		);
+	}
+
+	public String generateNoParams() {
+		return generate(new ExprToSqlContext(type, schema, false), false);
 	}
 
 	public String generate(ExprToSqlContext context, boolean asSubQuery) {

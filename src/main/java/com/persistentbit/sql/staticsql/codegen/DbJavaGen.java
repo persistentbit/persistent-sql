@@ -443,11 +443,11 @@ public final class DbJavaGen{
 			}
 			else {
 				if(getInternalOrExternalEnum(cls).isPresent()) {
-					addImport(ExprEnum.class);
+					addImport(ExprValueEnum.class);
 					//We have an enum
 					//r = r.plus(new ExprEnum<Gender>(v.getGender(),Gender.class));
 					String clsName = cls.getClassName();
-					return "r = r.plus(new " + ExprEnum.class
+					return "r = r.plus(new " + ExprValueEnum.class
 						.getSimpleName() + "<" + clsName + ">(" + getter + ", " + clsName + ".class));";
 				}
 				if(cls.getPackageName().isEmpty()) {
@@ -587,14 +587,15 @@ public final class DbJavaGen{
 						}
 						else {
 							if(getInternalOrExternalEnum(cls).isPresent()) {
-								addImport(ExprEnum.class);
+								addImport(ExprValueEnum.class);
 								String clsName = cls.getClassName();
-								valExpr = "new " + ExprEnum.class
+								valExpr = "new " + ExprValueEnum.class
 									.getSimpleName() + "<" + clsName + ">(" + getter + ", " + clsName + ".class)";
 							}
 							else {
-								addImport(EValTable.class);
-								valExpr = "new EValTable(" + p.getName() + ", " + getter + ")";
+								addImport(ExprValueTable.class);
+								valExpr = "new " + ExprValueTable.class.getSimpleName() + "(" + p
+									.getName() + ", " + getter + ")";
 							}
 						}
 						println(".set(" + p.getName() + ", " + valExpr + ")");

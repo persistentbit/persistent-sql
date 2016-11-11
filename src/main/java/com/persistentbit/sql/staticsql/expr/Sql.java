@@ -14,47 +14,47 @@ import java.time.LocalDateTime;
  */
 public class Sql{
 
-	static public <N extends Number> ExprConstNumber<N> val(N number) {
-		return new ExprConstNumber<>(number.getClass(), number);
+	static public <N extends Number> ExprValueNumber<N> val(N number) {
+		return new ExprValueNumber<>(number.getClass(), number);
 	}
 
-	static public ExprConstNumber<Short> val(Short number) {
-		return new ExprConstNumber<>(Short.class, number);
+	static public ExprValueNumber<Short> val(Short number) {
+		return new ExprValueNumber<>(Short.class, number);
 	}
 
-	static public ExprConstNumber<Integer> val(Integer number) {
-		return new ExprConstNumber<>(Integer.class, number);
+	static public ExprValueNumber<Integer> val(Integer number) {
+		return new ExprValueNumber<>(Integer.class, number);
 	}
 
-	static public ExprConstNumber<Long> val(Long number) {
-		return new ExprConstNumber<>(Long.class, number);
+	static public ExprValueNumber<Long> val(Long number) {
+		return new ExprValueNumber<>(Long.class, number);
 	}
 
-	static public ExprConstNumber<Float> val(Float number) {
-		return new ExprConstNumber<>(Float.class, number);
+	static public ExprValueNumber<Float> val(Float number) {
+		return new ExprValueNumber<>(Float.class, number);
 	}
 
-	static public ExprConstNumber<Double> val(Double number) {
-		return new ExprConstNumber<>(Double.class, number);
+	static public ExprValueNumber<Double> val(Double number) {
+		return new ExprValueNumber<>(Double.class, number);
 	}
 
-	static public ExprConstBinary val(PByteList bin) { return new ExprConstBinary(bin); }
+	static public ExprValueBinary val(PByteList bin) { return new ExprValueBinary(bin); }
 
-	static public ExprConstBinary val(byte[] binData) { return new ExprConstBinary(PByteList.from(binData)); }
+	static public ExprValueBinary val(byte[] binData) { return new ExprValueBinary(PByteList.from(binData)); }
 
 
 	static public ETypeString val(String value) {
-		return new ExprConstString(value);
+		return new ExprValueString(value);
 	}
 
-	static public ETypeBoolean val(Boolean value) { return new ExprBoolean(value);}
+	static public ETypeBoolean val(Boolean value) { return new ExprValueBoolean(value);}
 
 	static public ETypeDate val(LocalDate date) {
-		return new ExprDate(date);
+		return new ExprValueDate(date);
 	}
 
 	static public ETypeDateTime val(LocalDateTime dateTime) {
-		return new ExprDateTime(dateTime);
+		return new ExprValueDateTime(dateTime);
 	}
 
 	static public ETypeBoolean exists(ETypeList<?> list) {
@@ -79,12 +79,12 @@ public class Sql{
 		if(value == null) {
 			throw new PersistSqlException("Need to know the class of the null enum: use Expr.valNullEnum(cls) instead.");
 		}
-		return new ExprEnum<T>(value, (Class<T>) value.getClass());
+		return new ExprValueEnum<T>(value, (Class<T>) value.getClass());
 	}
 
 
 	static public <T extends Enum<T>> ETypeEnum<T> valNullEnum(Class<T> value) {
-		return new ExprEnum<>(null, value);
+		return new ExprValueEnum<>(null, value);
 	}
 
 }

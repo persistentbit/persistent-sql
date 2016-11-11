@@ -6,7 +6,9 @@ import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 
 /**
- * Created by petermuys on 14/10/16.
+ * Represents an {@link Expr} that holds a List of Expressions of a type T.<br>
+ * @author Peter Muys
+ * @since 14/10/16
  */
 public class ExprValueList<T> implements ETypeList<T>, Expr<T>{
 

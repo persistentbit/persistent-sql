@@ -20,11 +20,11 @@ public interface ETypeDate extends Expr<LocalDate>, MixinEq<ETypeDate>{
 	}
 
 	default ETypeBoolean eq(LocalDate date) {
-		return eq(new ExprDate(date));
+		return eq(new ExprValueDate(date));
 	}
 
 	default ETypeBoolean notEq(LocalDate date) {
-		return notEq(new ExprDate(date));
+		return notEq(new ExprValueDate(date));
 	}
 
 

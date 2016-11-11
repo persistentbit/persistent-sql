@@ -27,8 +27,8 @@ public interface ETypeObject<T> extends ETypePropertyParent<T>{
 
 	String _getTableName();
 
-	default EValTable<T> val(T value) {
-		return new EValTable<>(this, value);
+	default ExprValueTable<T> val(T value) {
+		return new ExprValueTable<>(this, value);
 	}
 
 	PList<Expr<?>> _asExprValues(T value);

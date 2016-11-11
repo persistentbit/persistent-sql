@@ -14,8 +14,8 @@ import java.time.LocalDateTime;
  * RowReader implementation that
  * reads from a {@link ResultSet}
  *
- * @since 3/10/16
  * @author Peter Muys
+ * @since 3/10/16
  */
 public class ResultSetRowReader implements RowReader{
 
@@ -40,14 +40,15 @@ public class ResultSetRowReader implements RowReader{
 				Timestamp ts = rs.getObject(index++, Timestamp.class);
 				if(ts == null) { return null; }
 				return (T) ts.toLocalDateTime();
-			} else if(cls.equals(PByteList.class)){
+			}
+			else if(cls.equals(PByteList.class)) {
 				byte[] bytes = rs.getBytes(index++);
-				return (T)(bytes == null ? null : PByteList.from(bytes));
+				return (T) (bytes == null ? null : PByteList.from(bytes));
 			}
 
 			return rs.getObject(index++, cls);
 		} catch(SQLException e) {
-			throw new RtSqlException("SQL error while reading column " + index + " from resultset", e);
+			throw new RtSqlException("SQL error while reading column " + index + " from result set", e);
 		}
 
 	}

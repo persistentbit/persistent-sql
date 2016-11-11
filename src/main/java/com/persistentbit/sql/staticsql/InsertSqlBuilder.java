@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 /**
  * Builder for SQL insert statements.<br>
  *
+ * @see Insert
  * @author Peter Muys
  * @since 2/10/16
  */

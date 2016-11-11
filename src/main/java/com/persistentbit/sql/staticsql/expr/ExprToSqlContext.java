@@ -54,6 +54,10 @@ public class ExprToSqlContext{
 		}
 	}
 
+	public boolean isUsingSqlParameters() {
+		return useSqlParams;
+	}
+
 	public PList<Consumer<Tuple2<PreparedStatement, Integer>>> getParamSetters() {
 		return paramSetters;
 	}

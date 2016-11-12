@@ -1,0 +1,107 @@
+
+
+annotation Schema{
+    name:String;
+}
+
+annotation Table{
+    name:?String;
+}
+
+annotation Column{
+    name:String;
+}
+
+annotation Key{
+
+}
+
+annotation AutoGen{
+
+}
+
+/*
+    marks a property that has a sub value as
+    having no prefix.
+    ex:
+    case class Embedded{
+        a:String;
+        b:String;
+    }
+
+    @Table
+    case class Table{
+        @NoPrefix
+        emb:Embedded        --> column names are: a and b instead of emb_a and emb_b
+    }
+*/
+annotation NoPrefix{
+
+}
+
+enum NameType{
+    table,column,all;
+}
+
+
+annotation NameRemovePrefix{
+    type:NameType = NameType.all;
+    value:String;
+}
+
+annotation NameToLower{
+    type:NameType = NameType.all;
+}
+annotation NameToUpper{
+    type:NameType = NameType.all;
+}
+
+annotation NameCamelToSnake{
+    type:NameType = NameType.all;
+}
+annotation NamePrefix{
+    type:NameType = NameType.all;
+    value:String;
+}
+annotation NamePostfix{
+    type:NameType = NameType.all;
+    value:String;
+}
+
+/*
+    **********************   DB IMPORT ANNOTATIONS
+*/
+
+annotation DbImportIncludeTables{
+    tableNamePattern:String;
+}
+annotation DbImportExcludeTables{
+    tableNamePattern:String;
+}
+annotation DbImportExcludeColumns{
+    tableNamePattern:String;
+    columnNamePattern:String;
+}
+
+annotation DbImportMergeEmbedded{
+    tableNamePattern:String = ".*";
+    columnNamePattern:String = ".*";
+    className:String;
+}
+
+annotation DbImportSetTableSubstemaName{
+    tableName:String;
+    substemaName:String;
+}
+
+annotation DbImportSetColumnSubstemaName{
+    tableNamePattern:String = ".*";
+    columnName:String;
+    substemaName:String;
+}
+
+annotation DbImportUseEnum{
+    tableNamePattern:String = ".*";
+    columnNamePattern:String;
+    enumClassName:String;
+}

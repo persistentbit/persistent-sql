@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -35,7 +35,8 @@
     </licenses>
     <properties>
         <junit.version>4.12</junit.version>
-        <persistent-core.version>1.1.5</persistent-core.version>
+        <substema.version>1.0.0-SNAPSHOT</substema.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <distributionManagement>
@@ -52,6 +53,44 @@
     <build>
 
         <plugins>
+
+            <plugin>
+                <groupId>com.persistentbit</groupId>
+                <artifactId>substema-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate-packages</goal></goals>
+                        <configuration>
+                            <packages>
+                                <package>com.persistentbit.sql.annotations</package>
+                            </packages>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--    Just as an example
+                        <plugin>
+                            <groupId>com.persistentbit</groupId>
+                            <artifactId>persistent-sql-maven-plugin</artifactId>
+                            <version>1.0.0-SNAPSHOT</version>
+                            <executions>
+                                <execution>
+                                    <phase>generate-sources</phase>
+                                    <goals><goal>generate-db</goal></goals>
+                                    <configuration>
+                                        <packages>
+                                            <package>com.persistentbit.sql.test.db</package>
+                                        </packages>
+                                        <resourcesDirectory>src/test/resources</resourcesDirectory>
+                                        <outputDirectory>target/generated-test-sources/db</outputDirectory>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+            -->
+
+
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -120,8 +159,8 @@
         </dependency>
         <dependency>
             <groupId>com.persistentbit</groupId>
-            <artifactId>persistent-core</artifactId>
-            <version>${persistent-core.version}</version>
+            <artifactId>substema</artifactId>
+            <version>${substema.version}</version>
         </dependency>
     </dependencies>
     <profiles>

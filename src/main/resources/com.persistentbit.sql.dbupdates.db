@@ -1,0 +1,10 @@
+import com.persistentbit.sql.annotations;
+
+@Table
+case class SchemaUpdateHistory{
+    @Column("package_name")
+    packageName:String;
+    @Column("update_name");
+    updateName:String;
+    created:DateTime;
+}

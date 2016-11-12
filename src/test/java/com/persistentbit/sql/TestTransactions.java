@@ -11,16 +11,21 @@ import java.sql.PreparedStatement;
  * Date: 13/07/16
  * Time: 19:36
  */
-public class TestTransactions extends TestWithTransactions {
+public class TestTransactions extends AbstractTestWithTransactions{
 
     @Test
     public void testTrans(){
-        trans.run(c -> {
-            String sql = loader.getOne("create_test_table");
+        trans.trans(c -> {
+            String sql = loader.getAll("selectTest").head();
             log.fine(sql);
-            PreparedStatement stat = c.prepareStatement(sql);
-            stat.execute();
+            try(PreparedStatement stat = c.prepareStatement(sql)) {
+                stat.execute();
+            }
         });
     }
 
+    @Test
+    public void test2Test() {
+        //Test if we run 2 test that db is build/dropped ok
+    }
 }

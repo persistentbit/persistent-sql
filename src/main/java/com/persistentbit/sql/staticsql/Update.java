@@ -5,15 +5,21 @@ import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.staticsql.expr.ETypeBoolean;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
+import com.persistentbit.sql.staticsql.expr.Sql;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
- * Created by petermuys on 8/10/16.
+ * Represents an Sql Update statement.<br>
+ * @author Peter Muys
+ * @since 8/10/16
  */
 public class Update{
 
-	private DbSql        db;
-	private ETypeObject  table;
-	private ETypeBoolean where;
+	private final DbSql        db;
+	private final ETypeObject  table;
+	private       ETypeBoolean where;
 	private PList<Tuple2<Expr<?>, Expr<?>>> set = PList.empty();
 
 
@@ -22,9 +28,33 @@ public class Update{
 		this.table = table;
 	}
 
-	public <V> Update set(Expr<V> property, Expr<V> value) {
+	public <V> Update set(Expr<V> property, Expr<? extends V> value) {
 		set = set.plus(Tuple2.of(property, value));
 		return this;
+	}
+
+	public Update set(Expr<Number> property, Number value) {
+		return set(property, Sql.val(value));
+	}
+
+	public Update set(Expr<String> property, String value) {
+		return set(property, Sql.val(value));
+	}
+
+	public Update set(Expr<LocalDate> property, LocalDate value) {
+		return set(property, Sql.val(value));
+	}
+
+	public Update set(Expr<LocalDateTime> property, LocalDateTime value) {
+		return set(property, Sql.val(value));
+	}
+
+	public Update set(Expr<Boolean> property, Boolean value) {
+		return set(property, Sql.val(value));
+	}
+
+	public <V extends Enum<V>> Update set(Expr<V> property, V value) {
+		return set(property, Sql.val(value));
 	}
 
 

@@ -44,6 +44,11 @@ public class TransactionRunnerPerThread implements TransactionRunner{
 	}
 
 	@Override
+	public Supplier<Connection> getConnectionSupplier() {
+		return connectionSupplier;
+	}
+
+	@Override
 	public <T> T transNew(SqlCodeWithResult<T> code) {
 		Pair<Long, Connection> prev = currentConnection.get();
 		try {

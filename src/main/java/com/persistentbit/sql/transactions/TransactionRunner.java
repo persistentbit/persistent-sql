@@ -2,6 +2,7 @@ package com.persistentbit.sql.transactions;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 /**
  * Interface for working with db transactions.<br>
@@ -45,6 +46,13 @@ public interface TransactionRunner{
 	 * @param code The code to run
 	 */
 	void transNew(SqlCode code);
+
+	/**
+	 * Get the underlying connection supplier
+	 *
+	 * @return the Sql connection supplier
+	 */
+	Supplier<Connection> getConnectionSupplier();
 
 	@FunctionalInterface
 	interface SqlCodeWithResult<T>{

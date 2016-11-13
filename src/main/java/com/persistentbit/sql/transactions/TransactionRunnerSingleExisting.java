@@ -23,6 +23,11 @@ public class TransactionRunnerSingleExisting implements TransactionRunner{
 	}
 
 	@Override
+	public Supplier<Connection> getConnectionSupplier() {
+		return connectionSupplier;
+	}
+
+	@Override
 	public void trans(SqlCode code) {
 		trans((c) -> {
 			code.run(c);

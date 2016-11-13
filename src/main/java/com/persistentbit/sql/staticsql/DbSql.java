@@ -48,6 +48,13 @@ public class DbSql{
 		return Optional.ofNullable(schema);
 	}
 
+	public TransactionRunner getTransactionRunner() {
+		return run;
+	}
+
+	public DbType getDbType() {
+		return dbType;
+	}
 
 	/**
 	 * Create a new Sql Query object for the given Table

@@ -1,5 +1,7 @@
 package com.persistentbit.sql.databases;
 
+import java.io.File;
+
 /**
  * A DbType for a H2 database.
  * @author Peter Muys
@@ -29,6 +31,14 @@ public class DbH2 extends AbstractDbType{
 
 	@Override
 	public void registerDriver() {
-		registerDriver("org.h2.Driver");
+		registerDriver(DbH2.getDriverClassName());
+	}
+
+	static public String createEmbeddedUrl(File dbPath) {
+		return "jdbc:h2:" + dbPath.getPath();
+	}
+
+	public static String getDriverClassName() {
+		return "org.h2.Driver";
 	}
 }

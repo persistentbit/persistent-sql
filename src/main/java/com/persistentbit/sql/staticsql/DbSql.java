@@ -2,8 +2,7 @@ package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.function.Function2;
-import com.persistentbit.core.logging.PLog;
-import com.persistentbit.sql.PersistSqlException;
+import com.persistentbit.core.logging.Log;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.ETypeSelection;
@@ -18,7 +17,7 @@ import java.sql.Statement;
  * Created by petermuys on 3/10/16.
  */
 public class DbSql {
-    static private final PLog log = PLog.get(DbSql.class);
+
     private final DbType    dbType;
     public final TransactionRunner run;
 
@@ -51,71 +50,85 @@ public class DbSql {
     }
 
     public int run(Insert insert){
-        InsertSqlBuilder b = new InsertSqlBuilder(dbType,insert);
-        String sql = b.generate();
-        log.debug(sql);
-        return run.trans(c -> {
-            PreparedStatement s = c.prepareStatement(sql);
-            return s.executeUpdate();
+        return Log.function(insert).code(l-> {
+            InsertSqlBuilder b = new InsertSqlBuilder(dbType,insert);
+            String sql = b.generate();
+            l.info("sql",sql);
+            return run.trans(c -> {
+                PreparedStatement s = c.prepareStatement(sql);
+                return s.executeUpdate();
+            });
         });
 
     }
     public <T> T run(InsertWithGeneratedKeys<T> ik){
-        InsertSqlBuilder b = new InsertSqlBuilder(dbType,ik.getInsert(),ik.getGenerated());
-        String sql = b.generate();
-        log.debug(sql);
-        return run.trans(c -> {
-            PreparedStatement s = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            int count = s.executeUpdate();
-            ExprRowReader exprReader = new ExprRowReader();
+        return Log.function(ik).code(l -> {
+            InsertSqlBuilder b = new InsertSqlBuilder(dbType,ik.getInsert(),ik.getGenerated());
+            String sql = b.generate();
+            l.info(sql);
+            return run.trans(c -> {
+                PreparedStatement s = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                int count = s.executeUpdate();
+                ExprRowReader exprReader = new ExprRowReader();
 
 
-            try (ResultSet generatedKeys = s.getGeneratedKeys()) {
-                ResultSetRowReader rowReader = new ResultSetRowReader(generatedKeys);
-                if (generatedKeys.next()) {
-                    return exprReader.read(ik.getGenerated(),rowReader);
+                try (ResultSet generatedKeys = s.getGeneratedKeys()) {
+                    ResultSetRowReader rowReader = new ResultSetRowReader(generatedKeys);
+                    if (generatedKeys.next()) {
+                        return exprReader.read(ik.getGenerated(),rowReader);
+                    }
+                    throw new RuntimeException("No generated keys...");
                 }
-                throw new RuntimeException("No generated keys...");
-            }
+            });
         });
+
     }
 
     public <T> PList<T> run(ETypeSelection<T> selection){
-        QuerySqlBuilder b = new QuerySqlBuilder(selection,dbType);
-        String sql = b.generate();
-        log.debug(sql);
-        return run.trans(c-> {
-            PreparedStatement s = c.prepareStatement(sql);
-            ExprRowReader exprReader = new ExprRowReader();
-            try(ResultSet rs = s.executeQuery()){
-                ResultSetRowReader rowReader = new ResultSetRowReader(rs);
-                PList<T> res = PList.empty();
-                while(rs.next()){
-                    res = res.plus(selection.read(rowReader,exprReader));
-                    rowReader.nextRow();
+        return Log.function(selection).code(log-> {
+            QuerySqlBuilder b = new QuerySqlBuilder(selection,dbType);
+            String sql = b.generate();
+            log.info(sql);
+            return run.trans(c-> {
+                PreparedStatement s = c.prepareStatement(sql);
+                ExprRowReader exprReader = new ExprRowReader();
+                try(ResultSet rs = s.executeQuery()){
+                    ResultSetRowReader rowReader = new ResultSetRowReader(rs);
+                    PList<T> res = PList.empty();
+                    while(rs.next()){
+                        res = res.plus(selection.read(rowReader,exprReader));
+                        rowReader.nextRow();
+                    }
+                    return res;
                 }
-                return res;
-            }
+            });
         });
+
     }
 
     public int run(Update update){
-        UpdateSqlBuilder b = new UpdateSqlBuilder(dbType,update);
-        String sql = b.generate();
-        log.debug(sql);
-        return run.trans(c -> {
-            PreparedStatement s = c.prepareStatement(sql);
-            return s.executeUpdate();
+        return Log.function(update).code(log->{
+            UpdateSqlBuilder b = new UpdateSqlBuilder(dbType,update);
+            String sql = b.generate();
+            log.info(sql);
+            return run.trans(c -> {
+                PreparedStatement s = c.prepareStatement(sql);
+                return s.executeUpdate();
+            });
         });
+
     }
 
     public int run(Delete delete){
-        DeleteSqlBuilder b = new DeleteSqlBuilder(dbType,delete);
-        String sql = b.generate();
-        log.debug(sql);
-        return run.trans(c -> {
-            PreparedStatement s = c.prepareStatement(sql);
-            return s.executeUpdate();
+        return Log.function(delete).code(log->{
+            DeleteSqlBuilder b = new DeleteSqlBuilder(dbType,delete);
+            String sql = b.generate();
+            log.info(sql);
+            return run.trans(c -> {
+                PreparedStatement s = c.prepareStatement(sql);
+                return s.executeUpdate();
+            });
         });
+
     }
 }

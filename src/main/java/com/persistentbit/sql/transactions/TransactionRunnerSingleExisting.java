@@ -1,6 +1,8 @@
 package com.persistentbit.sql.transactions;
 
-import com.persistentbit.core.logging.PLog;
+
+
+import com.persistentbit.core.logging.Log;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -13,7 +15,7 @@ import java.util.function.Supplier;
  * @since 11/10/2016
  */
 public class TransactionRunnerSingleExisting implements TransactionRunner{
-    static private PLog log = PLog.get(TransactionRunnerSingleExisting.class);
+
     private Supplier<Connection>    connectionSupplier;
     private Connection  current;
 
@@ -26,36 +28,39 @@ public class TransactionRunnerSingleExisting implements TransactionRunner{
 
     @Override
     public <T> T trans(SqlCodeWithResult<T> code) {
-        Connection c;
-        boolean isNew = false;
-        synchronized (this){
-            if(current == null){
-                current = connectionSupplier.get();
-                isNew = true;
+        return Log.function().code(l -> {
+            Connection c;
+            boolean isNew = false;
+            synchronized (this){
+                if(current == null){
+                    current = connectionSupplier.get();
+                    isNew = true;
+                }
             }
-        }
-        try{
-            T result = code.run(current);
-            if(isNew) {
-                current.commit();
+            try{
+                T result = code.run(current);
+                if(isNew) {
+                    current.commit();
 
+                }
+                return result;
+            }catch(Exception e){
+                try {
+                    current.rollback();
+                } catch (SQLException e1) {
+                    l.error("Error while performing rollback",e1);
+                }
+                throw new RuntimeException("Rolledback",e);
             }
-            return result;
-        }catch(Exception e){
-            try {
-                current.rollback();
-            } catch (SQLException e1) {
-                log.error("Error while performing rollback",e1);
-            }
-            throw new RuntimeException("Rolledback",e);
-        }
-        finally {
+            finally {
 
-            if(isNew){
-                try{ current.close(); } catch(Exception e){log.error("Error while closing the db connection",e); }
-                current = null;
+                if(isNew){
+                    try{ current.close(); } catch(Exception e){l.error("Error while closing the db connection",e); }
+                    current = null;
+                }
             }
-        }
+        });
+
     }
 
     @Override

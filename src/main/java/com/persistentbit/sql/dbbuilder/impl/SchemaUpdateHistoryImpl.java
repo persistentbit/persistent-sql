@@ -1,7 +1,6 @@
 package com.persistentbit.sql.dbbuilder.impl;
 
 import com.persistentbit.core.collections.PList;
-import com.persistentbit.core.logging.PLog;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.dbbuilder.SchemaUpdateHistory;
 import com.persistentbit.sql.transactions.TransactionRunner;
@@ -16,7 +15,6 @@ import java.sql.Statement;
  */
 public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 
-	private static final PLog log = PLog.get(SchemaUpdateHistoryImpl.class);
 	private final TransactionRunner runner;
 	private final String            schema;
 	private final String            tableName;

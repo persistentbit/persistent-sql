@@ -1,9 +1,10 @@
 package com.persistentbit.sql.statement;
 
 
+import com.persistentbit.core.Nothing;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.POrderedMap;
-import com.persistentbit.core.logging.PLog;
+import com.persistentbit.core.logging.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,7 +28,6 @@ import java.util.stream.Collectors;
  */
 public class SqlLoader{
 
-	private static final PLog log = PLog.get(SqlLoader.class);
 	private final String resourcePath;
 	private POrderedMap<String, PList<String>> snippets = POrderedMap.empty();
 
@@ -38,13 +38,17 @@ public class SqlLoader{
 	 */
 	public SqlLoader(String resourcePath) {
 		this.resourcePath = resourcePath;
-		InputStream in = SqlLoader.class.getResourceAsStream(resourcePath);
-		if(in == null) {
-			log.error("Can't find Sql resource '" + resourcePath + "'");
-		}
-		else {
-			load(in);
-		}
+		Log.function(resourcePath).code(log -> {
+			InputStream in = SqlLoader.class.getResourceAsStream(resourcePath);
+			if(in == null) {
+				log.error("Can't find Sql resource '" + resourcePath + "'");
+			}
+			else {
+				load(in);
+			}
+			return Nothing.inst;
+		});
+
 	}
 
 	@Override

@@ -49,7 +49,7 @@ public final class DbJavaGen{
                         compiler.getImplicitImportPackages().plus(packageDbAnnotations)
                 );*/
 		this.compiler = compiler;
-		this.substema = this.compiler.compile(packageName);
+		this.substema = this.compiler.compile(packageName).orElseThrow();
 
 		this.allExternalValueClasses = findAllExternalDefinitions();
 	}
@@ -93,7 +93,7 @@ public final class DbJavaGen{
 					//must be an enum;
 					return null;
 				}
-				RSubstema substema = compiler.compile(c.getPackageName());
+				RSubstema substema = compiler.compile(c.getPackageName()).orElseThrow();
 				RValueClass vc =
 					substema.getValueClasses().find(evc -> evc.getTypeSig().getName().equals(c)).orElse(null);
 				if(vc == null) {
@@ -827,7 +827,7 @@ public final class DbJavaGen{
 		 */
 		private Optional<REnum> getInternalOrExternalEnum(RClass cls) {
 			if(cls.getPackageName().equals(packageName) == false) {
-				RSubstema ss = compiler.compile(cls.getPackageName());
+				RSubstema ss = compiler.compile(cls.getPackageName()).orElseThrow();
 				return ss.getEnums().find(e -> e.getName().getClassName().equals(cls.getClassName()));
 			}
 			else {
@@ -847,7 +847,7 @@ public final class DbJavaGen{
 				return getValueClass(cls)
 					.orElseThrow(() -> new PersistSqlException("Can't find Internal Value class " + cls));
 			}
-			RSubstema ns = compiler.compile(cls.getPackageName());
+			RSubstema ns = compiler.compile(cls.getPackageName()).orElseThrow();
 			return ns.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls))
 				.orElseThrow(() -> new PersistSqlException("Can't find Value class " + cls));
 		}

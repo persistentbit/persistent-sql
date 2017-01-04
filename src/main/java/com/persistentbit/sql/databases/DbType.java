@@ -1,7 +1,8 @@
 package com.persistentbit.sql.databases;
 
 import com.persistentbit.core.collections.PByteList;
-import com.persistentbit.core.logging.PLog;
+
+import com.persistentbit.core.logging.Log;
 import com.persistentbit.sql.PersistSqlException;
 
 import java.time.LocalDate;
@@ -43,34 +44,37 @@ public interface DbType{
 	 * @return An Optional DbType.
 	 */
 	static Optional<DbType> createFromName(String dbTypeOrClassName) {
-		switch(dbTypeOrClassName.toLowerCase()) {
-			case "derby":
-				return Optional.of(new DbDerby());
-			case "h2":
-				return Optional.of(new DbH2());
-			case "postgres":
-			case "postgresql":
-				return Optional.of(new DbPostgres());
-			case "mysql":
-				return Optional.of(new DbMySql());
-			default:
-				if(dbTypeOrClassName.contains(".") == false) {
-					PLog.get(DbType.class).error("Don't know database type name '" + dbTypeOrClassName + "'");
-					return Optional.empty();
-				}
-				//See the name as the class name...
-				try {
-					Class<?> cls = DbType.class.getClassLoader().loadClass(dbTypeOrClassName);
-					return Optional.of((DbType) cls.newInstance());
-				} catch(ClassNotFoundException e) {
-					PLog.get(DbType.class).error("Can't load DbType class  '" + dbTypeOrClassName + "'");
-					return Optional.empty();
-				} catch(InstantiationException | IllegalAccessException e) {
-					PLog.get(DbType.class).error("Error constructing DbType class '" + dbTypeOrClassName + "'");
-					return Optional.empty();
-				}
+		return Log.function(dbTypeOrClassName).code(log -> {
+			switch(dbTypeOrClassName.toLowerCase()) {
+				case "derby":
+					return Optional.of(new DbDerby());
+				case "h2":
+					return Optional.of(new DbH2());
+				case "postgres":
+				case "postgresql":
+					return Optional.of(new DbPostgres());
+				case "mysql":
+					return Optional.of(new DbMySql());
+				default:
+					if(dbTypeOrClassName.contains(".") == false) {
+						log.error("Don't know database type name '" + dbTypeOrClassName + "'");
+						return Optional.empty();
+					}
+					//See the name as the class name...
+					try {
+						Class<?> cls = DbType.class.getClassLoader().loadClass(dbTypeOrClassName);
+						return Optional.of((DbType) cls.newInstance());
+					} catch(ClassNotFoundException e) {
+						log.error("Can't load DbType class  '" + dbTypeOrClassName + "'");
+						return Optional.empty();
+					} catch(InstantiationException | IllegalAccessException e) {
+						log.error("Error constructing DbType class '" + dbTypeOrClassName + "'");
+						return Optional.empty();
+					}
 
-		}
+			}
+		});
+
 	}
 
 	String getDatabaseName();

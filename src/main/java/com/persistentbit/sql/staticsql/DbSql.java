@@ -2,7 +2,7 @@ package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.function.Function2;
-import com.persistentbit.core.logging.PLog;
+import com.persistentbit.core.logging.Log;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
@@ -24,7 +24,6 @@ import java.util.function.Consumer;
  */
 public class DbSql{
 
-	private static final PLog log = PLog.get(DbSql.class);
 	public final  TransactionRunner run;
 	private final DbType            dbType;
 	private final String            schema;
@@ -84,17 +83,20 @@ public class DbSql{
 	}
 
 	public int run(Insert insert) {
-		InsertSqlBuilder b = new InsertSqlBuilder(dbType, schema, insert);
+		return Log.function(insert).code(log -> {
+			InsertSqlBuilder b = new InsertSqlBuilder(dbType, schema, insert);
 
-		log.debug(b::generateNoParams);
+			log.info(b.generateNoParams());
 
-		Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
+			Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
 
-		return run.trans(c -> {
-			PreparedStatement s = c.prepareStatement(generatedQuery._1);
-			generatedQuery._2.accept(s);
-			return s.executeUpdate();
+			return run.trans(c -> {
+				PreparedStatement s = c.prepareStatement(generatedQuery._1);
+				generatedQuery._2.accept(s);
+				return s.executeUpdate();
+			});
 		});
+
 
 	}
 
@@ -110,78 +112,90 @@ public class DbSql{
 	}
 
 	public <T> T run(InsertWithGeneratedKeys<T> ik) {
-		InsertSqlBuilder b   = new InsertSqlBuilder(dbType, schema, ik.getInsert(), ik.getGenerated());
+		return Log.function(ik).code(log -> {
+			InsertSqlBuilder b   = new InsertSqlBuilder(dbType, schema, ik.getInsert(), ik.getGenerated());
 
-		log.debug(b::generateNoParams);
+			log.info(b.generateNoParams());
 
-		Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
+			Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
 
-		return run.trans(c -> {
-			PreparedStatement s = c.prepareStatement(generatedQuery._1, Statement.RETURN_GENERATED_KEYS);
+			return run.trans(c -> {
+				PreparedStatement s = c.prepareStatement(generatedQuery._1, Statement.RETURN_GENERATED_KEYS);
 
-			generatedQuery._2.accept(s);
+				generatedQuery._2.accept(s);
 
-			int               count      = s.executeUpdate();
-			ExprRowReader     exprReader = new ExprRowReader();
+				int               count      = s.executeUpdate();
+				ExprRowReader     exprReader = new ExprRowReader();
 
 
-			try(ResultSet generatedKeys = s.getGeneratedKeys()) {
-				ResultSetRowReader rowReader = new ResultSetRowReader(generatedKeys);
-				if(generatedKeys.next()) {
-					return exprReader.read(ik.getGenerated(), rowReader);
+				try(ResultSet generatedKeys = s.getGeneratedKeys()) {
+					ResultSetRowReader rowReader = new ResultSetRowReader(generatedKeys);
+					if(generatedKeys.next()) {
+						return exprReader.read(ik.getGenerated(), rowReader);
+					}
+					throw new RuntimeException("No generated keys...");
 				}
-				throw new RuntimeException("No generated keys...");
-			}
+			});
 		});
+
 	}
 
 	public <T> PList<T> run(ETypeSelection<T> selection) {
-		QuerySqlBuilder b = new QuerySqlBuilder(selection, dbType, schema);
+		return Log.function(selection).code(log -> {
+			QuerySqlBuilder b = new QuerySqlBuilder(selection, dbType, schema);
 
-		log.debug(b::generateNoParams);
+			log.info(b.generateNoParams());
 
-		Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
+			Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
 
-		return run.trans(c -> {
-			PreparedStatement s = c.prepareStatement(generatedQuery._1);
-			generatedQuery._2.accept(s);
-			ExprRowReader exprReader = new ExprRowReader();
-			try(ResultSet rs = s.executeQuery()) {
-				ResultSetRowReader rowReader = new ResultSetRowReader(rs);
-				PList<T>           res       = PList.empty();
-				while(rs.next()) {
-					res = res.plus(selection.read(rowReader, exprReader));
-					rowReader.nextRow();
+			return run.trans(c -> {
+				PreparedStatement s = c.prepareStatement(generatedQuery._1);
+				generatedQuery._2.accept(s);
+				ExprRowReader exprReader = new ExprRowReader();
+				try(ResultSet rs = s.executeQuery()) {
+					ResultSetRowReader rowReader = new ResultSetRowReader(rs);
+					PList<T>           res       = PList.empty();
+					while(rs.next()) {
+						res = res.plus(selection.read(rowReader, exprReader));
+						rowReader.nextRow();
+					}
+					return res;
 				}
-				return res;
-			}
+			});
 		});
+
 	}
 
 	public int run(Update update) {
-		UpdateSqlBuilder b = new UpdateSqlBuilder(dbType, schema, update);
+		return Log.function(update).code(log -> {
+			UpdateSqlBuilder b = new UpdateSqlBuilder(dbType, schema, update);
 
-		log.debug(b::generateNoParams);
+			log.info(b.generateNoParams());
 
-		Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
+			Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
 
-		return run.trans(c -> {
-			PreparedStatement s = c.prepareStatement(generatedQuery._1);
-			generatedQuery._2.accept(s);
-			return s.executeUpdate();
+			return run.trans(c -> {
+				PreparedStatement s = c.prepareStatement(generatedQuery._1);
+				generatedQuery._2.accept(s);
+				return s.executeUpdate();
+			});
 		});
+
 	}
 
 	public int run(Delete delete) {
-		DeleteSqlBuilder b   = new DeleteSqlBuilder(dbType, schema, delete);
-		log.debug(b::generateNoParams);
+		return Log.function(delete).code(log -> {
+			DeleteSqlBuilder b   = new DeleteSqlBuilder(dbType, schema, delete);
+			log.info(b.generateNoParams());
 
-		Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
+			Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
 
-		return run.trans(c -> {
-			PreparedStatement s = c.prepareStatement(generatedQuery._1);
-			generatedQuery._2.accept(s);
-			return s.executeUpdate();
+			return run.trans(c -> {
+				PreparedStatement s = c.prepareStatement(generatedQuery._1);
+				generatedQuery._2.accept(s);
+				return s.executeUpdate();
+			});
 		});
+
 	}
 }

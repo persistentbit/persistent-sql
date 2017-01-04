@@ -1,10 +1,11 @@
 package com.persistentbit.sql.substemagen;
 
+import com.persistentbit.core.Nothing;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.exceptions.RtSqlException;
-import com.persistentbit.core.logging.PLog;
+import com.persistentbit.core.logging.Log;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.tuples.Tuple3;
 import com.persistentbit.core.utils.StringUtils;
@@ -40,7 +41,7 @@ import java.util.regex.Pattern;
  */
 public class DbSubstemaGen{
 
-	public static final PLog log = PLog.get(DbSubstemaGen.class);
+
 	private final Supplier<Connection>     connectionSupplier;
 	private final RSubstema                baseSubstema;
 
@@ -141,39 +142,43 @@ public class DbSubstemaGen{
 	 * Load the definition of the tables<br>
 	 */
 	public void loadTables() {
-		List<String> tableNames = new ArrayList<>();
-		log.info("IMPORTING META DATA FROM DB");
-		handlePreBuildAnnotations();
-		try(Connection c = connectionSupplier.get()) {
-			DatabaseMetaData md = c.getMetaData();
-			ResultSet        rs = md.getTables(null, schema, "%", new String[]{"TABLE", "VIEW"});
-			while(rs.next()) {
-				String tableName = rs.getString("TABLE_NAME");
-				log.info("Found table " + tableName);
-				if(includeTablePatterns.isEmpty() == false) {
-					//Filter on included
-					if(includeTablePatterns.find(pattern -> pattern.matcher(tableName).matches())
-						.isPresent() == false) {
+		Log.function().code(log -> {
+			List<String> tableNames = new ArrayList<>();
+			log.info("IMPORTING META DATA FROM DB");
+			handlePreBuildAnnotations();
+			try(Connection c = connectionSupplier.get()) {
+				DatabaseMetaData md = c.getMetaData();
+				ResultSet        rs = md.getTables(null, schema, "%", new String[]{"TABLE", "VIEW"});
+				while(rs.next()) {
+					String tableName = rs.getString("TABLE_NAME");
+					log.info("Found table " + tableName);
+					if(includeTablePatterns.isEmpty() == false) {
+						//Filter on included
+						if(includeTablePatterns.find(pattern -> pattern.matcher(tableName).matches())
+							.isPresent() == false) {
+							log.info("Skipping table " + tableName);
+							continue;
+						}
+					}
+					if(excludeTablePatterns.find(p -> p.matcher(tableName).matches()).isPresent() == false) {
+						tableNames.add(tableName);
+					}
+					else {
 						log.info("Skipping table " + tableName);
-						continue;
 					}
 				}
-				if(excludeTablePatterns.find(p -> p.matcher(tableName).matches()).isPresent() == false) {
-					tableNames.add(tableName);
-				}
-				else {
-					log.info("Skipping table " + tableName);
-				}
+				rs.close();
+			} catch(SQLException e) {
+				RtSqlException.map(e);
 			}
-			rs.close();
-		} catch(SQLException e) {
-			RtSqlException.map(e);
-		}
-		for(String name : tableNames) {
+			for(String name : tableNames) {
 
-			valueClasses = valueClasses.plus(generateSubstemaForTable(name));
-		}
-		handlePostBuildAnnotations();
+				valueClasses = valueClasses.plus(generateSubstemaForTable(name));
+			}
+			handlePostBuildAnnotations();
+			return Nothing.inst;
+		});
+
 	}
 
 	/**
@@ -265,157 +270,160 @@ public class DbSubstemaGen{
 
 
 	private RValueClass generateSubstemaForTable(String tableName) {
-		PList<Pattern> columnExcludesForTable = excludeTableColumnPatterns
-			.filter(t -> t._1.matcher(tableName).matches())
-			.map(t -> t._2);
-		PMap<String, String> columnNamesForTable = substemaNameForTableColumnName
-			.filter(t -> t._1.matcher(tableName).matches())
-			.map(t2 -> Tuple2.of(t2._2, t2._3)).groupByOneValue(t3 -> t3._1, t4 -> t4._2);
-		PMap<Pattern, REnum> enumsForTable = mapEnums
-			.filter(t -> t._1.matcher(tableName).matches())
-			.map(t2 -> Tuple2.of(t2._2, t2._3)).groupByOneValue(t3 -> t3._1, t4 -> t4._2);
+		return Log.function(tableName).code(log -> {
+			PList<Pattern> columnExcludesForTable = excludeTableColumnPatterns
+				.filter(t -> t._1.matcher(tableName).matches())
+				.map(t -> t._2);
+			PMap<String, String> columnNamesForTable = substemaNameForTableColumnName
+				.filter(t -> t._1.matcher(tableName).matches())
+				.map(t2 -> Tuple2.of(t2._2, t2._3)).groupByOneValue(t3 -> t3._1, t4 -> t4._2);
+			PMap<Pattern, REnum> enumsForTable = mapEnums
+				.filter(t -> t._1.matcher(tableName).matches())
+				.map(t2 -> Tuple2.of(t2._2, t2._3)).groupByOneValue(t3 -> t3._1, t4 -> t4._2);
 
-		try(Connection c = connectionSupplier.get()) {
-			DatabaseMetaData md = c.getMetaData();
+			try(Connection c = connectionSupplier.get()) {
+				DatabaseMetaData md = c.getMetaData();
 
-			//GET PRIMARY KEYS FOR TABLE
+				//GET PRIMARY KEYS FOR TABLE
 
-			PMap<String, Integer> primKeys = PMap.empty();
-			try(ResultSet rs = md.getPrimaryKeys(null, schema, tableName)) {
-				while(rs.next()) {
-					String name   = rs.getString("COLUMN_NAME");
-					int    keySeq = rs.getInt("KEY_SEQ");
-					primKeys = primKeys.put(name, keySeq);
+				PMap<String, Integer> primKeys = PMap.empty();
+				try(ResultSet rs = md.getPrimaryKeys(null, schema, tableName)) {
+					while(rs.next()) {
+						String name   = rs.getString("COLUMN_NAME");
+						int    keySeq = rs.getInt("KEY_SEQ");
+						primKeys = primKeys.put(name, keySeq);
+					}
 				}
-			}
 
 
-			PList<RProperty> properties  = PList.empty();
-			String           packageName = baseSubstema.getPackageName();
+				PList<RProperty> properties  = PList.empty();
+				String           packageName = baseSubstema.getPackageName();
 
-			//GET COLUMNS
-			try(ResultSet rs = md.getColumns(null, schema, tableName, "%")) {
-				while(rs.next()) {
+				//GET COLUMNS
+				try(ResultSet rs = md.getColumns(null, schema, tableName, "%")) {
+					while(rs.next()) {
 
-					String name = rs.getString("COLUMN_NAME");
+						String name = rs.getString("COLUMN_NAME");
 
-					if(columnExcludesForTable.find(p -> p.matcher(name).matches()).isPresent()) {
-						log.info("Skipping column " + tableName + "." + name);
-						continue;
-					}
-
-					//String  typeName        = rs.getString("TYPE_NAME"); //datasource dependent
-					//int     columnSize      = rs.getInt("COLUMN_SIZE");
-					//Integer decimalDigits   = (Integer) rs.getObject("DECIMAL_DIGITS");
-					//String  defaultValue    = rs.getString("COLUMN_DEF");
-					//int     ordinalPos      = rs.getInt("ORDINAL_POSITION");
-					//int     charOctetLength = rs.getInt("CHAR_OCTET_LENGTH");
-					//String  scopeTable      = rs.getString("SCOPE_TABLE");
-					//Object  scopeDataType   = rs.getObject("SOURCE_DATA_TYPE");
-					//Integer decimal_digits  = rs.getInt("DECIMAL_DIGITS");
-
-					int     data_type       = rs.getInt("DATA_TYPE"); //java.sql.Types
-					boolean isNullable      = "YES".equals(rs.getString("IS_NULLABLE"));
-					boolean isAutoIncrement = "YES".equals(rs.getString("IS_AUTOINCREMENT"));
-					String  remarks         = rs.getString("REMARKS");
-					SqlType sqlType;
-					try {
-						sqlType = SqlType.fromJavaSqlType(data_type);
-
-					} catch(Exception e) {
-						throw new RuntimeException("Error getting sql type for column " + name, e);
-					}
-					boolean isKey = primKeys.getOpt(name).isPresent();
-
-					if(sqlType.getTypeSig().isPresent()) {
-						RValueType valueType =
-							new RValueType(sqlType.getTypeSig().get(), isNullable == false);
-
-						PList<RAnnotation> propAnnotations = PList.empty();
-						if(isKey) {
-							propAnnotations =
-								propAnnotations.plus(new RAnnotation(DbAnnotationsUtils.rclassKey, PMap.empty()));
-						}
-						if(isAutoIncrement) {
-							propAnnotations =
-								propAnnotations.plus(new RAnnotation(DbAnnotationsUtils.rclassAutoGen, PMap.empty()));
-						}
-						String propName =
-							columnNamesForTable.getOpt(name).orElse(mapColumnNameToSubstemaName.apply(name));
-
-
-						if(mapSubstemaColumnNameToDbName.apply(propName).equals(name) == false) {
-							PMap<String, RConst> nameValue = PMap.empty();
-							nameValue = nameValue.put("name", new RConstString(name));
-							propAnnotations =
-								propAnnotations.plus(new RAnnotation(DbAnnotationsUtils.rclassColumn, nameValue));
+						if(columnExcludesForTable.find(p -> p.matcher(name).matches()).isPresent()) {
+							log.info("Skipping column " + tableName + "." + name);
+							continue;
 						}
 
-						if(remarks != null && remarks.isEmpty() == false) {
-							propAnnotations = propAnnotations
-								.plus(new RAnnotation(SubstemaUtils.docRClass, PMap.<String, RConst>empty()
-									.put("info", new RConstString(remarks))));
-						}
+						//String  typeName        = rs.getString("TYPE_NAME"); //datasource dependent
+						//int     columnSize      = rs.getInt("COLUMN_SIZE");
+						//Integer decimalDigits   = (Integer) rs.getObject("DECIMAL_DIGITS");
+						//String  defaultValue    = rs.getString("COLUMN_DEF");
+						//int     ordinalPos      = rs.getInt("ORDINAL_POSITION");
+						//int     charOctetLength = rs.getInt("CHAR_OCTET_LENGTH");
+						//String  scopeTable      = rs.getString("SCOPE_TABLE");
+						//Object  scopeDataType   = rs.getObject("SOURCE_DATA_TYPE");
+						//Integer decimal_digits  = rs.getInt("DECIMAL_DIGITS");
 
-						if(valueType.getTypeSig().getName().equals(SubstemaUtils.stringRClass)) {
-							for(Tuple2<Pattern, REnum> t : enumsForTable) {
-								if(t._1.matcher(name).matches()) {
-									valueType = valueType.withTypeSig(new RTypeSig(t._2.getName()));
-									break;
+						int     data_type       = rs.getInt("DATA_TYPE"); //java.sql.Types
+						boolean isNullable      = "YES".equals(rs.getString("IS_NULLABLE"));
+						boolean isAutoIncrement = "YES".equals(rs.getString("IS_AUTOINCREMENT"));
+						String  remarks         = rs.getString("REMARKS");
+						SqlType sqlType;
+						try {
+							sqlType = SqlType.fromJavaSqlType(data_type);
+
+						} catch(Exception e) {
+							throw new RuntimeException("Error getting sql type for column " + name, e);
+						}
+						boolean isKey = primKeys.getOpt(name).isPresent();
+
+						if(sqlType.getTypeSig().isPresent()) {
+							RValueType valueType =
+								new RValueType(sqlType.getTypeSig().get(), isNullable == false);
+
+							PList<RAnnotation> propAnnotations = PList.empty();
+							if(isKey) {
+								propAnnotations =
+									propAnnotations.plus(new RAnnotation(DbAnnotationsUtils.rclassKey, PMap.empty()));
+							}
+							if(isAutoIncrement) {
+								propAnnotations =
+									propAnnotations.plus(new RAnnotation(DbAnnotationsUtils.rclassAutoGen, PMap.empty()));
+							}
+							String propName =
+								columnNamesForTable.getOpt(name).orElse(mapColumnNameToSubstemaName.apply(name));
+
+
+							if(mapSubstemaColumnNameToDbName.apply(propName).equals(name) == false) {
+								PMap<String, RConst> nameValue = PMap.empty();
+								nameValue = nameValue.put("name", new RConstString(name));
+								propAnnotations =
+									propAnnotations.plus(new RAnnotation(DbAnnotationsUtils.rclassColumn, nameValue));
+							}
+
+							if(remarks != null && remarks.isEmpty() == false) {
+								propAnnotations = propAnnotations
+									.plus(new RAnnotation(SubstemaUtils.docRClass, PMap.<String, RConst>empty()
+										.put("info", new RConstString(remarks))));
+							}
+
+							if(valueType.getTypeSig().getName().equals(SubstemaUtils.stringRClass)) {
+								for(Tuple2<Pattern, REnum> t : enumsForTable) {
+									if(t._1.matcher(name).matches()) {
+										valueType = valueType.withTypeSig(new RTypeSig(t._2.getName()));
+										break;
+									}
 								}
 							}
+
+							RProperty prop = new RProperty(
+								propName, valueType, propAnnotations);
+
+							properties = properties.plus(prop);
 						}
-
-						RProperty prop = new RProperty(
-							propName, valueType, propAnnotations);
-
-						properties = properties.plus(prop);
-					}
-					else {
-						//TODO find a better solution
-						log.error("Can't convert " + sqlType + " in " + tableName + "." + name + ": SKIPPING COLUMN");
+						else {
+							//TODO find a better solution
+							log.error("Can't convert " + sqlType + " in " + tableName + "." + name + ": SKIPPING COLUMN");
+						}
 					}
 				}
+
+				PList<RAnnotation> annotations = PList.empty();
+
+				String substemaName =
+					substemaNameForTableName.getOpt(tableName).orElse(mapTableNameToSubstemaName.apply(tableName));
+
+
+				if(mapSubstemaTableNameToDbName.apply(substemaName).equals(tableName) == false) {
+					PMap<String, RConst> nameValue = PMap.empty();
+					nameValue = nameValue.put("name", new RConstString(tableName));
+					annotations = annotations.plus(new RAnnotation(DbAnnotationsUtils.rclassTable, nameValue));
+				}
+				else {
+					annotations = annotations.plus(new RAnnotation(DbAnnotationsUtils.rclassTable, PMap.empty()));
+				}
+				//Lets generate some documentation for the value class.
+				String schemaAndTableName = schema != null ? schema + "." + tableName : tableName;
+				annotations = annotations.plus(
+					new RAnnotation(
+						SubstemaUtils.docRClass,
+						PMap.<String, RConst>empty().put("info", new RConstString(
+							"\nThis immutable value class contains the data for a record in the table '" + schemaAndTableName + "'.<br>\n"
+								+ "Generated from the database on " + LocalDateTime.now()
+								.format(DateTimeFormatter.ISO_DATE_TIME) + "<br>\n"
+						))
+					)
+				);
+				log.info("Imported table " + tableName);
+				return new RValueClass(
+					new RTypeSig(new RClass(packageName, substemaName)),
+					properties,
+					PList.empty(), //interfaceClasses
+					annotations
+				);
+
+			} catch(SQLException se) {
+				RtSqlException.map(se);
+				return null;
 			}
 
-			PList<RAnnotation> annotations = PList.empty();
-
-			String substemaName =
-				substemaNameForTableName.getOpt(tableName).orElse(mapTableNameToSubstemaName.apply(tableName));
-
-
-			if(mapSubstemaTableNameToDbName.apply(substemaName).equals(tableName) == false) {
-				PMap<String, RConst> nameValue = PMap.empty();
-				nameValue = nameValue.put("name", new RConstString(tableName));
-				annotations = annotations.plus(new RAnnotation(DbAnnotationsUtils.rclassTable, nameValue));
-			}
-			else {
-				annotations = annotations.plus(new RAnnotation(DbAnnotationsUtils.rclassTable, PMap.empty()));
-			}
-			//Lets generate some documentation for the value class.
-			String schemaAndTableName = schema != null ? schema + "." + tableName : tableName;
-			annotations = annotations.plus(
-				new RAnnotation(
-					SubstemaUtils.docRClass,
-					PMap.<String, RConst>empty().put("info", new RConstString(
-						"\nThis immutable value class contains the data for a record in the table '" + schemaAndTableName + "'.<br>\n"
-							+ "Generated from the database on " + LocalDateTime.now()
-							.format(DateTimeFormatter.ISO_DATE_TIME) + "<br>\n"
-					))
-				)
-			);
-			log.info("Imported table " + tableName);
-			return new RValueClass(
-				new RTypeSig(new RClass(packageName, substemaName)),
-				properties,
-				PList.empty(), //interfaceClasses
-				annotations
-			);
-
-		} catch(SQLException se) {
-			RtSqlException.map(se);
-			return null;
-		}
+		});
 	}
 
 	/**
@@ -519,12 +527,12 @@ public class DbSubstemaGen{
 	}
 
 	private Optional<RValueClass> findValueClass(RClass cls) {
-		RSubstema substema = substemaCompiler.compile(cls.getPackageName());
+		RSubstema substema = substemaCompiler.compile(cls.getPackageName()).orElseThrow();
 		return substema.getValueClasses().find(vc -> vc.getTypeSig().getName().equals(cls));
 	}
 
 	private Optional<REnum> findEnumClass(RClass cls) {
-		RSubstema substema = substemaCompiler.compile(cls.getPackageName());
+		RSubstema substema = substemaCompiler.compile(cls.getPackageName()).orElseThrow();
 		return substema.getEnums().find(e -> e.getName().equals(cls));
 	}
 

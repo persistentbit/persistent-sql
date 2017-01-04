@@ -1,9 +1,10 @@
 package com.persistentbit.sql.dbbuilder.impl;
 
+import com.persistentbit.core.Nothing;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.exceptions.RtSqlException;
-import com.persistentbit.core.logging.PLog;
+import com.persistentbit.core.logging.Log;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.dbbuilder.DbBuilder;
@@ -32,7 +33,7 @@ public class DbBuilderImpl implements DbBuilder{
 	public static final String onceBeforeSnippetName = "OnceBefore";
 	public static final String dropAllSnippetName    = "DropAll";
 
-	protected final PLog                log;
+
 	protected final DbType dbType;
 	protected final String schema;
 	protected final TransactionRunner   runner;
@@ -68,7 +69,7 @@ public class DbBuilderImpl implements DbBuilder{
 						 String packageName, String sqlResourceName,
 						 SchemaUpdateHistory updateHistory
 	) {
-		this.log = PLog.get(getClass());
+
 		this.dbType = dbType;
 		this.schema = schema;
 		this.runner = runner;
@@ -79,43 +80,46 @@ public class DbBuilderImpl implements DbBuilder{
 
 	@Override
 	public void buildOrUpdate() {
-		runOnceBefore();
-		//First, find all declared method on this class
-		Class<?> cls = this.getClass();
+		Log.function().code(log -> {
+			runOnceBefore();
+			//First, find all declared method on this class
+			Class<?> cls = this.getClass();
 
-		PMap<String, Method> declaredMethods = PMap.empty();
+			PMap<String, Method> declaredMethods = PMap.empty();
 
-		for(Method m : cls.getDeclaredMethods()) {
-			declaredMethods = declaredMethods.put(m.getName().toLowerCase(), m);
-		}
-		PMap<String, Method> methods = declaredMethods;
-
-		//Loop over all snippets and execute
-		sqlLoader.getAllSnippetNames().forEach(name -> runner.trans((c) -> {
-			//Skip Drop all and once before snippet
-			if(name.equalsIgnoreCase(dropAllSnippetName) || name.equalsIgnoreCase(onceBeforeSnippetName)) {
-				return;
+			for(Method m : cls.getDeclaredMethods()) {
+				declaredMethods = declaredMethods.put(m.getName().toLowerCase(), m);
 			}
-			//Is Snippet already executed ?
-			if(updateHistory.isDone(packageName, name)) {
-				return;
-			}
-			log.info("DBUpdate for  " + getFullName(name));
+			PMap<String, Method> methods = declaredMethods;
 
-			//Set the default schema if it is defined.
-			setDefaultSchema(c);
-
-			//If a method with this name exists -> execute it
-			methods.getOpt(name).ifPresent(m -> {
-				try {
-					m.invoke(this, c);
-				} catch(IllegalAccessException | InvocationTargetException e) {
-					throw new PersistSqlException(e);
+			//Loop over all snippets and execute
+			sqlLoader.getAllSnippetNames().forEach(name -> runner.trans((c) -> {
+				//Skip Drop all and once before snippet
+				if(name.equalsIgnoreCase(dropAllSnippetName) || name.equalsIgnoreCase(onceBeforeSnippetName)) {
+					return;
 				}
-			});
-			sqlLoader.getAll(name).forEach(sql -> executeSql(c, name, sql));
-			updateHistory.setDone(packageName, name);
-		}));
+				//Is Snippet already executed ?
+				if(updateHistory.isDone(packageName, name)) {
+					return;
+				}
+				log.info("DBUpdate for  " + getFullName(name));
+
+				//Set the default schema if it is defined.
+				setDefaultSchema(c);
+
+				//If a method with this name exists -> execute it
+				methods.getOpt(name).ifPresent(m -> {
+					try {
+						m.invoke(this, c);
+					} catch(IllegalAccessException | InvocationTargetException e) {
+						throw new PersistSqlException(e);
+					}
+				});
+				sqlLoader.getAll(name).forEach(sql -> executeSql(c, name, sql));
+				updateHistory.setDone(packageName, name);
+			}));
+			return Nothing.inst;
+		});
 
 	}
 
@@ -144,19 +148,23 @@ public class DbBuilderImpl implements DbBuilder{
 	 * Run the snippet with the name OnceBefore ({@link #onceBeforeSnippetName})
 	 */
 	private void runOnceBefore() {
-		if(sqlLoader.hasSnippet(onceBeforeSnippetName) == false) {
-			return; //we are done here
-		}
-		PList<String> sqlList = sqlLoader.getAll(onceBeforeSnippetName);
-		sqlList.forEach(sql ->
-							runner.trans(c -> {
-								try {
-									executeSql(c, onceBeforeSnippetName, sql);
-								} catch(Exception e) {
-									log.error("Error executing sql '" + sql + "': " + e.getMessage());
-					}
-				})
-		);
+		Log.function().code(log -> {
+			if(sqlLoader.hasSnippet(onceBeforeSnippetName) == false) {
+				return Nothing.inst; //we are done here
+			}
+			PList<String> sqlList = sqlLoader.getAll(onceBeforeSnippetName);
+			sqlList.forEach(sql ->
+								runner.trans(c -> {
+									try {
+										executeSql(c, onceBeforeSnippetName, sql);
+									} catch(Exception e) {
+										log.error("Error executing sql '" + sql + "': " + e.getMessage());
+									}
+								})
+			);
+			return Nothing.inst;
+		});
+
 	}
 
 	/**
@@ -167,26 +175,28 @@ public class DbBuilderImpl implements DbBuilder{
 	 */
 	@Override
 	public boolean dropAll() {
+		return Log.function().code(log -> {
+			if(sqlLoader.hasSnippet(dropAllSnippetName) == false) {
+				throw new PersistSqlException("Can't find SQL code 'DropAll' in " + sqlLoader);
+			}
+			runOnceBefore();
+			PList<String> sqlList = sqlLoader.getAll(dropAllSnippetName);
+			boolean allOk = sqlList.map(sql ->
+											runner.trans(c -> {
+												setDefaultSchema(c);
+												try {
+													executeSql(c, dropAllSnippetName, sql);
+													return true;
+												} catch(Exception e) {
+													log.error("Error executing sql '" + sql + "': " + e.getMessage());
+													return false;
+												}
+											})
+			).find(ok -> ok == false).orElse(true);
+			updateHistory.removeUpdateHistory(packageName);
+			return allOk;
+		});
 
-		if(sqlLoader.hasSnippet(dropAllSnippetName) == false) {
-			throw new PersistSqlException("Can't find SQL code 'DropAll' in " + sqlLoader);
-		}
-		runOnceBefore();
-		PList<String> sqlList = sqlLoader.getAll(dropAllSnippetName);
-		boolean allOk = sqlList.map(sql ->
-										runner.trans(c -> {
-											setDefaultSchema(c);
-											try {
-												executeSql(c, dropAllSnippetName, sql);
-												return true;
-											} catch(Exception e) {
-												log.error("Error executing sql '" + sql + "': " + e.getMessage());
-												return false;
-											}
-										})
-		).find(ok -> ok == false).orElse(true);
-		updateHistory.removeUpdateHistory(packageName);
-		return allOk;
 	}
 
 	/**

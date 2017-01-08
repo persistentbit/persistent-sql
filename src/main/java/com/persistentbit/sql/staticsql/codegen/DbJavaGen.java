@@ -5,6 +5,8 @@ import com.persistentbit.core.collections.PByteList;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
+import com.persistentbit.core.logging.Log;
+import com.persistentbit.core.result.Result;
 import com.persistentbit.core.sourcegen.SourceGen;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.StringUtils;
@@ -44,10 +46,6 @@ public final class DbJavaGen{
 	private DbJavaGen(JavaGenOptions options, String packageName, SubstemaCompiler compiler) {
 		this.options = options;
 
-        /*this.compiler = compiler
-				.withImplicitImportPackages(
-                        compiler.getImplicitImportPackages().plus(packageDbAnnotations)
-                );*/
 		this.compiler = compiler;
 		this.substema = this.compiler.compile(packageName).orElseThrow();
 
@@ -63,8 +61,14 @@ public final class DbJavaGen{
 	 *
 	 * @return PList with all the generated java files
 	 */
-	public static PList<GeneratedJava> generate(JavaGenOptions options, String packageName, SubstemaCompiler compiler) {
-		return new DbJavaGen(options, packageName, compiler).generateService();
+	public static PList<Result<GeneratedJava>> generate(JavaGenOptions options, String packageName,
+														SubstemaCompiler compiler
+	) {
+		return Log.function(options, packageName, compiler).code(l ->
+																	 new DbJavaGen(options, packageName, compiler)
+																		 .generateService()
+		);
+
 	}
 
 	/**
@@ -72,46 +76,50 @@ public final class DbJavaGen{
 	 *
 	 * @return PList with all the generated java files
 	 */
-	public PList<GeneratedJava> generateService() {
-
-		PList<GeneratedJava> tableValueClasses = SubstemaJavaGen.generate(compiler, options, substema);
-
-
-		//Generate value classes defined in this substema
-		PList<GeneratedJava> generatedForThisSubstema =
-			substema.getValueClasses()
-				.map(vc -> new Generator(compiler, substema.getPackageName())
-					.generateValueClass(vc)
-				);
+	public PList<Result<GeneratedJava>> generateService() {
+		return Log.function().code(log -> {
+			PList<Result<GeneratedJava>> tableValueClasses = SubstemaJavaGen.generate(compiler, options, substema);
+			tableValueClasses.forEach(r -> log.add(r));
 
 
-		//For all external case classes that are used
-		//in this substema, generate the db description
-		PList<GeneratedJava> generatedDescriptions =
-			allExternalValueClasses.map(c -> {
-				if(c.getPackageName().isEmpty()) {
-					//must be an enum;
-					return null;
-				}
-				RSubstema substema = compiler.compile(c.getPackageName()).orElseThrow();
-				RValueClass vc =
-					substema.getValueClasses().find(evc -> evc.getTypeSig().getName().equals(c)).orElse(null);
-				if(vc == null) {
-					return null;
-				}
-				return new Generator(compiler, this.substema.getPackageName()).generateValueClass(vc);
-			}).filterNulls().plist();
+			//Generate value classes defined in this substema
+			PList<Result<GeneratedJava>> generatedForThisSubstema =
+				substema.getValueClasses()
+					.map(vc -> new Generator(compiler, substema.getPackageName()).generateValueClass(vc)
+					);
+
+			generatedForThisSubstema.forEach(r -> log.add(r));
+
+			//For all external case classes that are used
+			//in this substema, generate the db description
+			PList<Result<GeneratedJava>> generatedDescriptions =
+				allExternalValueClasses.map(c -> {
+					if(c.getPackageName().isEmpty()) {
+						//must be an enum;
+						return null;
+					}
+					RSubstema substema = compiler.compile(c.getPackageName()).orElseThrow();
+					RValueClass vc =
+						substema.getValueClasses().find(evc -> evc.getTypeSig().getName().equals(c)).orElse(null);
+					if(vc == null) {
+						return null;
+					}
+					return new Generator(compiler, this.substema.getPackageName()).generateValueClass(vc);
+				}).filterNulls().plist();
+			generatedDescriptions.forEach(r -> log.add(r));
+
+			Result<GeneratedJava> generatedDbClass =
+				new Generator(compiler, substema.getPackageName()).generateDb(substema.getValueClasses());
+
+			log.add(generatedDbClass);
 
 
-		GeneratedJava generatedDbClass =
-			new Generator(compiler, substema.getPackageName()).generateDb(substema.getValueClasses());
-
-
-		return PList.val(generatedDbClass)
-			.plusAll(generatedForThisSubstema)
-			.plusAll(generatedDescriptions)
-			.plusAll(tableValueClasses)
-			;
+			return PList.val(generatedDbClass)
+				.plusAll(generatedForThisSubstema)
+				.plusAll(generatedDescriptions)
+				.plusAll(tableValueClasses)
+				;
+		});
 	}
 
 	/**
@@ -189,233 +197,237 @@ public final class DbJavaGen{
 
 		}
 
-		public GeneratedJava generateValueClass(RValueClass vc) {
-			RClass vcCls = vc.getTypeSig().getName();
-			RClass cls   = toExprClass(vcCls);
+		public Result<GeneratedJava> generateValueClass(RValueClass vc) {
+			return Result.function(vc.getTypeSig()).code(log -> {
+				RClass vcCls = vc.getTypeSig().getName();
+				RClass cls   = toExprClass(vcCls);
 
-			Function<String, String> tableNameConverter =
-				createSubstemaToDbNameConverter(substema.getPackageDef().getAnnotations(), NameType.table, atUtils);
+				Function<String, String> tableNameConverter =
+					createSubstemaToDbNameConverter(substema.getPackageDef().getAnnotations(), NameType.table, atUtils);
 
-			addImport(vcCls);
-			addImport(Expr.class);
-			addImport(Sql.class);
-			addImport(ETypeObject.class);
-			boolean isTableClass = atUtils.hasAnnotation(vc.getAnnotations(), rclassTable);
+				addImport(vcCls);
+				addImport(Expr.class);
+				addImport(Sql.class);
+				addImport(ETypeObject.class);
+				boolean isTableClass = atUtils.hasAnnotation(vc.getAnnotations(), rclassTable);
 
-			// ********   Table Definition class
-			generateJavaDoc(vc.getAnnotations());
-			bs("public class " + cls.getClassName() + " implements ETypeObject<" + vcCls.getClassName() + ">");
-			{
-				// ************ Construction & Parent Expression
-				addImport(DbSql.class);
-				addImport(ETypePropertyParent.class);
-				println("private final ETypePropertyParent __parent;");
-				if(isTableClass) {
-					println("private final DbSql _db;");
-					println("");
-					bs("public " + cls.getClassName() + "(DbSql db, ETypePropertyParent parent)");
-					{
-						println("this._db = db;");
-						println("this.__parent = parent;");
-					}
-					be();
-					println("");
-					bs("public " + cls.getClassName() + "(DbSql db)");
-					{
-						println("this(db,null);");
-					}
-					be();
-				}
-				else {
-					bs("public " + cls.getClassName() + "(ETypePropertyParent parent)");
-					{
-						println("this.__parent = parent;");
-					}
-					be();
-					println("");
-					bs("public " + cls.getClassName() + "()");
-					{
-						println("this(null);");
-					}
-					be();
-
-				}
-
-
-				println("");
-				addImport(Optional.class);
-				println("@Override");
-				println("public Optional<ETypePropertyParent> getParent() { return Optional.ofNullable(this.__parent); }");
-				// *****************  _getTableName
-
-				println("");
-				println("@Override");
-				bs("public String _getTableName()");
+				// ********   Table Definition class
+				generateJavaDoc(vc.getAnnotations());
+				bs("public class " + cls.getClassName() + " implements ETypeObject<" + vcCls.getClassName() + ">");
 				{
-					String name = atUtils.getOneAnnotation(vc.getAnnotations(), rclassTable)
-						.map(at -> atUtils.getStringProperty(at, "name").orElse(null)).orElse(null);
-					if(name == null) { name = tableNameConverter.apply(vcCls.getClassName()); }
-					println("return \"" + name + "\";");
-				}
-				be();
-
-
-				// *****************  toString
-
-				println("");
-				println("@Override");
-				if(isTableClass) {
-					println("public String toString() { return getFullTableName(_db.getSchema().orElse(null)); }");
-				}
-				else {
-					println("public String toString() { return _getTableName(); }");
-				}
-
-
-
-
-				println("");
-
-				// ***************** _fullColumnName
-				addImport(ExprToSqlContext.class);
-				println("");
-				println("@Override");
-				println("public String _fullColumnName(ExprToSqlContext context) { return __parent == null ? \"\" : __parent._fullColumnName(context); }");
-
-				// ***************** properties
-
-				vc.getProperties().forEach(this::generateProperty);
-
-				// ****************** _all()
-				println("");
-				println("@Override");
-				addImport(PList.class);
-				addImport(Tuple2.class);
-				bs("public PList<Tuple2<String,Expr<?>>> _all()");
-				{
-					if(vc.getProperties().isEmpty()) {
-						println("return PList.empty();");
+					// ************ Construction & Parent Expression
+					addImport(DbSql.class);
+					addImport(ETypePropertyParent.class);
+					println("private final ETypePropertyParent __parent;");
+					if(isTableClass) {
+						println("private final DbSql _db;");
+						println("");
+						bs("public " + cls.getClassName() + "(DbSql db, ETypePropertyParent parent)");
+						{
+							println("this._db = db;");
+							println("this.__parent = parent;");
+						}
+						be();
+						println("");
+						bs("public " + cls.getClassName() + "(DbSql db)");
+						{
+							println("this(db,null);");
+						}
+						be();
 					}
 					else {
-						println("return PList.val(" + vc.getProperties()
-							.map(p -> "Tuple2.of(\"" + p.getName() + "\"," + p.getName() + ")").toString(", ") + ");");
+						bs("public " + cls.getClassName() + "(ETypePropertyParent parent)");
+						{
+							println("this.__parent = parent;");
+						}
+						be();
+						println("");
+						bs("public " + cls.getClassName() + "()");
+						{
+							println("this(null);");
+						}
+						be();
+
 					}
-				}
-				be();
-				// ***************** _asExprValues
-				println("");
-				bs("public PList<Expr<?>> _asExprValues(" + vcCls.getClassName() + " v)");
-				{
-					println("return " + cls.getClassName() + ".asValues(v);");
-				}
-				be();
-
-				bs("static public PList<Expr<?>> asValues(" + vcCls.getClassName() + " v)");
-				{
-					println("PList<Expr<?>> r = PList.empty();");
-					vc.getProperties().forEach(p -> println(generateValueExpr(p)));
-					println("return r;");
-				}
-				be();
-
-				// ***************** _expand
-				println("");
-				bs("public PList<Expr<?>> _expand()");
-				{
-					println("PList<Expr<?>> res = PList.empty();");
-					vc.getProperties().forEach(p -> println("res = res.plusAll(" + p.getName() + "._expand());"));
-					println("return res;");
-				}
-				be();
 
 
-				// **************** read
-				addImport(RowReader.class);
-				addImport(ExprRowReaderCache.class);
-				bs("public " + vcCls.getClassName() + " read(RowReader _rowReader, " + ExprRowReaderCache.class
-					.getSimpleName() + " _cache)");
-				{
-					vc.getProperties().forEach(p -> {
-						RClass propCls = p.getValueType().getTypeSig().getName();
+					println("");
+					addImport(Optional.class);
+					println("@Override");
+					println("public Optional<ETypePropertyParent> getParent() { return Optional.ofNullable(this.__parent); }");
+					// *****************  _getTableName
 
-						String javaClassName = JavaGenUtils.toString(packageName, propCls);
-						//For internal Substema classes
-						if(SubstemaUtils.isSubstemaClass(propCls)) {
-							if(propCls.equals(SubstemaUtils.dateTimeRClass)) {
-								addImport(LocalDateTime.class);
-								javaClassName = LocalDateTime.class.getSimpleName();
-							}
-							if(propCls.equals(SubstemaUtils.dateRClass)) {
-								addImport(LocalDate.class);
-								javaClassName = LocalDate.class.getSimpleName();
-							}
-							println(javaClassName + " " + p.getName() + " = this." + p
-								.getName() + ".read(_rowReader,_cache);");
+					println("");
+					println("@Override");
+					bs("public String _getTableName()");
+					{
+						String name = atUtils.getOneAnnotation(vc.getAnnotations(), rclassTable)
+							.map(at -> atUtils.getStringProperty(at, "name").orElse(null)).orElse(null);
+						if(name == null) { name = tableNameConverter.apply(vcCls.getClassName()); }
+						println("return \"" + name + "\";");
+					}
+					be();
+
+
+					// *****************  toString
+
+					println("");
+					println("@Override");
+					if(isTableClass) {
+						println("public String toString() { return getFullTableName(_db.getSchema().orElse(null)); }");
+					}
+					else {
+						println("public String toString() { return _getTableName(); }");
+					}
+
+
+					println("");
+
+					// ***************** _fullColumnName
+					addImport(ExprToSqlContext.class);
+					println("");
+					println("@Override");
+					println("public String _fullColumnName(ExprToSqlContext context) { return __parent == null ? \"\" : __parent._fullColumnName(context); }");
+
+					// ***************** properties
+
+					vc.getProperties().forEach(this::generateProperty);
+
+					// ****************** _all()
+					println("");
+					println("@Override");
+					addImport(PList.class);
+					addImport(Tuple2.class);
+					bs("public PList<Tuple2<String,Expr<?>>> _all()");
+					{
+						if(vc.getProperties().isEmpty()) {
+							println("return PList.empty();");
 						}
 						else {
+							println("return PList.val(" + vc.getProperties()
+								.map(p -> "Tuple2.of(\"" + p.getName() + "\"," + p.getName() + ")")
+								.toString(", ") + ");");
+						}
+					}
+					be();
+					// ***************** _asExprValues
+					println("");
+					bs("public PList<Expr<?>> _asExprValues(" + vcCls.getClassName() + " v)");
+					{
+						println("return " + cls.getClassName() + ".asValues(v);");
+					}
+					be();
 
-							if(getInternalOrExternalEnum(propCls).isPresent()) {
-								//For Enums
-								//Gender gender = Gender.valueOf(rowReader.readNext(String.class));
-								addImport(propCls);
-								String enumStringName = "_" + p.getName() + "String";
-								println("String " + enumStringName + " = _rowReader.readNext(String.class);");
-								println(propCls.getClassName() + " " + p
-									.getName() + " = " + enumStringName + "== null ? null : " + propCls
-									.getClassName() + ".valueOf(" + enumStringName + ");");
-							}
-							else {
-								addImport(propCls);
-								javaClassName =
-									JavaGenUtils.toString(packageName, propCls.withPackageName(packageName));
-								RClass nc = toExprClass(propCls);
-								addImport(nc);
+					bs("static public PList<Expr<?>> asValues(" + vcCls.getClassName() + " v)");
+					{
+						println("PList<Expr<?>> r = PList.empty();");
+						vc.getProperties().forEach(p -> println(generateValueExpr(p)));
+						println("return r;");
+					}
+					be();
+
+					// ***************** _expand
+					println("");
+					bs("public PList<Expr<?>> _expand()");
+					{
+						println("PList<Expr<?>> res = PList.empty();");
+						vc.getProperties().forEach(p -> println("res = res.plusAll(" + p.getName() + "._expand());"));
+						println("return res;");
+					}
+					be();
+
+
+					// **************** read
+					addImport(RowReader.class);
+					addImport(ExprRowReaderCache.class);
+					bs("public " + vcCls.getClassName() + " read(RowReader _rowReader, " + ExprRowReaderCache.class
+						.getSimpleName() + " _cache)");
+					{
+						vc.getProperties().forEach(p -> {
+							RClass propCls = p.getValueType().getTypeSig().getName();
+
+							String javaClassName = JavaGenUtils.toString(packageName, propCls);
+							//For internal Substema classes
+							if(SubstemaUtils.isSubstemaClass(propCls)) {
+								if(propCls.equals(SubstemaUtils.dateTimeRClass)) {
+									addImport(LocalDateTime.class);
+									javaClassName = LocalDateTime.class.getSimpleName();
+								}
+								if(propCls.equals(SubstemaUtils.dateRClass)) {
+									addImport(LocalDate.class);
+									javaClassName = LocalDate.class.getSimpleName();
+								}
 								println(javaClassName + " " + p.getName() + " = this." + p
 									.getName() + ".read(_rowReader,_cache);");
 							}
+							else {
 
+								if(getInternalOrExternalEnum(propCls).isPresent()) {
+									//For Enums
+									//Gender gender = Gender.valueOf(rowReader.readNext(String.class));
+									addImport(propCls);
+									String enumStringName = "_" + p.getName() + "String";
+									println("String " + enumStringName + " = _rowReader.readNext(String.class);");
+									println(propCls.getClassName() + " " + p
+										.getName() + " = " + enumStringName + "== null ? null : " + propCls
+										.getClassName() + ".valueOf(" + enumStringName + ");");
+								}
+								else {
+									addImport(propCls);
+									javaClassName =
+										JavaGenUtils.toString(packageName, propCls.withPackageName(packageName));
+									RClass nc = toExprClass(propCls);
+									addImport(nc);
+									println(javaClassName + " " + p.getName() + " = this." + p
+										.getName() + ".read(_rowReader,_cache);");
+								}
+
+							}
+						});
+
+						String allNull =
+							vc.getProperties().filter(p -> p.getValueType().isRequired())
+								.map(p -> p.getName() + "==null")
+								.toString(" || ");
+						if(allNull.isEmpty() == false) {
+							println("if(" + allNull + ") { return null; }");
 						}
-					});
+						println("return _cache.updatedFromCache(" + vcCls.getClassName() + ".build(b-> b");
+						indent();
+						vc.getProperties()
+							.forEach(p -> println(".set" + StringUtils.firstUpperCase(p.getName()) + "(" + p
+								.getName() + ")"));
+						outdent();
+						println("));");
 
-					String allNull =
-						vc.getProperties().filter(p -> p.getValueType().isRequired()).map(p -> p.getName() + "==null")
-							.toString(" || ");
-					if(allNull.isEmpty() == false) {
-						println("if(" + allNull + ") { return null; }");
 					}
-					println("return _cache.updatedFromCache(" + vcCls.getClassName() + ".build(b-> b");
-					indent();
-					vc.getProperties().forEach(p -> println(".set" + StringUtils.firstUpperCase(p.getName()) + "(" + p
-						.getName() + ")"));
-					outdent();
-					println("));");
+					be();
+
+					//**************   Auto Generated Key
+					generateAutGenKeyFunctions(vc);
+
+					//**************   Insert
+					if(isTableClass) {
+						generateInsertFunction(vc);
+					}
+					//*************   Select
+					if(isTableClass) {
+						generateSelectByIdFunction(vc);
+					}
+					//*************  Delete
+					if(isTableClass) {
+						generateDeleteByIdFunction(vc);
+					}
+					//*************  Update
+					if(isTableClass) {
+						generateUpdateFunction(vc);
+					}
 
 				}
 				be();
+				return toGenJava(cls);
 
-				//**************   Auto Generated Key
-				generateAutGenKeyFunctions(vc);
-
-				//**************   Insert
-				if(isTableClass) {
-					generateInsertFunction(vc);
-				}
-				//*************   Select
-				if(isTableClass) {
-					generateSelectByIdFunction(vc);
-				}
-				//*************  Delete
-				if(isTableClass) {
-					generateDeleteByIdFunction(vc);
-				}
-				//*************  Update
-				if(isTableClass) {
-					generateUpdateFunction(vc);
-				}
-
-			}
-			be();
-			return toGenJava(cls);
+			});
 		}
 
 		/**
@@ -633,77 +645,81 @@ public final class DbJavaGen{
 		 *
 		 * @return The Generated Db java file
 		 */
-		public GeneratedJava generateDb(PList<RValueClass> valueClasses) {
+		public Result<GeneratedJava> generateDb(PList<RValueClass> valueClasses) {
+			return Result.function(valueClasses.map(vc -> vc.getTypeSig())).code(log -> {
 
-			RClass dbCls = new RClass(packageName, "Db");
-			addImport(dbCls);
-			//addImport(ExprDb.class);
-			addImport(DbSql.class);
-			addImport(TransactionRunner.class);
-			addImport(DbType.class);
-			String schemaName =
-				atUtils.getOneAnnotation(substema.getPackageDef().getAnnotations(), rclassSchema)
-					.map(at -> atUtils.getStringProperty(at, "name").map(n -> "\"" + n + "\"").orElse(null))
-					.orElse(null);
-			generateJavaDoc(substema.getPackageDef().getAnnotations());
-			bs("public class Db extends DbSql");
-			{
-				println("/**");
-				println(" * @param dbType Database flavor");
-				println(" * @param trans The transaction runner");
-				println(" * @see " + DbType.class.getSimpleName());
-				println(" * @see " + TransactionRunner.class.getSimpleName());
-				println(" */");
-				bs("public Db(DbType dbType, " + TransactionRunner.class.getSimpleName() + " trans, String schema)");
+				RClass dbCls = new RClass(packageName, "Db");
+				addImport(dbCls);
+				//addImport(ExprDb.class);
+				addImport(DbSql.class);
+				addImport(TransactionRunner.class);
+				addImport(DbType.class);
+				String schemaName =
+					atUtils.getOneAnnotation(substema.getPackageDef().getAnnotations(), rclassSchema)
+						.map(at -> atUtils.getStringProperty(at, "name").map(n -> "\"" + n + "\"").orElse(null))
+						.orElse(null);
+				generateJavaDoc(substema.getPackageDef().getAnnotations());
+				bs("public class Db extends DbSql");
 				{
-					println("super(dbType, trans , schema);");
-				}
-				be();
-				println("/**");
-				if(schemaName != null) {
-					println(" * Create a Db instance with schema name " + schemaName + "<br>");
-				}
-				else {
-					println(" * Create a Db instance without a schema name<br>");
-				}
-				println(" * @param dbType Database flavor");
-				println(" * @param trans The transaction runner");
-				println(" * @see " + DbType.class.getSimpleName());
-				println(" * @see " + TransactionRunner.class.getSimpleName());
-				println(" */");
-				bs("public Db(DbType dbType, " + TransactionRunner.class.getSimpleName() + " trans)");
-				{
-					println("this(dbType, trans ," + schemaName + ");");
-				}
-				be();
-
-				valueClasses.forEach(vc -> {
-					RClass cls     = vc.getTypeSig().getName();
-					RClass exprCls = toExprClass(cls);
-					addImport(exprCls);
-					boolean isTableClass = atUtils.hasAnnotation(vc.getAnnotations(), rclassTable);
-					if(isTableClass) {
-						println("/**");
-						println(" * Create a new database Table or View instance");
-						println(" * @see " + exprCls.getFullName());
-						println(" * @see " + cls.getFullName());
-						println(" */");
-						println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
-							.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
-							.toString(packageName, exprCls) + "(this); }");
+					println("/**");
+					println(" * @param dbType Database flavor");
+					println(" * @param trans The transaction runner");
+					println(" * @see " + DbType.class.getSimpleName());
+					println(" * @see " + TransactionRunner.class.getSimpleName());
+					println(" */");
+					bs("public Db(DbType dbType, " + TransactionRunner.class
+						.getSimpleName() + " trans, String schema)");
+					{
+						println("super(dbType, trans , schema);");
+					}
+					be();
+					println("/**");
+					if(schemaName != null) {
+						println(" * Create a Db instance with schema name " + schemaName + "<br>");
 					}
 					else {
-						generateJavaDoc(vc.getAnnotations());
-						println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
-							.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
-							.toString(packageName, exprCls) + "(); }");
+						println(" * Create a Db instance without a schema name<br>");
 					}
+					println(" * @param dbType Database flavor");
+					println(" * @param trans The transaction runner");
+					println(" * @see " + DbType.class.getSimpleName());
+					println(" * @see " + TransactionRunner.class.getSimpleName());
+					println(" */");
+					bs("public Db(DbType dbType, " + TransactionRunner.class.getSimpleName() + " trans)");
+					{
+						println("this(dbType, trans ," + schemaName + ");");
+					}
+					be();
 
-				});
+					valueClasses.forEach(vc -> {
+						RClass cls     = vc.getTypeSig().getName();
+						RClass exprCls = toExprClass(cls);
+						addImport(exprCls);
+						boolean isTableClass = atUtils.hasAnnotation(vc.getAnnotations(), rclassTable);
+						if(isTableClass) {
+							println("/**");
+							println(" * Create a new database Table or View instance");
+							println(" * @see " + exprCls.getFullName());
+							println(" * @see " + cls.getFullName());
+							println(" */");
+							println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
+								.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
+								.toString(packageName, exprCls) + "(this); }");
+						}
+						else {
+							generateJavaDoc(vc.getAnnotations());
+							println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
+								.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
+								.toString(packageName, exprCls) + "(); }");
+						}
 
-			}
-			be();
-			return toGenJava(dbCls);
+					});
+
+				}
+				be();
+				return toGenJava(dbCls);
+			});
+
 		}
 
 		private RClass toExprClass(RClass cls) {

@@ -29,7 +29,16 @@ public class DbTransManagerImpl implements DbTransManager{
 	}
 
 	public DbTransManagerImpl(Supplier<Connection> connectionSupplier) {
-		this(connectionSupplier, Result.lazy(() -> Result.success(connectionSupplier.get())), true);
+		this(connectionSupplier, Result.lazy(() -> {
+			Connection connection = connectionSupplier.get();
+			try {
+				connection.setAutoCommit(false);
+				return Result.success(connection);
+			} catch(SQLException e) {
+				throw new RuntimeException("Exception while setting db connection autocomit to false", e);
+			}
+
+		}), true);
 	}
 
 	@Override

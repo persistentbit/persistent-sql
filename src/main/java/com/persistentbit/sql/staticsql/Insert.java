@@ -2,8 +2,14 @@ package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PStream;
+import com.persistentbit.core.result.Result;
+import com.persistentbit.core.tuples.Tuple2;
+import com.persistentbit.sql.dbwork.DbTransManager;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
+
+import java.sql.PreparedStatement;
+import java.util.function.Consumer;
 
 /**
  * Represents an Sql Insert statement
@@ -11,7 +17,7 @@ import com.persistentbit.sql.staticsql.expr.Expr;
  * @author Peter Muys
  * @since 2/10/16*
  */
-public class Insert{
+public class Insert implements SSqlWork<Integer>{
 
 	private final ETypeObject into;
 	private final PList<Expr> valueList;
@@ -24,6 +30,7 @@ public class Insert{
 	public static Insert into(ETypeObject into, Expr... values) {
 		return new Insert(into, PStream.from(values).plist());
 	}
+
 
 	public ETypeObject getInto() {
 		return into;
@@ -39,5 +46,22 @@ public class Insert{
 		}
 		return new InsertWithGeneratedKeys<>(this, generatedKeys);
 	}
+
+	@Override
+	public Result<Integer> execute(DbContext dbc, DbTransManager tm) throws Exception {
+		return Result.function(dbc, tm).code(log -> {
+			InsertSqlBuilder b = new InsertSqlBuilder(dbc, this);
+
+			log.info(b.generateNoParams());
+
+			Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
+			try(PreparedStatement s = tm.get().prepareStatement(generatedQuery._1)) {
+				generatedQuery._2.accept(s);
+				return Result.success(s.executeUpdate());
+			}
+		});
+	}
+
+
 
 }

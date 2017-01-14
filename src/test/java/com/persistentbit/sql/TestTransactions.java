@@ -2,17 +2,13 @@ package com.persistentbit.sql;
 
 
 
-import org.junit.Test;
-
-import java.sql.PreparedStatement;
-
 /**
  * User: petermuys
  * Date: 13/07/16
  * Time: 19:36
  */
 public class TestTransactions extends AbstractTestWithTransactions{
-
+/*
     @Test
     public void testTrans(){
         trans.trans(c -> {
@@ -27,5 +23,5 @@ public class TestTransactions extends AbstractTestWithTransactions{
     @Test
     public void test2Test() {
         //Test if we run 2 test that db is build/dropped ok
-    }
+    }*/
 }

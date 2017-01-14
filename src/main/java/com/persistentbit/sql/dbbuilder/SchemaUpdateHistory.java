@@ -1,7 +1,9 @@
 package com.persistentbit.sql.dbbuilder;
 
+import com.persistentbit.core.OK;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.dbbuilder.impl.DbBuilderImpl;
+import com.persistentbit.sql.staticsql.SSqlWork;
 
 /**
  * Service interface to keep track of database schema updates.<br>
@@ -20,7 +22,7 @@ public interface SchemaUpdateHistory{
 	 *
 	 * @return is the update done
 	 */
-	boolean isDone(String packageName, String updateName);
+	SSqlWork<Boolean> isDone(String packageName, String updateName);
 
 	/**
 	 * set the database update for the provided version as done.
@@ -28,13 +30,13 @@ public interface SchemaUpdateHistory{
 	 * @param packageName The package or module Name (ex. com.persistentbit.sql)
 	 * @param updateName  The name of the update (ex. create_initial_tables)
 	 */
-	void setDone(String packageName, String updateName);
+	SSqlWork<OK> setDone(String packageName, String updateName);
 
 	/**
 	 * removes the update history for a given package.<br>
 	 * @param packageName The packageName to remove the history for
 	 */
-	void removeUpdateHistory(String packageName);
+	SSqlWork<OK> removeUpdateHistory(String packageName);
 
 	/**
 	 * Get a list of all updates registered as done for a package.<br>
@@ -43,5 +45,5 @@ public interface SchemaUpdateHistory{
 	 *
 	 * @return List with all the update names for the given package
 	 */
-	PList<String> getUpdatesDone(String packageName);
+	SSqlWork<PList<String>> getUpdatesDone(String packageName);
 }

@@ -163,7 +163,7 @@ public interface Expr<S>{
 	}
 
 
-	default <R> EMapper<S, R> map(Function<S, R> mapper) {
+	default <R> EMapper<S, R> mapObject(Function<S, R> mapper) {
 		return new EMapper<>(this, mapper);
 	}
 

@@ -16,7 +16,7 @@ public interface ETypeObject<T> extends ETypePropertyParent<T>{
 	PList<Tuple2<String, Expr<?>>> _all();
 
 	@Override
-	default <R> EMapper<T, R> map(Function<T, R> mapper) {
+	default <R> EMapper<T, R> mapObject(Function<T, R> mapper) {
 		return new EMapper<>(this, mapper);
 	}
 

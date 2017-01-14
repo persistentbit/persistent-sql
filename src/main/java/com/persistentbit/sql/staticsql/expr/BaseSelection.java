@@ -1,13 +1,15 @@
 package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.result.Result;
+import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.ToDo;
-import com.persistentbit.sql.staticsql.ExprRowReaderCache;
-import com.persistentbit.sql.staticsql.Query;
-import com.persistentbit.sql.staticsql.QuerySqlBuilder;
-import com.persistentbit.sql.staticsql.RowReader;
+import com.persistentbit.sql.dbwork.DbTransManager;
+import com.persistentbit.sql.staticsql.*;
 
-import java.util.Optional;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.function.Consumer;
 
 /**
  * @author Peter Muys
@@ -30,12 +32,28 @@ public abstract class BaseSelection<T> implements ETypeSelection<T> {
         return query;
     }
 
-    public Optional<T> getOneResult() {
-        return getResult().headOpt();
-    }
+    @Override
+    public Result<PList<T>> execute(DbContext dbc, DbTransManager tm) throws Exception {
+        return Result.function(dbc, tm).code(log -> {
+            QuerySqlBuilder b = new QuerySqlBuilder(this, dbc);
 
-    public PList<T> getResult() {
-        return query.getDbSql().run(this);
+            log.info(b.generateNoParams());
+
+            Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
+            try(PreparedStatement s = tm.get().prepareStatement(generatedQuery._1)) {
+                generatedQuery._2.accept(s);
+                ExprRowReader exprReader = new ExprRowReader();
+                try(ResultSet rs = s.executeQuery()) {
+                    ResultSetRowReader rowReader = new ResultSetRowReader(rs);
+                    PList<T>           res       = PList.empty();
+                    while(rs.next()) {
+                        res = res.plus(read(rowReader, exprReader));
+                        rowReader.nextRow();
+                    }
+                    return Result.success(res);
+                }
+            }
+        });
     }
 
     @Override
@@ -50,7 +68,7 @@ public abstract class BaseSelection<T> implements ETypeSelection<T> {
 
     @Override
     public String _toSql(ExprToSqlContext context) {
-        QuerySqlBuilder b = new QuerySqlBuilder(this, context.getDbType(), context.getSchema().orElse(null));
+        QuerySqlBuilder b = new QuerySqlBuilder(this, context.getDbContext());
         return b.generate(context, true);
     }
 

@@ -1,8 +1,9 @@
 package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.result.Result;
 import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.sql.databases.DbType;
+import com.persistentbit.sql.dbwork.DbWork;
 import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
 
@@ -16,41 +17,52 @@ import java.util.function.Consumer;
  * @author Peter Muys
  * @since 2/10/16
  */
-public class InsertSqlBuilder{
+class InsertSqlBuilder{
 
-	private final DbType dbType;
-	private final String schema;
-	private final Insert insert;
-	private final Expr   generatedKeys;
+	private final DbContext dbContext;
+	private final Insert    insert;
+	private final Expr      generatedKeys;
 
-	public InsertSqlBuilder(DbType dbType, String schema, Insert insert) {
-		this(dbType, schema, insert, null);
+	public InsertSqlBuilder(DbContext dbContext, Insert insert) {
+		this(dbContext, insert, null);
 	}
 
-	public InsertSqlBuilder(DbType dbType, String schema, Insert insert, Expr generatedKeys) {
-		this.dbType = dbType;
-		this.schema = schema;
+	public InsertSqlBuilder(DbContext dbContext, Insert insert, Expr generatedKeys) {
+		this.dbContext = dbContext;
 		this.insert = insert;
 		this.generatedKeys = generatedKeys;
 	}
 
 	public Tuple2<String, Consumer<PreparedStatement>> generate() {
-		ExprToSqlContext context = new ExprToSqlContext(dbType, schema, true);
+		ExprToSqlContext context = new ExprToSqlContext(dbContext, true);
 		return Tuple2.of(generate(context), prepStat ->
 			context.getParamSetters().zipWithIndex().forEach(t -> t._2.accept(Tuple2.of(prepStat, t._1 + 1)))
 		);
 	}
 
+	public DbWork<Integer> work() {
+		return tm -> Result.function().code(l -> {
+			l.info("Insert query");
+			l.info(generateNoParams());
+			Tuple2<String, Consumer<PreparedStatement>> generatedQuery = generate();
+			try(PreparedStatement stat = tm.get().prepareStatement(generatedQuery._1)) {
+				generatedQuery._2.accept(stat);
+				return Result.success(stat.executeUpdate());
+			}
+		});
+	}
+
 	public String generateNoParams() {
-		return generate(new ExprToSqlContext(dbType, schema, false));
+		return generate(new ExprToSqlContext(dbContext, false));
 	}
 
 	private String generate(ExprToSqlContext context) {
-		context.uniqueInstanceName(insert.getInto(), insert.getInto().getFullTableName(schema));
+		String fullTableName = insert.getInto().getFullTableName(dbContext.getSchemaName().orElse(null));
+		context.uniqueInstanceName(insert.getInto(), fullTableName);
 		String nl        = "\r\n";
 		String res       = "";
 		String tableName = insert.getInto()._getTableName();
-		res += "INSERT INTO " + insert.getInto().getFullTableName(schema) + " ";
+		res += "INSERT INTO " + fullTableName + " ";
 		@SuppressWarnings("unchecked")
 		PList<Tuple2<String, Expr>> all                  = insert.getInto()._all();
 		PList<Expr>                 expanded             = all.map(e -> e._2._expand()).<Expr>flatten().plist();

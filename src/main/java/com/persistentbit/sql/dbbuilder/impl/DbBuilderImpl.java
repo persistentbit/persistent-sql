@@ -1,22 +1,21 @@
 package com.persistentbit.sql.dbbuilder.impl;
 
-import com.persistentbit.core.Nothing;
+import com.persistentbit.core.Lazy;
+import com.persistentbit.core.OK;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
-import com.persistentbit.core.exceptions.RtSqlException;
-import com.persistentbit.core.logging.Log;
+import com.persistentbit.core.result.Result;
 import com.persistentbit.sql.PersistSqlException;
-import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.dbbuilder.DbBuilder;
 import com.persistentbit.sql.dbbuilder.SchemaUpdateHistory;
+import com.persistentbit.sql.dbwork.DbWork;
 import com.persistentbit.sql.statement.SqlLoader;
-import com.persistentbit.sql.transactions.TransactionRunner;
+import com.persistentbit.sql.staticsql.SSqlWork;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Optional;
 
 /**
  * A {@link DbBuilder} implementation that uses resource files to create/update/drop a database schema.<br>
@@ -33,10 +32,6 @@ public class DbBuilderImpl implements DbBuilder{
 	public static final String onceBeforeSnippetName = "OnceBefore";
 	public static final String dropAllSnippetName    = "DropAll";
 
-
-	protected final DbType dbType;
-	protected final String schema;
-	protected final TransactionRunner   runner;
 	protected final String              packageName;
 	protected final SqlLoader           sqlLoader;
 	protected final SchemaUpdateHistory updateHistory;
@@ -46,81 +41,88 @@ public class DbBuilderImpl implements DbBuilder{
 	 * Create a new {@link DbBuilder} with the given parameters and a default
 	 * {@link SchemaUpdateHistoryImpl} to keep track of the updates already done.
 	 *
-	 * @param dbType          The Database Type
-	 * @param schema          The Optional schema name.
-	 * @param runner          The Transaction runner to use
+
 	 * @param packageName     The packageName, used to keep track of the updates already done.
 	 * @param sqlResourceName The name of the java resource file containing the sql statements
 	 */
-	public DbBuilderImpl(DbType dbType,String schema,TransactionRunner runner, String packageName, String sqlResourceName) {
-		this(dbType, schema, runner, packageName, sqlResourceName, new SchemaUpdateHistoryImpl(runner, schema));
+	public DbBuilderImpl(String packageName, String sqlResourceName) {
+		this(packageName, sqlResourceName, new SchemaUpdateHistoryImpl());
 	}
 
 	/**
 	 *
-	 * @param dbType The Database Type
-	 * @param schema The Optional schema name.
-	 * @param runner The Transaction runner to use
+
 	 * @param packageName The packageName, used to keep track of the updates already done.
 	 * @param sqlResourceName The name of the java resource file containing the sql statements
 	 * @param updateHistory The {@link SchemaUpdateHistory} to use
 	 */
-	public DbBuilderImpl(DbType dbType, String schema, TransactionRunner runner,
-						 String packageName, String sqlResourceName,
+	public DbBuilderImpl(String packageName, String sqlResourceName,
 						 SchemaUpdateHistory updateHistory
 	) {
-
-		this.dbType = dbType;
-		this.schema = schema;
-		this.runner = runner;
 		this.packageName = packageName;
 		this.sqlLoader = new SqlLoader(sqlResourceName);
 		this.updateHistory = updateHistory;
 	}
 
 	@Override
-	public void buildOrUpdate() {
-		Log.function().code(log -> {
-			runOnceBefore();
-			//First, find all declared method on this class
-			Class<?> cls = this.getClass();
+	public SSqlWork<OK> buildOrUpdate() {
+		return (dbc, tm) -> Result.function().code(log ->
+													   executeSnip(onceBeforeSnippetName)
+														   .flatMap(ok -> {
+															   PList<String> names = sqlLoader.getAllSnippetNames()
+																   .filter(name -> name
+																	   .equalsIgnoreCase(dropAllSnippetName) == false && name
+																	   .equalsIgnoreCase(onceBeforeSnippetName) == false);
+															   for(String name : names) {
+																   Result<OK> snipOk =
+																	   executeSnip(name).execute(dbc, tm);
+																   if(snipOk.isPresent() == false) {
+																	   return snipOk;
+																   }
+															   }
+															   return OK.result;
+														   })
+														   .execute(dbc, tm)
+		);
+	}
 
-			PMap<String, Method> declaredMethods = PMap.empty();
+	private final Lazy<PMap<String, Method>> declaredMethods = new Lazy<>(() -> {
+		PMap<String, Method> declaredMethods = PMap.empty();
 
-			for(Method m : cls.getDeclaredMethods()) {
-				declaredMethods = declaredMethods.put(m.getName().toLowerCase(), m);
+		for(Method m : this.getClass().getDeclaredMethods()) {
+			declaredMethods = declaredMethods.put(m.getName().toLowerCase(), m);
+		}
+		return declaredMethods;
+	});
+
+	private SSqlWork<OK> executeSnip(String name) {
+		return (dbc, tm) -> Result.function(name).code(l -> {
+			//Is Snippet already executed ?
+			if(updateHistory.isDone(packageName, name).execute(dbc, tm).orElseThrow()) {
+				return OK.result;
 			}
-			PMap<String, Method> methods = declaredMethods;
-
-			//Loop over all snippets and execute
-			sqlLoader.getAllSnippetNames().forEach(name -> runner.trans((c) -> {
-				//Skip Drop all and once before snippet
-				if(name.equalsIgnoreCase(dropAllSnippetName) || name.equalsIgnoreCase(onceBeforeSnippetName)) {
-					return;
+			l.info("DBUpdate for  " + getFullName(name));
+			//If a method with this name exists -> execute it
+			Optional<Method> optMethod = declaredMethods.get().getOpt(name);
+			if(optMethod.isPresent()) {
+				try {
+					optMethod.get().invoke(this, tm.get());
+					return OK.result;
+				} catch(IllegalAccessException | InvocationTargetException e) {
+					return Result.failure(new PersistSqlException(e));
 				}
-				//Is Snippet already executed ?
-				if(updateHistory.isDone(packageName, name)) {
-					return;
+			}
+			for(DbWork<OK> work : sqlLoader.getAll(name).map(sql -> executeSql(name, sql))) {
+				Result<OK> ok = work.execute(tm);
+				if(ok.isPresent() == false) {
+					return ok;
 				}
-				log.info("DBUpdate for  " + getFullName(name));
-
-				//Set the default schema if it is defined.
-				setDefaultSchema(c);
-
-				//If a method with this name exists -> execute it
-				methods.getOpt(name).ifPresent(m -> {
-					try {
-						m.invoke(this, c);
-					} catch(IllegalAccessException | InvocationTargetException e) {
-						throw new PersistSqlException(e);
-					}
-				});
-				sqlLoader.getAll(name).forEach(sql -> executeSql(c, name, sql));
-				updateHistory.setDone(packageName, name);
-			}));
-			return Nothing.inst;
+			}
+			if(name.equalsIgnoreCase(dropAllSnippetName) || name.equalsIgnoreCase(onceBeforeSnippetName)) {
+				return OK.result;
+			}
+			return updateHistory.setDone(packageName, name).execute(dbc, tm);
 		});
-
 	}
 
 	private String getFullName(String updateName) {
@@ -130,42 +132,19 @@ public class DbBuilderImpl implements DbBuilder{
 	/**
 	 * Execute an sql statement.
 	 *
-	 * @param c    The connection to use
 	 * @param name The name of the snippet for error reporting
 	 * @param sql  The sql statement
 	 */
-	private void executeSql(Connection c, String name, String sql) {
-		try {
-			try(Statement stat = c.createStatement()) {
+	private DbWork<OK> executeSql(String name, String sql) {
+		return tm -> Result.function(name, sql).code(l -> {
+			try(Statement stat = tm.get().createStatement()) {
 				stat.execute(sql);
+				return OK.result;
 			}
-		} catch(SQLException e) {
-			throw new PersistSqlException("Error executing " + getFullName(name) + ": " + sql, e);
-		}
-	}
-
-	/**
-	 * Run the snippet with the name OnceBefore ({@link #onceBeforeSnippetName})
-	 */
-	private void runOnceBefore() {
-		Log.function().code(log -> {
-			if(sqlLoader.hasSnippet(onceBeforeSnippetName) == false) {
-				return Nothing.inst; //we are done here
-			}
-			PList<String> sqlList = sqlLoader.getAll(onceBeforeSnippetName);
-			sqlList.forEach(sql ->
-								runner.trans(c -> {
-									try {
-										executeSql(c, onceBeforeSnippetName, sql);
-									} catch(Exception e) {
-										log.error("Error executing sql '" + sql + "': " + e.getMessage());
-									}
-								})
-			);
-			return Nothing.inst;
 		});
 
 	}
+
 
 	/**
 	 * Executes the snippet 'DropAll' and removes
@@ -174,49 +153,24 @@ public class DbBuilderImpl implements DbBuilder{
 	 * @return true if dropAll executed without errors
 	 */
 	@Override
-	public boolean dropAll() {
-		return Log.function().code(log -> {
+	public SSqlWork<OK> dropAll() {
+		return (dbc, tm) -> Result.function().code(l -> {
 			if(sqlLoader.hasSnippet(dropAllSnippetName) == false) {
-				throw new PersistSqlException("Can't find SQL code 'DropAll' in " + sqlLoader);
+				return Result.failure(new PersistSqlException("Can't find SQL code 'DropAll' in " + sqlLoader));
 			}
-			runOnceBefore();
-			PList<String> sqlList = sqlLoader.getAll(dropAllSnippetName);
-			boolean allOk = sqlList.map(sql ->
-											runner.trans(c -> {
-												setDefaultSchema(c);
-												try {
-													executeSql(c, dropAllSnippetName, sql);
-													return true;
-												} catch(Exception e) {
-													log.error("Error executing sql '" + sql + "': " + e.getMessage());
-													return false;
-												}
-											})
-			).find(ok -> ok == false).orElse(true);
-			updateHistory.removeUpdateHistory(packageName);
-			return allOk;
+			return executeSnip(onceBeforeSnippetName)
+				.andThen(ok -> executeSnip(dropAllSnippetName))
+				.execute(dbc, tm);
 		});
 
 	}
 
-	/**
-	 * If a schema name is defined in the constructor,
-	 * then this function will set the default schema for the connection.<br>
-	 *
-	 * @param c The connection to set.
-	 */
-	private void setDefaultSchema(Connection c) {
-		if(schema != null) {
-			RtSqlException.tryRun(() -> {
-				try(Statement stat = c.createStatement()) {
-					stat.execute(dbType.setCurrentSchemaStatement(schema));
-				}
-			});
-		}
-	}
-
 	@Override
-	public boolean hasUpdatesThatAreDone() {
-		return updateHistory.getUpdatesDone(packageName).isEmpty() == false;
+	public SSqlWork<Boolean> hasUpdatesThatAreDone() {
+		return (dbc, tm) -> Result.function().code(l ->
+													   updateHistory.getUpdatesDone(packageName)
+														   .map(p -> p.isEmpty() == false)
+														   .execute(dbc, tm)
+		);
 	}
 }

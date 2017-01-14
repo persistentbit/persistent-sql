@@ -12,9 +12,7 @@ import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.utils.StringUtils;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.databases.DbType;
-import com.persistentbit.sql.staticsql.DbSql;
-import com.persistentbit.sql.staticsql.ExprRowReaderCache;
-import com.persistentbit.sql.staticsql.RowReader;
+import com.persistentbit.sql.staticsql.*;
 import com.persistentbit.sql.staticsql.expr.*;
 import com.persistentbit.sql.transactions.TransactionRunner;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
@@ -216,26 +214,10 @@ public final class DbJavaGen{
 				bs("public class " + cls.getClassName() + " implements ETypeObject<" + vcCls.getClassName() + ">");
 				{
 					// ************ Construction & Parent Expression
-					addImport(DbSql.class);
+					//addImport(DbSql.class);
 					addImport(ETypePropertyParent.class);
 					println("private final ETypePropertyParent __parent;");
-					if(isTableClass) {
-						println("private final DbSql _db;");
-						println("");
-						bs("public " + cls.getClassName() + "(DbSql db, ETypePropertyParent parent)");
-						{
-							println("this._db = db;");
-							println("this.__parent = parent;");
-						}
-						be();
-						println("");
-						bs("public " + cls.getClassName() + "(DbSql db)");
-						{
-							println("this(db,null);");
-						}
-						be();
-					}
-					else {
+					{
 						bs("public " + cls.getClassName() + "(ETypePropertyParent parent)");
 						{
 							println("this.__parent = parent;");
@@ -273,10 +255,7 @@ public final class DbJavaGen{
 
 					println("");
 					println("@Override");
-					if(isTableClass) {
-						println("public String toString() { return getFullTableName(_db.getSchema().orElse(null)); }");
-					}
-					else {
+					{
 						println("public String toString() { return _getTableName(); }");
 					}
 
@@ -506,19 +485,32 @@ public final class DbJavaGen{
 		}
 
 		private void generateInsertFunction(RValueClass vc) {
+			addImport(SSqlWork.class);
+			addImport(Insert.class);
+			addImport(Update.class);
+			addImport(Delete.class);
+			addImport(Update.class);
 			RProperty autoGenProp =
 				vc.getProperties().find(p -> atUtils.getOneAnnotation(p.getAnnotations(), rclassAutoGen).isPresent())
 					.orElse(null);
 			String vcName = vc.getTypeSig().getName().getClassName();
-			bs("public " + vcName + " insert(" + vcName + " newRow)");
+			bs("public SSqlWork<" + vcName + "> insert(" + vcName + " newRow)");
 			{
 				if(autoGenProp == null) {
+					println("return Insert.into(this,val(newRow)).asWork().map(count -> newRow);");
+				}
+				else {
+					println("return Insert.into(this,val(newRow)).withGeneratedKeys(_getAutoGenKey().get())");
+					println("\t.asWork().map(key -> _setAutoGenKey(newRow,key));");
+				}
+
+				/*if(autoGenProp == null) {
 					println("_db.runInsert(this,val(newRow));");
 					println("return newRow;");
 				}
 				else {
 					println("return _db.runInsertWithGenKeys(this,newRow,_getAutoGenKey().get(),this::_setAutoGenKey);");
-				}
+				}*/
 			}
 			be();
 
@@ -536,15 +528,16 @@ public final class DbJavaGen{
 																						.getName().getClassName(), p
 																						.getName())
 			);
-			addImport(Optional.class);
+			addImport(SSqlWork.class);
+			addImport(Query.class);
 			String vcName = vc.getTypeSig().getName().getClassName();
-			bs("public Optional<" + vcName + "> selectById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2)
+			bs("public SSqlWork<" + vcName + "> selectById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2)
 				.toString(", ") + ")");
 			{
 				String cond = keyTypesAndNames.headOpt().map(tn -> "this." + tn._2 + ".eq(" + tn._2 + ")").get();
 				cond =
 					cond + keyTypesAndNames.tail().map(tn -> ".and(this." + tn._2 + ".eq(" + tn._2 + "))").toString("");
-				println("return _db.queryFrom(this).where(" + cond + ").selection(this).getOneResult();");
+				println("return Query.from(this).where(" + cond + ").selection(this).oneResultAsWork();");
 			}
 			be();
 		}
@@ -560,14 +553,16 @@ public final class DbJavaGen{
 																						.getName().getClassName(), p
 																						.getName())
 			);
-			addImport(Optional.class);
+			addImport(SSqlWork.class);
+			addImport(Delete.class);
 
-			bs("public int deleteById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2).toString(", ") + ")");
+			bs("public SSqlWork<Integer> deleteById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2)
+				.toString(", ") + ")");
 			{
 				String cond = keyTypesAndNames.headOpt().map(tn -> "this." + tn._2 + ".eq(" + tn._2 + ")").get();
 				cond =
 					cond + keyTypesAndNames.tail().map(tn -> ".and(this." + tn._2 + ".eq(" + tn._2 + "))").toString("");
-				println("return _db.deleteFrom(this).where(" + cond + ").execute();");
+				println("return new Delete(this).where(" + cond + ").asWork();");
 			}
 			be();
 		}
@@ -578,11 +573,11 @@ public final class DbJavaGen{
 			if(keys.isEmpty()) {
 				return;
 			}
-
+			addImport(SSqlWork.class);
 			String vcName = vc.getTypeSig().getName().getClassName();
-			bs("public " + vcName + " update(" + vcName + " _row)");
+			bs("public SSqlWork<" + vcName + "> update(" + vcName + " _row)");
 			{
-				println("int count = _db.update(this)");
+				println("return new Update(this)");
 
 				vc.getProperties()
 					.filter(p -> atUtils.hasAnnotation(p.getAnnotations(), rclassKey) == false)
@@ -618,14 +613,12 @@ public final class DbJavaGen{
 				cond = cond + keys.tail().map(p -> ".and(this." + p.getName() + ".eq(" + getValGetter(p, "_row") + "))")
 					.toString("");
 				println(".where(" + cond + ")");
-				println(".execute();");
-				bs("if(count != 1)");
-				{
-					addImport(PersistSqlException.class);
-					println("throw new PersistSqlException(\"Expected 1 row updated, not \" + count + \" for \" + _row);");
-				}
-				be();
-				println("return _row;");
+				println(".asWork()");
+				println(".mapResult(countRes ->");
+				println("countRes.verify(c -> c == 1,\"Expected 1 row updated, not \" + countRes.orElseThrow() + \" for \" + _row)");
+				println(".map(count -> _row)");
+				println(");");
+
 			}
 			be();
 		}
@@ -650,8 +643,7 @@ public final class DbJavaGen{
 
 				RClass dbCls = new RClass(packageName, "Db");
 				addImport(dbCls);
-				//addImport(ExprDb.class);
-				addImport(DbSql.class);
+
 				addImport(TransactionRunner.class);
 				addImport(DbType.class);
 				String schemaName =
@@ -659,37 +651,9 @@ public final class DbJavaGen{
 						.map(at -> atUtils.getStringProperty(at, "name").map(n -> "\"" + n + "\"").orElse(null))
 						.orElse(null);
 				generateJavaDoc(substema.getPackageDef().getAnnotations());
-				bs("public class Db extends DbSql");
+				bs("public class Db");
 				{
-					println("/**");
-					println(" * @param dbType Database flavor");
-					println(" * @param trans The transaction runner");
-					println(" * @see " + DbType.class.getSimpleName());
-					println(" * @see " + TransactionRunner.class.getSimpleName());
-					println(" */");
-					bs("public Db(DbType dbType, " + TransactionRunner.class
-						.getSimpleName() + " trans, String schema)");
-					{
-						println("super(dbType, trans , schema);");
-					}
-					be();
-					println("/**");
-					if(schemaName != null) {
-						println(" * Create a Db instance with schema name " + schemaName + "<br>");
-					}
-					else {
-						println(" * Create a Db instance without a schema name<br>");
-					}
-					println(" * @param dbType Database flavor");
-					println(" * @param trans The transaction runner");
-					println(" * @see " + DbType.class.getSimpleName());
-					println(" * @see " + TransactionRunner.class.getSimpleName());
-					println(" */");
-					bs("public Db(DbType dbType, " + TransactionRunner.class.getSimpleName() + " trans)");
-					{
-						println("this(dbType, trans ," + schemaName + ");");
-					}
-					be();
+
 
 					valueClasses.forEach(vc -> {
 						RClass cls     = vc.getTypeSig().getName();
@@ -702,9 +666,9 @@ public final class DbJavaGen{
 							println(" * @see " + exprCls.getFullName());
 							println(" * @see " + cls.getFullName());
 							println(" */");
-							println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
+							println("public static " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
 								.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
-								.toString(packageName, exprCls) + "(this); }");
+								.toString(packageName, exprCls) + "(); }");
 						}
 						else {
 							generateJavaDoc(vc.getAnnotations());

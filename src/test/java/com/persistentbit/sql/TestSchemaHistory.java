@@ -1,17 +1,12 @@
 package com.persistentbit.sql;
 
-import com.persistentbit.sql.dbbuilder.SchemaUpdateHistory;
-import com.persistentbit.sql.dbbuilder.impl.SchemaUpdateHistoryImpl;
-import org.junit.Test;
-
-
 /**
  * User: petermuys
  * Date: 14/07/16
  * Time: 22:36
  */
 public class TestSchemaHistory extends AbstractTestWithTransactions{
-
+/*
     @Test
     public void testa(){
         assert trans != null;
@@ -29,6 +24,6 @@ public class TestSchemaHistory extends AbstractTestWithTransactions{
         });
 
 
-    }
+    }*/
 
 }

@@ -10,21 +10,20 @@ import java.util.Optional;
  */
 public class Query{
 
-	private final DbSql        dbSql;
+
 	private final ETypeObject  from;
 	boolean        distinct = false;
 	PList<OrderBy> orderBy  = PList.empty();
 	private       PList<Join>  joins;
 	private       ETypeBoolean where;
 
-	public Query(DbSql sql, ETypeObject from, PList<Join> joins) {
-		this.dbSql = sql;
+	public Query(ETypeObject from, PList<Join> joins) {
 		this.from = from;
 		this.joins = joins;
 	}
 
-	static public Query from(DbSql sql, ETypeObject table) {
-		return new Query(sql, table, PList.empty());
+	static public Query from(ETypeObject table) {
+		return new Query(table, PList.empty());
 	}
 
 
@@ -126,7 +125,4 @@ public class Query{
 		return new Selection7<>(this, col1, col2, col3, col4, col5, col6, col7);
 	}
 
-	public DbSql getDbSql() {
-		return dbSql;
-	}
 }

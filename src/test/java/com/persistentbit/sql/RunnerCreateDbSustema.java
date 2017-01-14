@@ -1,13 +1,5 @@
 package com.persistentbit.sql;
 
-import com.persistentbit.sql.databases.DbDerby;
-import com.persistentbit.sql.substemagen.DbSubstemaGen;
-import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
-import com.persistentbit.substema.compiler.SubstemaCompiler;
-import com.persistentbit.substema.compiler.values.RSubstema;
-import com.persistentbit.substema.dependencies.DependencySupplier;
-import com.persistentbit.substema.substemagen.SubstemaSourceGenerator;
-
 /**
  * Create Substema Source code for the test db
  *
@@ -15,7 +7,7 @@ import com.persistentbit.substema.substemagen.SubstemaSourceGenerator;
  * @since 2/11/16
  */
 public class RunnerCreateDbSustema{
-
+/*
 	public static void main(String[] args) {
 		InMemConnectionSupplier dbConnector = new InMemConnectionSupplier();
 
@@ -42,5 +34,5 @@ public class RunnerCreateDbSustema{
 			codeGen.addValueClass(vc);
 		});
 		System.out.println(codeGen);
-	}
+	}*/
 }

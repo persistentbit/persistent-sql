@@ -6,6 +6,8 @@ import com.persistentbit.core.testing.TestCase;
 import com.persistentbit.core.testing.TestRunner;
 import com.persistentbit.sql.InMemConnectionSupplier;
 import com.persistentbit.sql.ModuleSql;
+import com.persistentbit.sql.dbwork.DbWork;
+import com.persistentbit.sql.dbwork.DbWorkRunner;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -46,8 +48,9 @@ public class TestDbWork{
 
 		InMemConnectionSupplier cs = new InMemConnectionSupplier();
 
-		DbTransManagerImpl tm  = new DbTransManagerImpl(cs);
-		Result<Integer>    res = tm.run(work1);
+		//DbTransManagerImpl tm  = new DbTransManagerImpl(cs);
+		//Result<Integer>    res = tm.run(work1);
+		Result<Integer> res = DbWorkRunner.run(cs, work1);
 		tr.add(res);
 		tr.isEquals(res.orElseThrow(), 1234);
 

@@ -1,18 +1,11 @@
 package com.persistentbit.sql;
 
-import com.persistentbit.sql.databases.DbDerby;
-import com.persistentbit.sql.statement.SqlLoader;
-import com.persistentbit.sql.transactions.TransactionRunnerPerThread;
-import org.junit.After;
-import org.junit.Before;
-
-import java.util.logging.Logger;
-
 /**
  * @author Peter Muys
  * @since 13/07/16
  */
 public abstract class AbstractTestWithTransactions{
+    /*
     protected Logger log = Logger.getLogger(this.getClass().getName());
     protected InMemConnectionSupplier    dbConnector;
     protected TransactionRunnerPerThread trans;
@@ -39,5 +32,5 @@ public abstract class AbstractTestWithTransactions{
         trans = null;
         dbConnector.close();
         dbConnector = null;
-    }
+    }*/
 }

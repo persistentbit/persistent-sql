@@ -1,36 +1,46 @@
 package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.result.Result;
 import com.persistentbit.core.tuples.Tuple2;
+import com.persistentbit.sql.dbwork.DbTransManager;
 import com.persistentbit.sql.staticsql.expr.ETypeBoolean;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.staticsql.expr.Sql;
 
+import java.sql.PreparedStatement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Represents an Sql Update statement.<br>
  * @author Peter Muys
  * @since 8/10/16
  */
-public class Update{
+public class Update implements SSqlWork<Integer>{
 
-	private final DbSql        db;
-	private final ETypeObject  table;
-	private       ETypeBoolean where;
-	private PList<Tuple2<Expr<?>, Expr<?>>> set = PList.empty();
+	private final ETypeObject                     table;
+	private final ETypeBoolean                    where;
+	private final PList<Tuple2<Expr<?>, Expr<?>>> set;
 
+	private Update(ETypeObject table, ETypeBoolean where,
+				   PList<Tuple2<Expr<?>, Expr<?>>> set
+	) {
+		this.table = Objects.requireNonNull(table);
+		this.where = where;
+		this.set = Objects.requireNonNull(set);
+	}
 
-	public Update(DbSql db, ETypeObject table) {
-		this.db = db;
-		this.table = table;
+	public Update(ETypeObject table) {
+		this(table, null, PList.empty());
 	}
 
 	public <V> Update set(Expr<V> property, Expr<? extends V> value) {
-		set = set.plus(Tuple2.of(property, value));
-		return this;
+		return new Update(table, where, set.plus(Tuple2.of(property, value)));
 	}
 
 	public Update set(Expr<Number> property, Number value) {
@@ -59,21 +69,29 @@ public class Update{
 
 
 	public Update where(ETypeBoolean whereExpr) {
-		this.where = whereExpr;
-		return this;
+		return new Update(table, whereExpr, set);
 	}
 
-	public int execute() {
-		return db.run(this);
-	}
+	@Override
+	public Result<Integer> execute(DbContext dbc, DbTransManager tm) throws Exception {
+		return Result.function(dbc, tm).code(log -> {
+			UpdateSqlBuilder b = new UpdateSqlBuilder(dbc, this);
+			log.info(b.generateNoParams());
 
+			Tuple2<String, Consumer<PreparedStatement>> generatedQuery = b.generate();
+			try(PreparedStatement s = tm.get().prepareStatement(generatedQuery._1)) {
+				generatedQuery._2.accept(s);
+				return Result.success(s.executeUpdate());
+			}
+		});
+	}
 
 	public ETypeObject getTable() {
 		return table;
 	}
 
-	public ETypeBoolean getWhere() {
-		return where;
+	public Optional<ETypeBoolean> getWhere() {
+		return Optional.ofNullable(where);
 	}
 
 	public PList<Tuple2<Expr<?>, Expr<?>>> getSet() {

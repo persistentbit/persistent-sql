@@ -2,13 +2,14 @@ package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.sql.staticsql.Query;
+import com.persistentbit.sql.staticsql.SSqlWork;
 
 import java.util.Optional;
 
 /**
  * Created by petermuys on 14/10/16.
  */
-public interface ETypeSelection<T> extends ETypeObject<T>, ETypeList<T>{
+public interface ETypeSelection<T> extends ETypeObject<T>, ETypeList<T>, SSqlWork<PList<T>>{
 
 	@Override
 	default Optional<ETypePropertyParent> getParent() {
@@ -22,6 +23,7 @@ public interface ETypeSelection<T> extends ETypeObject<T>, ETypeList<T>{
 
 
 	Query getQuery();
+
 
 	PList<BaseSelection<?>.SelectionProperty<?>> selections();
 

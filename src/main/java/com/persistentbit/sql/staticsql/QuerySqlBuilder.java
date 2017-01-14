@@ -2,7 +2,6 @@ package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.expr.BaseSelection;
 import com.persistentbit.sql.staticsql.expr.ETypeSelection;
 import com.persistentbit.sql.staticsql.expr.Expr;
@@ -19,27 +18,27 @@ import java.util.function.Consumer;
  */
 public class QuerySqlBuilder{
 
+	private final DbContext      dbContext;
 	private final ETypeSelection s;
 	private final Query          q;
-	private final DbType         type;
-	private final String         schema;
 
-	public QuerySqlBuilder(ETypeSelection s, DbType type, String schema) {
+
+	public QuerySqlBuilder(ETypeSelection s, DbContext dbContext) {
 		this.s = s;
+		this.dbContext = dbContext;
 		this.q = s.getQuery();
-		this.type = type;
-		this.schema = schema;
+
 	}
 
 	public Tuple2<String, Consumer<PreparedStatement>> generate() {
-		ExprToSqlContext context = new ExprToSqlContext(type, schema, true);
+		ExprToSqlContext context = new ExprToSqlContext(dbContext, true);
 		return Tuple2.of(generate(context, false), prepStat ->
 			context.getParamSetters().zipWithIndex().forEach(t -> t._2.accept(Tuple2.of(prepStat, t._1 + 1)))
 		);
 	}
 
 	public String generateNoParams() {
-		return generate(new ExprToSqlContext(type, schema, false), false);
+		return generate(new ExprToSqlContext(dbContext, false), false);
 	}
 
 	public String generate(ExprToSqlContext context, boolean asSubQuery) {
@@ -59,6 +58,7 @@ public class QuerySqlBuilder{
 			selItems = exp.map(e -> e._toSql(context)).toString(", ");
 		}
 		String distinct = q.distinct ? "DISTINCT " : "";
+		String schema   = dbContext.getSchemaName().orElse(null);
 		String sql      = "SELECT " + distinct + selItems + nl;
 		sql += "FROM " + q.getFrom().getFullTableName(schema) + " AS " + context
 			.uniqueInstanceName(q.getFrom(), q.getFrom().getFullTableName(schema)) + " ";
@@ -96,6 +96,7 @@ public class QuerySqlBuilder{
 				throw new IllegalArgumentException(join.getType().toString());
 
 		}
+		String schema = dbContext.getSchemaName().orElse(null);
 		res += " " + join.getTable().getFullTableName(schema) + " " + context
 			.uniqueInstanceName(join.getTable(), join.getTable().getFullTableName(schema));
 		res += join.getJoinExpr().map(e -> " ON " + e._toSql(context)).get();

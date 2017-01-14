@@ -19,4 +19,23 @@ public interface DbContext{
 	default String getFullTableName(String tableName) {
 		return getSchemaName().map(schema -> schema + "." + tableName).orElse(tableName);
 	}
+
+
+	static DbContext of(DbType type) {
+		return of(type, null);
+	}
+
+	static DbContext of(DbType type, String schemaName) {
+		return new DbContext(){
+			@Override
+			public DbType getDbType() {
+				return type;
+			}
+
+			@Override
+			public Optional<String> getSchemaName() {
+				return Optional.ofNullable(schemaName);
+			}
+		};
+	}
 }

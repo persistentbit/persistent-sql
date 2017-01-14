@@ -1,4 +1,4 @@
-package com.persistentbit.sql.dbwork;
+package com.persistentbit.sql.sqlwork;
 
 import com.persistentbit.core.OK;
 import com.persistentbit.core.logging.Log;
@@ -14,7 +14,7 @@ import java.util.function.Supplier;
  * @author petermuys
  * @since 14/01/17
  */
-public class DbWorkRunner{
+public class SqlWorkRunner{
 
 	private static class DbWorkTrans implements DbTransManager{
 
@@ -38,11 +38,11 @@ public class DbWorkRunner{
 		}
 
 		@Override
-		public <T> Result<T> runInNewTransaction(DbWork<T> work) {
+		public <T> Result<T> runInNewTransaction(SqlWork<T> work) {
 			return new DbWorkTrans(connectionSupplier).run(work);
 		}
 
-		public <R> Result<R> run(DbWork<R> work) {
+		public <R> Result<R> run(SqlWork<R> work) {
 			Result<R> result;
 			try {
 				result = work.execute(this);
@@ -92,7 +92,7 @@ public class DbWorkRunner{
 		}
 	}
 
-	public static <R> Result<R> run(Supplier<Connection> connectionSupplier, DbWork<R> work) {
+	public static <R> Result<R> run(Supplier<Connection> connectionSupplier, SqlWork<R> work) {
 		return new DbWorkTrans(connectionSupplier).run(work);
 	}
 }

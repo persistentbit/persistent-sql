@@ -1,4 +1,4 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.old;
 
 /**
  * Create Substema Source code for the test db

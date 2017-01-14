@@ -6,7 +6,7 @@ import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.result.Result;
 import com.persistentbit.sql.dbbuilder.DbBuilder;
-import com.persistentbit.sql.staticsql.SSqlWork;
+import com.persistentbit.sql.staticsql.DbWork;
 
 /**
  * @author Peter Muys
@@ -22,18 +22,18 @@ public class DbBuilderGroup implements DbBuilder{
 
 
 	@Override
-	public SSqlWork<OK> buildOrUpdate() {
-		return SSqlWork.sequence(builders.map(DbBuilder::buildOrUpdate));
+	public DbWork<OK> buildOrUpdate() {
+		return DbWork.sequence(builders.map(DbBuilder::buildOrUpdate));
 	}
 
 	@Override
-	public SSqlWork<OK> dropAll() {
-		return SSqlWork.sequence(builders.map(DbBuilder::buildOrUpdate));
+	public DbWork<OK> dropAll() {
+		return DbWork.sequence(builders.map(DbBuilder::buildOrUpdate));
 	}
 
 	@Override
-	public SSqlWork<Boolean> hasUpdatesThatAreDone() {
-		return SSqlWork.function().code(log -> (dbc, tm) -> {
+	public DbWork<Boolean> hasUpdatesThatAreDone() {
+		return DbWork.function().code(log -> (dbc, tm) -> {
 			boolean ok = true;
 			for(DbBuilder b : builders) {
 				Result<Boolean> itemOk = b.hasUpdatesThatAreDone().execute(dbc, tm);

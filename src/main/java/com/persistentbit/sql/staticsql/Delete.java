@@ -2,7 +2,7 @@ package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.result.Result;
 import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.sql.dbwork.DbTransManager;
+import com.persistentbit.sql.sqlwork.DbTransManager;
 import com.persistentbit.sql.staticsql.expr.ETypeBoolean;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 
@@ -16,7 +16,7 @@ import java.util.function.Consumer;
  * @author Peter Muys
  * @since 13/10/2016
  */
-public class Delete implements SSqlWork<Integer>{
+public class Delete implements DbWork<Integer>{
 
 	private final ETypeObject  table;
 	private final ETypeBoolean where;

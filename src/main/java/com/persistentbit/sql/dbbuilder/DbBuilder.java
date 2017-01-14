@@ -1,7 +1,7 @@
 package com.persistentbit.sql.dbbuilder;
 
 import com.persistentbit.core.OK;
-import com.persistentbit.sql.staticsql.SSqlWork;
+import com.persistentbit.sql.staticsql.DbWork;
 
 import java.sql.Connection;
 
@@ -19,21 +19,21 @@ public interface DbBuilder{
 	 * If there is a declared method in this class with the same name,
 	 * then that method is executed with a {@link Connection} as argument.<br>
 	 */
-	SSqlWork<OK> buildOrUpdate();
+	DbWork<OK> buildOrUpdate();
 
 	/**
 	 * Drop all tables, views,... created by buildOrUpdate
 	 *
 	 * @return true if dropAll executed without errors
 	 */
-	SSqlWork<OK> dropAll();
+	DbWork<OK> dropAll();
 
 	/**
 	 * Check if there is at least 1  update done for this builder.<br>
 	 *
 	 * @return true if 1 update is done for this builder
 	 */
-	SSqlWork<Boolean> hasUpdatesThatAreDone();
+	DbWork<Boolean> hasUpdatesThatAreDone();
 
 
 }

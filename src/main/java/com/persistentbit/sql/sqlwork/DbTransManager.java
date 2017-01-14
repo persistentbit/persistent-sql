@@ -1,4 +1,4 @@
-package com.persistentbit.sql.dbwork;
+package com.persistentbit.sql.sqlwork;
 
 import com.persistentbit.core.result.Result;
 
@@ -13,7 +13,7 @@ import java.sql.Connection;
 public interface DbTransManager{
 
 
-	<T> Result<T> runInNewTransaction(DbWork<T> work);
+	<T> Result<T> runInNewTransaction(SqlWork<T> work);
 
 	Connection get();
 

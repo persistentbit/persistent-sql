@@ -23,7 +23,7 @@ public class InsertWithGeneratedKeys<T>{
 	}
 
 
-	public SSqlWork<T> asWork() {
+	public DbWork<T> asWork() {
 		return (dbContext, tm) -> Result.function().code(log -> {
 			InsertSqlBuilder b = new InsertSqlBuilder(dbContext, insert, generated);
 

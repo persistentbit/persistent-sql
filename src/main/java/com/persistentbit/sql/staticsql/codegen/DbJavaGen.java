@@ -485,7 +485,7 @@ public final class DbJavaGen{
 		}
 
 		private void generateInsertFunction(RValueClass vc) {
-			addImport(SSqlWork.class);
+			addImport(DbWork.class);
 			addImport(Insert.class);
 			addImport(Update.class);
 			addImport(Delete.class);
@@ -528,8 +528,9 @@ public final class DbJavaGen{
 																						.getName().getClassName(), p
 																						.getName())
 			);
-			addImport(SSqlWork.class);
+			addImport(DbWork.class);
 			addImport(Query.class);
+			addImport(Result.class);
 			String vcName = vc.getTypeSig().getName().getClassName();
 			bs("public SSqlWork<" + vcName + "> selectById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2)
 				.toString(", ") + ")");
@@ -537,7 +538,7 @@ public final class DbJavaGen{
 				String cond = keyTypesAndNames.headOpt().map(tn -> "this." + tn._2 + ".eq(" + tn._2 + ")").get();
 				cond =
 					cond + keyTypesAndNames.tail().map(tn -> ".and(this." + tn._2 + ".eq(" + tn._2 + "))").toString("");
-				println("return Query.from(this).where(" + cond + ").selection(this).oneResultAsWork();");
+				println("return Query.from(this).where(" + cond + ").selection(this).flatMap(l -> Result.fromOpt(l.headOpt()));");
 			}
 			be();
 		}
@@ -553,7 +554,7 @@ public final class DbJavaGen{
 																						.getName().getClassName(), p
 																						.getName())
 			);
-			addImport(SSqlWork.class);
+			addImport(DbWork.class);
 			addImport(Delete.class);
 
 			bs("public SSqlWork<Integer> deleteById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2)
@@ -562,7 +563,7 @@ public final class DbJavaGen{
 				String cond = keyTypesAndNames.headOpt().map(tn -> "this." + tn._2 + ".eq(" + tn._2 + ")").get();
 				cond =
 					cond + keyTypesAndNames.tail().map(tn -> ".and(this." + tn._2 + ".eq(" + tn._2 + "))").toString("");
-				println("return new Delete(this).where(" + cond + ").asWork();");
+				println("return new Delete(this).where(" + cond + ");");
 			}
 			be();
 		}
@@ -573,7 +574,7 @@ public final class DbJavaGen{
 			if(keys.isEmpty()) {
 				return;
 			}
-			addImport(SSqlWork.class);
+			addImport(DbWork.class);
 			String vcName = vc.getTypeSig().getName().getClassName();
 			bs("public SSqlWork<" + vcName + "> update(" + vcName + " _row)");
 			{
@@ -613,10 +614,12 @@ public final class DbJavaGen{
 				cond = cond + keys.tail().map(p -> ".and(this." + p.getName() + ".eq(" + getValGetter(p, "_row") + "))")
 					.toString("");
 				println(".where(" + cond + ")");
-				println(".asWork()");
-				println(".mapResult(countRes ->");
-				println("countRes.verify(c -> c == 1,\"Expected 1 row updated, not \" + countRes.orElseThrow() + \" for \" + _row)");
-				println(".map(count -> _row)");
+				//println(".mapResult(countRes ->");
+				//println("countRes.verify(c -> c == 1,\"Expected 1 row updated, not \" + countRes.orElseThrow() + \" for \" + _row)");
+				//println(".map(count -> _row)");
+				println(".flatMap(count -> count == 0");
+				println("\t? Result.empty()");
+				println("\t: count == 1 ? Result.success(_row) : Result.failure(\"More than one record update: \" + count)");
 				println(");");
 
 			}

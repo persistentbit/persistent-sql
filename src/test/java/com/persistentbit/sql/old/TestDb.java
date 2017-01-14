@@ -1,10 +1,5 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.old;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.sql.Connection;
 
 /**
  * User: petermuys
@@ -12,7 +7,7 @@ import java.sql.Connection;
  * Time: 19:02
  */
 public class TestDb {
-
+/*
     private InMemConnectionSupplier dbConnector;
     @Before
     public void setupConnection() {
@@ -35,6 +30,6 @@ public class TestDb {
         c1.close();
         c2.close();
     }
-
+*/
 
 }

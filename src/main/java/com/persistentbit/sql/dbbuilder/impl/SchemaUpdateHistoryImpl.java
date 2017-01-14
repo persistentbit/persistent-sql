@@ -6,9 +6,9 @@ import com.persistentbit.core.logging.Log;
 import com.persistentbit.core.result.Result;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.dbbuilder.SchemaUpdateHistory;
-import com.persistentbit.sql.dbwork.DbTransManager;
+import com.persistentbit.sql.sqlwork.DbTransManager;
 import com.persistentbit.sql.staticsql.DbContext;
-import com.persistentbit.sql.staticsql.SSqlWork;
+import com.persistentbit.sql.staticsql.DbWork;
 
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -42,12 +42,13 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 
 
 	@Override
-	public SSqlWork<Boolean> isDone(String packageName, String updateName) {
-		return SSqlWork.function(packageName, updateName).code(log -> (dbc, tm) ->
+	public DbWork<Boolean> isDone(String packageName, String updateName) {
+		return DbWork.function(packageName, updateName).code(log -> (dbc, tm) ->
 			createTableIfNotExist()
 				.flatMap(ok -> {
 					String sql = "select count(1) from " + dbc.getFullTableName(tableName) +
 						" where package_name=?  and update_name=?";
+					log.info("Executing " + sql);
 					try(PreparedStatement stat = tm.get().prepareStatement(sql)) {
 						stat.setString(1, packageName);
 						stat.setString(2, updateName);
@@ -62,11 +63,11 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 		);
 	}
 
-	private SSqlWork<OK> createTableIfNotExist() {
-		return SSqlWork.function().code(log -> (dbc, tm) ->
+	private DbWork<OK> createTableIfNotExist() {
+		return DbWork.function().code(log -> (dbc, tm) ->
 			schemaHistoryTableExists()
 				.flatMap(exists -> {
-					if(exists) {
+					if(exists == false) {
 						try(Statement stat = tm.get().createStatement()) {
 							stat.execute("CREATE TABLE " + dbc.getFullTableName(tableName) + " (" +
 											 "  createdDate TIMESTAMP          NOT NULL DEFAULT current_timestamp," +
@@ -83,8 +84,8 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 		);
 	}
 
-	private SSqlWork<Boolean> schemaHistoryTableExists() {
-		return (dbc, tm) -> Result.function().code(l ->
+	private DbWork<Boolean> schemaHistoryTableExists() {
+		return DbWork.function().code(l -> (dbc, tm) ->
 													   Result.success(
 														   tableExists(dbc, tm, tableName) ||
 															   tableExists(dbc, tm, tableName.toLowerCase()) ||
@@ -114,7 +115,7 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 	}
 
 	@Override
-	public SSqlWork<PList<String>> getUpdatesDone(String packageName) {
+	public DbWork<PList<String>> getUpdatesDone(String packageName) {
 		return (dbc, tm) -> Result.function(packageName).code(l ->
 
 																  schemaHistoryTableExists()
@@ -146,8 +147,8 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 
 
 	@Override
-	public SSqlWork<OK> setDone(String packageName, String updateName) {
-		SSqlWork<OK> insert = (dbc, tm) -> {
+	public DbWork<OK> setDone(String packageName, String updateName) {
+		DbWork<OK> insert = (dbc, tm) -> {
 			String sql = "insert into " + dbc.getFullTableName(tableName) +
 				"(package_name,update_name) values(?,?)";
 			try(PreparedStatement s = tm.get().prepareStatement(sql)) {
@@ -169,8 +170,8 @@ public class SchemaUpdateHistoryImpl implements SchemaUpdateHistory{
 	}
 
 	@Override
-	public SSqlWork<OK> removeUpdateHistory(String packageName) {
-		SSqlWork<OK> delete = (dbc, tm) -> {
+	public DbWork<OK> removeUpdateHistory(String packageName) {
+		DbWork<OK> delete = (dbc, tm) -> {
 			String sql = "delete from " + dbc.getFullTableName(tableName) + " where package_name = ?";
 			try(PreparedStatement s = tm.get().prepareStatement(sql)) {
 				s.setString(1, packageName);

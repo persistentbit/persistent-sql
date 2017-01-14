@@ -3,7 +3,7 @@ package com.persistentbit.sql.staticsql;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.result.Result;
 import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.sql.dbwork.DbWork;
+import com.persistentbit.sql.sqlwork.SqlWork;
 import com.persistentbit.sql.staticsql.expr.Expr;
 import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
 
@@ -40,7 +40,7 @@ class InsertSqlBuilder{
 		);
 	}
 
-	public DbWork<Integer> work() {
+	public SqlWork<Integer> work() {
 		return tm -> Result.function().code(l -> {
 			l.info("Insert query");
 			l.info(generateNoParams());

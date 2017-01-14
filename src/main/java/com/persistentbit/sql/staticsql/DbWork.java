@@ -6,8 +6,8 @@ import com.persistentbit.core.logging.FunctionLogging;
 import com.persistentbit.core.logging.entries.LogContext;
 import com.persistentbit.core.logging.entries.LogEntryFunction;
 import com.persistentbit.core.result.Result;
-import com.persistentbit.sql.dbwork.DbTransManager;
-import com.persistentbit.sql.dbwork.DbWork;
+import com.persistentbit.sql.sqlwork.DbTransManager;
+import com.persistentbit.sql.sqlwork.SqlWork;
 
 /**
  * TODOC
@@ -16,13 +16,13 @@ import com.persistentbit.sql.dbwork.DbWork;
  * @since 13/01/17
  */
 @FunctionalInterface
-public interface SSqlWork<R>{
+public interface DbWork<R>{
 
 
 	Result<R> execute(DbContext dbc, DbTransManager tm) throws Exception;
 
-	default <T> SSqlWork<T> map(ThrowingFunction<R, T, Exception> f) {
-		return SSqlWork.function().code(l -> (dbc, tm) -> {
+	default <T> DbWork<T> map(ThrowingFunction<R, T, Exception> f) {
+		return DbWork.function().code(l -> (dbc, tm) -> {
 			try {
 				Result<R> thisResult = this.execute(dbc, tm);
 				if(thisResult.isError()) {
@@ -36,17 +36,20 @@ public interface SSqlWork<R>{
 		});
 	}
 
-	default <T> SSqlWork<T> flatMap(ThrowingFunction<R, Result<T>, Exception> mapper) {
-		return (dbc, tm) -> this.execute(dbc, tm).flatMap(r -> {
-			try {
-				return mapper.apply(r);
-			} catch(Exception e) {
-				return Result.failure(e);
-			}
-		});
+	default <T> DbWork<T> flatMap(ThrowingFunction<R, Result<T>, Exception> mapper) {
+		return DbWork.function().code(l -> (dbc, tm) ->
+			this.execute(dbc, tm)
+				.flatMap(r -> {
+					try {
+						return mapper.apply(r);
+					} catch(Exception e) {
+						return Result.failure(e);
+					}
+				})
+		);
 	}
 
-	default <T> SSqlWork<T> andThen(ThrowingFunction<Result<R>, SSqlWork<T>, Exception> after) {
+	default <T> DbWork<T> andThen(ThrowingFunction<Result<R>, DbWork<T>, Exception> after) {
 		return (dbc, tm) -> {
 			Result<R> thisResult = this.execute(dbc, tm);
 			if(thisResult.isError()) {
@@ -57,9 +60,9 @@ public interface SSqlWork<R>{
 		};
 	}
 
-	static SSqlWork<OK> sequence(Iterable<SSqlWork<OK>> sequence) {
-		return SSqlWork.function().code(log -> (dbc, tm) -> {
-			for(SSqlWork<OK> w : sequence) {
+	static DbWork<OK> sequence(Iterable<DbWork<OK>> sequence) {
+		return DbWork.function().code(log -> (dbc, tm) -> {
+			for(DbWork<OK> w : sequence) {
 				Result<OK> itemOK = w.execute(dbc, tm);
 				if(itemOK.isError()) {
 					return itemOK;
@@ -70,7 +73,7 @@ public interface SSqlWork<R>{
 		});
 	}
 
-	default DbWork<R> asDbWork(DbContext dbc) {
+	default SqlWork<R> asSqlWork(DbContext dbc) {
 		return tm -> execute(dbc, tm);
 	}
 
@@ -103,11 +106,11 @@ public interface SSqlWork<R>{
 		@FunctionalInterface
 		public interface SSqlWorkWithLogging<R>{
 
-			SSqlWork<R> create(SSqlWork.FLogging log) throws Exception;
+			DbWork<R> create(DbWork.FLogging log) throws Exception;
 		}
 
 		@SuppressWarnings("unchecked")
-		public <R> SSqlWork<R> code(SSqlWorkWithLogging<R> code) {
+		public <R> DbWork<R> code(SSqlWorkWithLogging<R> code) {
 			return (dbc, tm) ->
 				code
 					.create(this)

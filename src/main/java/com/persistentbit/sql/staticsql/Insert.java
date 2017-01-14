@@ -4,7 +4,7 @@ import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PStream;
 import com.persistentbit.core.result.Result;
 import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.sql.dbwork.DbTransManager;
+import com.persistentbit.sql.sqlwork.DbTransManager;
 import com.persistentbit.sql.staticsql.expr.ETypeObject;
 import com.persistentbit.sql.staticsql.expr.Expr;
 
@@ -17,7 +17,7 @@ import java.util.function.Consumer;
  * @author Peter Muys
  * @since 2/10/16*
  */
-public class Insert implements SSqlWork<Integer>{
+public class Insert implements DbWork<Integer>{
 
 	private final ETypeObject into;
 	private final PList<Expr> valueList;

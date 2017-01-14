@@ -1,4 +1,4 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.old;
 
 /**
  * @author Peter Muys

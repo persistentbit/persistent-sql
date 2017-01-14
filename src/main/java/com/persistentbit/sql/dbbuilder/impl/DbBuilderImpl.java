@@ -8,9 +8,9 @@ import com.persistentbit.core.result.Result;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.dbbuilder.DbBuilder;
 import com.persistentbit.sql.dbbuilder.SchemaUpdateHistory;
-import com.persistentbit.sql.dbwork.DbWork;
+import com.persistentbit.sql.sqlwork.SqlWork;
 import com.persistentbit.sql.statement.SqlLoader;
-import com.persistentbit.sql.staticsql.SSqlWork;
+import com.persistentbit.sql.staticsql.DbWork;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -65,9 +65,9 @@ public class DbBuilderImpl implements DbBuilder{
 	}
 
 	@Override
-	public SSqlWork<OK> buildOrUpdate() {
-		return (dbc, tm) -> Result.function().code(log ->
-													   executeSnip(onceBeforeSnippetName)
+	public DbWork<OK> buildOrUpdate() {
+		return DbWork.function().code(log -> (dbc, tm) ->
+			executeSnipIfExists(onceBeforeSnippetName)
 														   .flatMap(ok -> {
 															   PList<String> names = sqlLoader.getAllSnippetNames()
 																   .filter(name -> name
@@ -95,8 +95,17 @@ public class DbBuilderImpl implements DbBuilder{
 		return declaredMethods;
 	});
 
-	private SSqlWork<OK> executeSnip(String name) {
-		return (dbc, tm) -> Result.function(name).code(l -> {
+	private DbWork<OK> executeSnipIfExists(String name) {
+		return DbWork.function(name).code(mainLog -> (dbc, tm) -> Result.function().code(l -> {
+			if(sqlLoader.hasSnippet(name)) {
+				return executeSnip(name).execute(dbc, tm);
+			}
+			return OK.result;
+		}));
+	}
+
+	private DbWork<OK> executeSnip(String name) {
+		return DbWork.function(name).code(mainLog -> (dbc, tm) -> Result.function().code(l -> {
 			//Is Snippet already executed ?
 			if(updateHistory.isDone(packageName, name).execute(dbc, tm).orElseThrow()) {
 				return OK.result;
@@ -112,7 +121,7 @@ public class DbBuilderImpl implements DbBuilder{
 					return Result.failure(new PersistSqlException(e));
 				}
 			}
-			for(DbWork<OK> work : sqlLoader.getAll(name).map(sql -> executeSql(name, sql))) {
+			for(SqlWork<OK> work : sqlLoader.getAll(name).map(sql -> executeSql(name, sql))) {
 				Result<OK> ok = work.execute(tm);
 				if(ok.isPresent() == false) {
 					return ok;
@@ -122,7 +131,7 @@ public class DbBuilderImpl implements DbBuilder{
 				return OK.result;
 			}
 			return updateHistory.setDone(packageName, name).execute(dbc, tm);
-		});
+		}));
 	}
 
 	private String getFullName(String updateName) {
@@ -135,7 +144,7 @@ public class DbBuilderImpl implements DbBuilder{
 	 * @param name The name of the snippet for error reporting
 	 * @param sql  The sql statement
 	 */
-	private DbWork<OK> executeSql(String name, String sql) {
+	private SqlWork<OK> executeSql(String name, String sql) {
 		return tm -> Result.function(name, sql).code(l -> {
 			try(Statement stat = tm.get().createStatement()) {
 				stat.execute(sql);
@@ -153,20 +162,21 @@ public class DbBuilderImpl implements DbBuilder{
 	 * @return true if dropAll executed without errors
 	 */
 	@Override
-	public SSqlWork<OK> dropAll() {
+	public DbWork<OK> dropAll() {
 		return (dbc, tm) -> Result.function().code(l -> {
 			if(sqlLoader.hasSnippet(dropAllSnippetName) == false) {
 				return Result.failure(new PersistSqlException("Can't find SQL code 'DropAll' in " + sqlLoader));
 			}
-			return executeSnip(onceBeforeSnippetName)
+			return executeSnipIfExists(onceBeforeSnippetName)
 				.andThen(ok -> executeSnip(dropAllSnippetName))
+				.andThen(ok -> updateHistory.removeUpdateHistory(packageName))
 				.execute(dbc, tm);
 		});
 
 	}
 
 	@Override
-	public SSqlWork<Boolean> hasUpdatesThatAreDone() {
+	public DbWork<Boolean> hasUpdatesThatAreDone() {
 		return (dbc, tm) -> Result.function().code(l ->
 													   updateHistory.getUpdatesDone(packageName)
 														   .map(p -> p.isEmpty() == false)

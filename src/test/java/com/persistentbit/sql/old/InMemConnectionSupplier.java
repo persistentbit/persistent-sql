@@ -1,4 +1,4 @@
-package com.persistentbit.sql;
+package com.persistentbit.sql.old;
 
 import com.persistentbit.sql.connect.PooledConnectionSupplier;
 import com.persistentbit.sql.connect.SimpleConnectionSupplier;

@@ -494,14 +494,14 @@ public final class DbJavaGen{
 				vc.getProperties().find(p -> atUtils.getOneAnnotation(p.getAnnotations(), rclassAutoGen).isPresent())
 					.orElse(null);
 			String vcName = vc.getTypeSig().getName().getClassName();
-			bs("public SSqlWork<" + vcName + "> insert(" + vcName + " newRow)");
+			bs("public DbWork<" + vcName + "> insert(" + vcName + " newRow)");
 			{
 				if(autoGenProp == null) {
-					println("return Insert.into(this,val(newRow)).asWork().map(count -> newRow);");
+					println("return Insert.into(this,val(newRow)).map(count -> newRow);");
 				}
 				else {
 					println("return Insert.into(this,val(newRow)).withGeneratedKeys(_getAutoGenKey().get())");
-					println("\t.asWork().map(key -> _setAutoGenKey(newRow,key));");
+					println("\t.map(key -> _setAutoGenKey(newRow,key));");
 				}
 
 				/*if(autoGenProp == null) {
@@ -532,7 +532,7 @@ public final class DbJavaGen{
 			addImport(Query.class);
 			addImport(Result.class);
 			String vcName = vc.getTypeSig().getName().getClassName();
-			bs("public SSqlWork<" + vcName + "> selectById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2)
+			bs("public DbWork<" + vcName + "> selectById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2)
 				.toString(", ") + ")");
 			{
 				String cond = keyTypesAndNames.headOpt().map(tn -> "this." + tn._2 + ".eq(" + tn._2 + ")").get();
@@ -557,7 +557,7 @@ public final class DbJavaGen{
 			addImport(DbWork.class);
 			addImport(Delete.class);
 
-			bs("public SSqlWork<Integer> deleteById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2)
+			bs("public DbWork<Integer> deleteById(" + keyTypesAndNames.map(t -> t._1 + " " + t._2)
 				.toString(", ") + ")");
 			{
 				String cond = keyTypesAndNames.headOpt().map(tn -> "this." + tn._2 + ".eq(" + tn._2 + ")").get();
@@ -576,7 +576,7 @@ public final class DbJavaGen{
 			}
 			addImport(DbWork.class);
 			String vcName = vc.getTypeSig().getName().getClassName();
-			bs("public SSqlWork<" + vcName + "> update(" + vcName + " _row)");
+			bs("public DbWork<" + vcName + "> update(" + vcName + " _row)");
 			{
 				println("return new Update(this)");
 

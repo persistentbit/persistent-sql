@@ -1,5 +1,6 @@
 package com.persistentbit.sql;
 
+import com.persistentbit.core.logging.printing.LogPrinter;
 import com.persistentbit.core.result.Result;
 import com.persistentbit.sql.connect.SimpleConnectionSupplier;
 import com.persistentbit.sql.databases.DbDerby;
@@ -20,7 +21,7 @@ import java.util.function.Supplier;
  * @since 14/01/17
  */
 public class SQLTestTools{
-
+	static final LogPrinter	lp = ModuleSql.createLogPrinter(true);
 	static final DbType               testDbType      = new DbDerby();
 	static final String               testSchema      = null;
 	static final Supplier<Connection> testDbConnector = new SimpleConnectionSupplier(

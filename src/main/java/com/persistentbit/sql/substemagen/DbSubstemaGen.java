@@ -1,11 +1,12 @@
 package com.persistentbit.sql.substemagen;
 
-import com.persistentbit.core.Nothing;
+import com.persistentbit.core.OK;
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PMap;
 import com.persistentbit.core.collections.PSet;
 import com.persistentbit.core.exceptions.RtSqlException;
 import com.persistentbit.core.logging.Log;
+import com.persistentbit.core.result.Result;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.tuples.Tuple3;
 import com.persistentbit.core.utils.StringUtils;
@@ -141,8 +142,8 @@ public class DbSubstemaGen{
 	/**
 	 * Load the definition of the tables<br>
 	 */
-	public void loadTables() {
-		Log.function().code(log -> {
+	public Result<OK> loadTables() {
+		return Result.function().code(log -> {
 			List<String> tableNames = new ArrayList<>();
 			log.info("IMPORTING META DATA FROM DB");
 			handlePreBuildAnnotations();
@@ -168,15 +169,16 @@ public class DbSubstemaGen{
 					}
 				}
 				rs.close();
+				c.commit();
 			} catch(SQLException e) {
-				RtSqlException.map(e);
+				return Result.failure(e);
 			}
 			for(String name : tableNames) {
 
 				valueClasses = valueClasses.plus(generateSubstemaForTable(name));
 			}
 			handlePostBuildAnnotations();
-			return Nothing.inst;
+			return OK.result;
 		});
 
 	}
@@ -411,6 +413,7 @@ public class DbSubstemaGen{
 					)
 				);
 				log.info("Imported table " + tableName);
+				c.commit();
 				return new RValueClass(
 					new RTypeSig(new RClass(packageName, substemaName)),
 					properties,

@@ -2,6 +2,7 @@ package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.result.Result;
 import com.persistentbit.core.tuples.Tuple2;
+import com.persistentbit.sql.sqlwork.DbTransManager;
 import com.persistentbit.sql.staticsql.expr.Expr;
 
 import java.sql.PreparedStatement;
@@ -12,7 +13,7 @@ import java.util.function.Consumer;
 /**
  * Created by petermuys on 3/10/16.
  */
-public class InsertWithGeneratedKeys<T>{
+public class InsertWithGeneratedKeys<T> implements DbWork<T>{
 
 	private final Insert  insert;
 	private final Expr<T> generated;
@@ -22,10 +23,10 @@ public class InsertWithGeneratedKeys<T>{
 		this.generated = generated;
 	}
 
-
-	public DbWork<T> asWork() {
-		return (dbContext, tm) -> Result.function().code(log -> {
-			InsertSqlBuilder b = new InsertSqlBuilder(dbContext, insert, generated);
+	@Override
+	public Result<T> execute(DbContext dbc, DbTransManager tm) throws Exception {
+		return Result.function().code(log -> {
+			InsertSqlBuilder b = new InsertSqlBuilder(dbc, insert, generated);
 
 			log.info(b.generateNoParams());
 
@@ -47,5 +48,7 @@ public class InsertWithGeneratedKeys<T>{
 			}
 		});
 	}
+
+
 
 }

@@ -12,9 +12,20 @@ import java.util.function.Supplier;
  * @author petermuys
  * @since 14/01/17
  */
-public class DbWorkRunner{
+@FunctionalInterface
+public interface DbWorkRunner{
 
-	public static <R> Result<R> run(Supplier<Connection> connectionSupplier, DbContext context, DbWork<R> work) {
-		return SqlWorkRunner.run(connectionSupplier, work.asSqlWork(context));
+	<T> Result<T> run(DbWork<T> work);
+
+
+	static DbWorkRunner create(Supplier<Connection> connectionSupplier, DbContext context) {
+		return new DbWorkRunner(){
+			@Override
+			public <T> Result<T> run(DbWork<T> work) {
+				return SqlWorkRunner.run(connectionSupplier, work.asSqlWork(context));
+			}
+		};
 	}
+
+
 }

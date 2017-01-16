@@ -17,20 +17,20 @@ import com.persistentbit.sql.test.*;
 public class TestDbWork extends SQLTestTools{
 
 	static final TestCase testDbBuilder = TestCase.name("DbBuilder").code(tr -> {
-		tr.isFalse(run(builder.hasUpdatesThatAreDone()).orElseThrow());
-		tr.isSuccess(run(builder.buildOrUpdate()));
-		tr.isTrue(run(builder.hasUpdatesThatAreDone()).orElseThrow());
-		tr.isSuccess(run(builder.dropAll()));
+		tr.isFalse(dbRun.run(builder.hasUpdatesThatAreDone()).orElseThrow());
+		tr.isSuccess(dbRun.run(builder.buildOrUpdate()));
+		tr.isTrue(dbRun.run(builder.hasUpdatesThatAreDone()).orElseThrow());
+		tr.isSuccess(dbRun.run(builder.dropAll()));
 
-		tr.isFalse(run(builder.hasUpdatesThatAreDone()).orElseThrow());
-		tr.isSuccess(run(builder.buildOrUpdate()));
-		tr.isTrue(run(builder.hasUpdatesThatAreDone()).orElseThrow());
-		tr.isSuccess(run(builder.dropAll()));
+		tr.isFalse(dbRun.run(builder.hasUpdatesThatAreDone()).orElseThrow());
+		tr.isSuccess(dbRun.run(builder.buildOrUpdate()));
+		tr.isTrue(dbRun.run(builder.hasUpdatesThatAreDone()).orElseThrow());
+		tr.isSuccess(dbRun.run(builder.dropAll()));
 	});
 
 	static final TestCase testInsertUpdate = TestCase.name("insert & update").code(tr -> {
 		try {
-			tr.isSuccess(run(builder.buildOrUpdate()));
+			tr.isSuccess(dbRun.run(builder.buildOrUpdate()));
 			SPerson p1 = SPerson.build(b -> b
 				.setId(0)
 				.setUserName("pmu")
@@ -44,38 +44,40 @@ public class TestDbWork extends SQLTestTools{
 				.setAddress(new Address("Snoekstraat", 10, "9000", "Gent", "Belgium"))
 			);
 
-			tr.isEquals(run(Db.sPerson().insert(p1)).map(p -> p.getId()).orElseThrow(), 1);
+			tr.isEquals(dbRun.run(Db.sPerson().insert(p1)).map(p -> p.getId()).orElseThrow(), 1);
 			_SPerson tablePersons = Db.sPerson();
 			InsertWithGeneratedKeys<Integer>
 				i = Insert.into(tablePersons, tablePersons.val(p2)).withGeneratedKeys(tablePersons.id);
-			tr.isEquals(run(i).orElseThrow(), 2);
+			tr.isEquals(dbRun.run(i).orElseThrow(), 2);
 			Query q1 = Query.from(tablePersons).distinct().orderByAsc(tablePersons.id);
-			tr.isSuccess(run(q1.selection(tablePersons, Sql.val(1234), Sql.val(0).sub(tablePersons.id)))
+			tr.isSuccess(dbRun.run(q1.selection(tablePersons, Sql.val(1234), Sql.val(0).sub(tablePersons.id)))
 							 .ifPresent(l -> l.getValue().forEach(item -> tr.info(item))));
-			tr.isTrue(run(q1.where(tablePersons.address.houseNumber.between(5, 15)).selection(tablePersons))
+			tr.isTrue(dbRun.run(q1.where(tablePersons.address.houseNumber.between(5, 15)).selection(tablePersons))
 						  .orElseThrow().size() == 1);
-			tr.isNumbersEquals(run(Query.from(tablePersons).selection(Sql.val(1).count()).justOne()).orElseThrow(), 2);
+			tr.isNumbersEquals(dbRun.run(Query.from(tablePersons).selection(Sql.val(1).count()).justOne())
+								   .orElseThrow(), 2);
 
 
 			_SCompany tComp = Db.sCompany();
-			SCompany muysSoftware = run(tComp.insert(SCompany.build(b -> b
+			SCompany muysSoftware = dbRun.run(tComp.insert(SCompany.build(b -> b
 				.setAdres(p1.getAddress()).setId(0)
 			))).orElseThrow();
-			SCompany schaubroek = run(tComp.insert(SCompany.build(b -> b
+			SCompany schaubroek = dbRun.run(tComp.insert(SCompany.build(b -> b
 				.setAdres(new Address("N60", 159, "", "Nazareth", "Belgium")).setId(0)
 			))).orElseThrow();
 			_SInvoice     tInv     = Db.sInvoice();
 			SInvoice      invoice1 =
-				run(tInv.insert(new SInvoice(0, "2017-01", muysSoftware.getId(), schaubroek.getId()))).orElseThrow();
+				dbRun.run(tInv.insert(new SInvoice(0, "2017-01", muysSoftware.getId(), schaubroek.getId())))
+					.orElseThrow();
 			_SInvoiceLine tInvLine = Db.sInvoiceLine();
-			run(tInvLine.insert(new SInvoiceLine(1, invoice1.getId(), "Werk Januari")));
+			dbRun.run(tInvLine.insert(new SInvoiceLine(1, invoice1.getId(), "Werk Januari")));
 
-			run(Query.from(tInv).leftJoin(tInvLine).on(tInvLine.invoiceId.eq(tInv.id))
+			dbRun.run(Query.from(tInv).leftJoin(tInvLine).on(tInvLine.invoiceId.eq(tInv.id))
 					.orderByAsc(tInv.invoiceNummer).orderByAsc(tInvLine.id).selection(tInv, tInvLine)).orElseThrow()
 				.forEach(t -> tr.info(t));
 
 		} finally {
-			run(builder.dropAll());
+			dbRun.run(builder.dropAll());
 		}
 
 

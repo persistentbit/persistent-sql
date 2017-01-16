@@ -1,14 +1,12 @@
 package com.persistentbit.sql;
 
 import com.persistentbit.core.logging.printing.LogPrinter;
-import com.persistentbit.core.result.Result;
 import com.persistentbit.sql.connect.SimpleConnectionSupplier;
 import com.persistentbit.sql.databases.DbDerby;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.dbbuilder.DbBuilder;
 import com.persistentbit.sql.dbbuilder.impl.DbBuilderImpl;
 import com.persistentbit.sql.staticsql.DbContext;
-import com.persistentbit.sql.staticsql.DbWork;
 import com.persistentbit.sql.staticsql.DbWorkRunner;
 
 import java.sql.Connection;
@@ -29,12 +27,11 @@ public class SQLTestTools{
 		DbDerby.urlInMemory(testSchema)
 	);
 
-	static final DbContext testDbContext = DbContext.of(testDbType, testSchema);
+	static final DbContext    testDbContext = DbContext.of(testDbType, testSchema);
+	static final DbWorkRunner dbRun         = DbWorkRunner.create(testDbConnector, testDbContext);
+
 	static final DbBuilder builder       = new DbBuilderImpl("sqlTests", "/db/db_update.sql");
 
-	public static <T> Result<T> run(DbWork<T> work) {
-		return DbWorkRunner.run(testDbConnector, testDbContext, work);
-	}
 
 }
 

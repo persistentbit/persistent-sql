@@ -118,7 +118,7 @@ public class DbBuilderImpl implements DbBuilder{
 					optMethod.get().invoke(this, tm.get());
 					return OK.result;
 				} catch(IllegalAccessException | InvocationTargetException e) {
-					return Result.failure(new PersistSqlException(e));
+					return Result.<OK>failure(new PersistSqlException(e));
 				}
 			}
 			for(SqlWork<OK> work : sqlLoader.getAll(name).map(sql -> executeSql(name, sql))) {

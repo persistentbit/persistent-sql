@@ -21,6 +21,10 @@ public interface DbWork<R>{
 
 	Result<R> execute(DbContext dbc, DbTransManager tm) throws Exception;
 
+	default Result<R> run(DbWorkRunner runner) {
+		return runner.run(this);
+	}
+
 	default <T> DbWork<T> map(ThrowingFunction<R, T, Exception> f) {
 		return DbWork.function().code(l -> (dbc, tm) -> {
 			try {
@@ -43,7 +47,7 @@ public interface DbWork<R>{
 					try {
 						return mapper.apply(r);
 					} catch(Exception e) {
-						return Result.failure(e);
+						return Result.<T>failure(e);
 					}
 				})
 		);

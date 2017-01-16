@@ -24,7 +24,7 @@ public class MainCreateSubstemaFromDb extends SQLTestTools{
 
 	public static void main(String[] args) {
 		lp.registerAsGlobalHandler();
-		run(builder.buildOrUpdate()).orElseThrow();
+		dbRun.run(builder.buildOrUpdate()).orElseThrow();
 
 
 		SubstemaCompiler compiler     = new SubstemaCompiler(

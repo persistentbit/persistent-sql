@@ -10,6 +10,7 @@ import com.persistentbit.sql.staticsql.*;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * @author Peter Muys
@@ -17,10 +18,12 @@ import java.util.function.Consumer;
  */
 public abstract class BaseSelection<T> implements ETypeSelection<T> {
 
-    private final Query query;
+    private final Query   query;
+    private final Expr<T> selection;
 
     public BaseSelection(Query query, Expr<T> selection) {
         this.query = query;
+        this.selection = selection;
     }
 
     @Override
@@ -54,6 +57,10 @@ public abstract class BaseSelection<T> implements ETypeSelection<T> {
                 }
             }
         });
+    }
+
+    public <U> BaseSelection<U> mapSelection(Function<T, U> recordMapper) {
+        return new Selection1<>(query, new EMapper<>(selection, recordMapper));
     }
 
     public DbWork<T> justOne() {

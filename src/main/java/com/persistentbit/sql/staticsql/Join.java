@@ -14,7 +14,7 @@ public class Join extends BaseValueClass{
 	private final Query       query;
 	private final ETypeObject table;
 	private final Type        type;
-	private       Expr        joinExpr;
+	private final Expr        joinExpr;
 	public Join(Query query, Type type, ETypeObject table) {
 		this(query, type, table, null);
 	}
@@ -28,12 +28,12 @@ public class Join extends BaseValueClass{
 	}
 
 	public Query on(Expr joinExpr) {
-		this.joinExpr = joinExpr;
-		return query;
+		Join n = new Join(query, type, table, joinExpr);
+		return n.query();
 	}
 
 	public Query query() {
-		return query;
+		return query.addJoin(this);
 	}
 
 	public ETypeObject getTable() {

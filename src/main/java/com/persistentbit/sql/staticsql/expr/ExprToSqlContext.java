@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 public class ExprToSqlContext{
 
 	private final DbContext dbContext;
-	private final boolean   useSqlParams;
+	private       boolean   useSqlParams;
 	private int                                                 nextUniqueId       = 1;
 	private PMap<Expr, String>                                  instanceNameLookup = PMap.empty();
 	private PList<Consumer<Tuple2<PreparedStatement, Integer>>> paramSetters       = PList.empty();
@@ -59,6 +59,10 @@ public class ExprToSqlContext{
 
 	public boolean isUsingSqlParameters() {
 		return useSqlParams;
+	}
+
+	public void setUseSqlParams(boolean useSqlParams) {
+		this.useSqlParams = useSqlParams;
 	}
 
 	public PList<Consumer<Tuple2<PreparedStatement, Integer>>> getParamSetters() {

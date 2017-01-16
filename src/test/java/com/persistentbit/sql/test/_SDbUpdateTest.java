@@ -1,35 +1,22 @@
 // WARNING !
 // GENERATED CODE FOR SUBSTEMA PACKAGE com.persistentbit.sql.test
 // See resource file com.persistentbit.sql.test.substema for the definition.
-// generated on 2017-01-15T11:05:17.119
+// generated on 2017-01-16T11:33:03.110
 
 package com.persistentbit.sql.test;
 
-import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.sql.staticsql.expr.Expr;
-import com.persistentbit.sql.staticsql.expr.ExprPropertyNumber;
-import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
 import com.persistentbit.core.collections.PList;
-import com.persistentbit.sql.staticsql.expr.ETypeString;
-import com.persistentbit.sql.staticsql.RowReader;
-import com.persistentbit.sql.staticsql.expr.Sql;
-import com.persistentbit.sql.staticsql.ExprRowReaderCache;
-import com.persistentbit.sql.staticsql.Insert;
-import com.persistentbit.sql.staticsql.expr.ETypeNumber;
-import java.util.Optional;
-import com.persistentbit.sql.staticsql.DbWork;
-import com.persistentbit.sql.staticsql.expr.ETypeObject;
-import com.persistentbit.sql.staticsql.Delete;
-import com.persistentbit.sql.staticsql.expr.ETypePropertyParent;
-import com.persistentbit.sql.staticsql.Update;
 import com.persistentbit.core.result.Result;
-import com.persistentbit.sql.staticsql.expr.ExprPropertyString;
-import com.persistentbit.sql.staticsql.Query;
+import com.persistentbit.core.tuples.Tuple2;
+import com.persistentbit.sql.staticsql.*;
+import com.persistentbit.sql.staticsql.expr.*;
+
+import java.util.Optional;
 
 /**
  * 
  * This immutable value class contains the data for a record in the table 'DB_UPDATE_TEST'.<br>
- * Generated from the database on 2017-01-15T11:04:40.721<br>
+ * Generated from the database on 2017-01-15T11:05:17.006<br>
  * 
  */
 public class _SDbUpdateTest implements ETypeObject<SDbUpdateTest> {

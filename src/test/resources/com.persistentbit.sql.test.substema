@@ -19,7 +19,7 @@ case class Address {
 
 <<
 This immutable value class contains the data for a record in the table 'COMPANY'.<br>
-Generated from the database on 2017-01-15T11:05:16.988<br>
+Generated from the database on 2017-01-16T11:33:02.738<br>
 >>
 @Table
 case class SCompany {
@@ -31,7 +31,7 @@ case class SCompany {
 
 <<
 This immutable value class contains the data for a record in the table 'DB_UPDATE_TEST'.<br>
-Generated from the database on 2017-01-15T11:05:17.006<br>
+Generated from the database on 2017-01-16T11:33:02.772<br>
 >>
 @Table
 case class SDbUpdateTest {
@@ -43,7 +43,7 @@ case class SDbUpdateTest {
 
 <<
 This immutable value class contains the data for a record in the table 'INVOICE'.<br>
-Generated from the database on 2017-01-15T11:05:17.011<br>
+Generated from the database on 2017-01-16T11:33:02.781<br>
 >>
 @Table
 case class SInvoice {
@@ -57,7 +57,7 @@ case class SInvoice {
 
 <<
 This immutable value class contains the data for a record in the table 'INVOICE_LINE'.<br>
-Generated from the database on 2017-01-15T11:05:17.015<br>
+Generated from the database on 2017-01-16T11:33:02.793<br>
 >>
 @Table
 case class SInvoiceLine {
@@ -70,7 +70,7 @@ case class SInvoiceLine {
 
 <<
 This immutable value class contains the data for a record in the table 'PERSON'.<br>
-Generated from the database on 2017-01-15T11:05:17.019<br>
+Generated from the database on 2017-01-16T11:33:02.807<br>
 >>
 @Table
 case class SPerson {
@@ -85,7 +85,7 @@ case class SPerson {
 
 <<
 This immutable value class contains the data for a record in the table 'SCHEMA_HISTORY'.<br>
-Generated from the database on 2017-01-15T11:05:17.022<br>
+Generated from the database on 2017-01-16T11:33:02.814<br>
 >>
 @Table
 case class SSchemaHistory {
@@ -96,7 +96,7 @@ case class SSchemaHistory {
 
 <<
 This immutable value class contains the data for a record in the table 'SQLTEST_TABLE'.<br>
-Generated from the database on 2017-01-15T11:05:17.025<br>
+Generated from the database on 2017-01-16T11:33:02.824<br>
 >>
 @Table
 case class SSqltestTable {

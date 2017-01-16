@@ -1,25 +1,18 @@
 // WARNING !
 // GENERATED CODE FOR SUBSTEMA PACKAGE com.persistentbit.sql.test
 // See resource file com.persistentbit.sql.test.substema for the definition.
-// generated on 2017-01-15T11:05:17.104
+// generated on 2017-01-16T11:33:03.055
 
 package com.persistentbit.sql.test;
 
+import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.PersistSqlException;
-import com.persistentbit.sql.staticsql.expr.Expr;
-import com.persistentbit.sql.staticsql.expr.ExprPropertyNumber;
-import com.persistentbit.sql.staticsql.expr.ExprToSqlContext;
-import com.persistentbit.core.collections.PList;
-import com.persistentbit.sql.staticsql.expr.ETypeString;
-import com.persistentbit.sql.staticsql.RowReader;
-import com.persistentbit.sql.staticsql.expr.Sql;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
-import com.persistentbit.sql.staticsql.expr.ETypeNumber;
+import com.persistentbit.sql.staticsql.RowReader;
+import com.persistentbit.sql.staticsql.expr.*;
+
 import java.util.Optional;
-import com.persistentbit.sql.staticsql.expr.ETypeObject;
-import com.persistentbit.sql.staticsql.expr.ETypePropertyParent;
-import com.persistentbit.sql.staticsql.expr.ExprPropertyString;
 
 public class _Address implements ETypeObject<Address> {
 	private final ETypePropertyParent __parent;

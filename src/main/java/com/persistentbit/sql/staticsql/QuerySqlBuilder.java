@@ -46,7 +46,8 @@ public class QuerySqlBuilder{
 		String selName = context.uniqueInstanceName(s, "s");
 		@SuppressWarnings("unchecked")
 		PList<Expr<?>> exp = s._expand();
-
+		boolean isUseSql = context.isUsingSqlParameters();
+		context.setUseSqlParams(false);
 		String selItems;
 		if(asSubQuery) {
 			@SuppressWarnings("unchecked")
@@ -57,6 +58,7 @@ public class QuerySqlBuilder{
 		else {
 			selItems = exp.map(e -> e._toSql(context)).toString(", ");
 		}
+		context.setUseSqlParams(isUseSql);
 		String distinct = q.distinct ? "DISTINCT " : "";
 		String schema   = dbContext.getSchemaName().orElse(null);
 		String sql      = "SELECT " + distinct + selItems + nl;

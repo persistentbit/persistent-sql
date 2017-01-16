@@ -1,16 +1,17 @@
 // WARNING !
 // GENERATED CODE FOR SUBSTEMA PACKAGE com.persistentbit.sql.test
 // See resource file com.persistentbit.sql.test.substema for the definition.
-// generated on 2017-01-15T11:05:17.061
+// generated on 2017-01-16T11:33:02.973
 
 package com.persistentbit.sql.test;
 
-import com.persistentbit.core.utils.builders.SET;
-import com.persistentbit.core.utils.builders.NOT;
-import java.util.function.Function;
-import java.util.Optional;
 import com.persistentbit.core.Nullable;
+import com.persistentbit.core.utils.builders.NOT;
+import com.persistentbit.core.utils.builders.SET;
+
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 
 public class Address {
 	private final String street;

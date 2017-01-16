@@ -1,19 +1,20 @@
 // WARNING !
 // GENERATED CODE FOR SUBSTEMA PACKAGE com.persistentbit.sql.test
 // See resource file com.persistentbit.sql.test.substema for the definition.
-// generated on 2017-01-15T11:05:17.086
+// generated on 2017-01-16T11:33:03.025
 
 package com.persistentbit.sql.test;
 
-import com.persistentbit.core.utils.builders.SET;
 import com.persistentbit.core.utils.builders.NOT;
-import java.util.function.Function;
+import com.persistentbit.core.utils.builders.SET;
+
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * 
  * This immutable value class contains the data for a record in the table 'INVOICE'.<br>
- * Generated from the database on 2017-01-15T11:04:40.725<br>
+ * Generated from the database on 2017-01-15T11:05:17.011<br>
  * 
  */
 public class SInvoice {

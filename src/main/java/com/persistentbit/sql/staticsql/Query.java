@@ -11,15 +11,26 @@ import java.util.Optional;
 public class Query{
 
 
-	private final ETypeObject  from;
-	boolean        distinct = false;
-	PList<OrderBy> orderBy  = PList.empty();
-	private       PList<Join>  joins;
-	private       ETypeBoolean where;
+	private final ETypeObject    from;
+	final         boolean        distinct;
+	final         PList<OrderBy> orderBy;
+	private final PList<Join>    joins;
+	private final ETypeBoolean   where;
+
+	public Query(ETypeObject from, boolean distinct,
+				 PList<OrderBy> orderBy,
+				 PList<Join> joins,
+				 ETypeBoolean where
+	) {
+		this.from = from;
+		this.distinct = distinct;
+		this.orderBy = orderBy;
+		this.joins = joins;
+		this.where = where;
+	}
 
 	public Query(ETypeObject from, PList<Join> joins) {
-		this.from = from;
-		this.joins = joins;
+		this(from, false, PList.empty(), joins, null);
 	}
 
 	static public Query from(ETypeObject table) {
@@ -28,8 +39,7 @@ public class Query{
 
 
 	public Query distinct() {
-		distinct = true;
-		return this;
+		return new Query(from, true, orderBy, joins, where);
 	}
 
 
@@ -38,8 +48,7 @@ public class Query{
 	}
 
 	public Query orderBy(OrderBy orderBy) {
-		this.orderBy = this.orderBy.plus(orderBy);
-		return this;
+		return new Query(from, distinct, this.orderBy.plus(orderBy), joins, where);
 	}
 
 	public Query orderByAsc(Expr<?> expr) {
@@ -47,29 +56,28 @@ public class Query{
 	}
 
 	public Join leftJoin(ETypeObject table) {
-		return add(new Join(this, Join.Type.left, table));
+		return new Join(this, Join.Type.left, table);
 	}
 
-	private Join add(Join j) {
-		joins = joins.plus(j);
-		return j;
-	}
 
 	public Join rightJoin(ETypeObject table) {
-		return add(new Join(this, Join.Type.right, table));
+		return new Join(this, Join.Type.right, table);
 	}
 
 	public Join innerJoin(ETypeObject table) {
-		return add(new Join(this, Join.Type.inner, table));
+		return new Join(this, Join.Type.inner, table);
 	}
 
 	public Join fullJoin(ETypeObject table) {
-		return add(new Join(this, Join.Type.full, table));
+		return new Join(this, Join.Type.full, table);
 	}
 
 	public Query where(ETypeBoolean whereExpr) {
-		this.where = whereExpr;
-		return this;
+		return new Query(from, distinct, orderBy, joins, whereExpr);
+	}
+
+	Query addJoin(Join j) {
+		return new Query(from, distinct, orderBy, joins.plus(j), where);
 	}
 
 

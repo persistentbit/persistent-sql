@@ -1,12 +1,9 @@
 // WARNING !
 // GENERATED CODE FOR SUBSTEMA PACKAGE com.persistentbit.sql.test
 // See resource file com.persistentbit.sql.test.substema for the definition.
-// generated on 2017-01-15T11:05:17.135
+// generated on 2017-01-16T11:33:03.139
 
 package com.persistentbit.sql.test;
-
-import com.persistentbit.sql.databases.DbType;
-import com.persistentbit.sql.transactions.TransactionRunner;
 
 public class Db {
 	public _Address address(){ return new _Address(); }

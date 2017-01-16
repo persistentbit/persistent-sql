@@ -1,20 +1,21 @@
 // WARNING !
 // GENERATED CODE FOR SUBSTEMA PACKAGE com.persistentbit.sql.test
 // See resource file com.persistentbit.sql.test.substema for the definition.
-// generated on 2017-01-15T11:05:17.096
+// generated on 2017-01-16T11:33:03.037
 
 package com.persistentbit.sql.test;
 
-import com.persistentbit.core.utils.builders.SET;
-import java.time.LocalDateTime;
 import com.persistentbit.core.utils.builders.NOT;
-import java.util.function.Function;
+import com.persistentbit.core.utils.builders.SET;
+
+import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * 
  * This immutable value class contains the data for a record in the table 'SCHEMA_HISTORY'.<br>
- * Generated from the database on 2017-01-15T11:04:40.737<br>
+ * Generated from the database on 2017-01-15T11:05:17.022<br>
  * 
  */
 public class SSchemaHistory {

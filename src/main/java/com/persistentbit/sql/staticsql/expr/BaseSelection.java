@@ -56,6 +56,12 @@ public abstract class BaseSelection<T> implements ETypeSelection<T> {
         });
     }
 
+    public DbWork<T> justOne() {
+        return DbWork.function().code(l -> (dbc, tm) ->
+            this.execute(dbc, tm).flatMap(list -> Result.fromOpt(list.headOpt()))
+        );
+    }
+
     @Override
     public String _asParentName(ExprToSqlContext context, String propertyName) {
         return context.uniqueInstanceName(this, "Selection") + "." + propertyName;

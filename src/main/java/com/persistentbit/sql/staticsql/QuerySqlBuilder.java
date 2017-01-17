@@ -63,7 +63,7 @@ public class QuerySqlBuilder{
 		String schema   = dbContext.getSchemaName().orElse(null);
 		String sql      = "SELECT " + distinct + selItems + nl;
 		sql += "FROM " + q.getFrom().getFullTableName(schema) + " AS " + context
-			.uniqueInstanceName(q.getFrom(), q.getFrom().getFullTableName(schema)) + " ";
+			.uniqueInstanceName(q.getFrom(), q.getFrom().getFullTableName(null)) + " ";
 		sql += q.getJoins().map(j -> joinToString(context, j)).toString(nl);
 		sql += q.getWhere().map(w -> nl + "WHERE " + w._toSql(context)).orElse("");
 
@@ -100,7 +100,7 @@ public class QuerySqlBuilder{
 		}
 		String schema = dbContext.getSchemaName().orElse(null);
 		res += " " + join.getTable().getFullTableName(schema) + " " + context
-			.uniqueInstanceName(join.getTable(), join.getTable().getFullTableName(schema));
+			.uniqueInstanceName(join.getTable(), join.getTable().getFullTableName(null));
 		res += join.getJoinExpr().map(e -> " ON " + e._toSql(context)).get();
 		return res;
 	}

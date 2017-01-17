@@ -59,6 +59,8 @@ public abstract class BaseSelection<T> implements ETypeSelection<T> {
         });
     }
 
+
+
     public <U> BaseSelection<U> mapSelection(Function<T, U> recordMapper) {
         return new Selection1<>(query, new EMapper<>(selection, recordMapper));
     }

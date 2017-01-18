@@ -85,11 +85,11 @@ public class TestDbWork extends SQLTestTools{
 
 
 	public void testAll() {
-		TestRunner.runAndPrint(ModuleSql.createLogPrinter(true), TestDbWork.class);
+		TestRunner.runAndPrint(ModuleSql.logPrint, TestDbWork.class);
 	}
 
 	public static void main(String[] args) {
-		ModuleSql.createLogPrinter(true).registerAsGlobalHandler();
+		ModuleSql.logPrint.registerAsGlobalHandler();
 		new TestDbWork().testAll();
 	}
 }

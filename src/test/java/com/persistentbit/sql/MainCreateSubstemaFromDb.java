@@ -23,7 +23,7 @@ import java.nio.file.Path;
 public class MainCreateSubstemaFromDb extends SQLTestTools{
 
 	public static void main(String[] args) {
-		lp.registerAsGlobalHandler();
+		logPrint.registerAsGlobalHandler();
 		dbRun.run(builder.buildOrUpdate()).orElseThrow();
 
 

@@ -49,7 +49,7 @@ public class TestSqlWork{
 	});
 
 	public void testAll() {
-		TestRunner.runAndPrint(ModuleSql.createLogPrinter(true), TestSqlWork.class);
+		TestRunner.runAndPrint(ModuleSql.logPrint, TestSqlWork.class);
 	}
 
 	public static void main(String[] args) {

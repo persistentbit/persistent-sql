@@ -72,6 +72,15 @@ public class QuerySqlBuilder{
 				.map(ob -> ob.getExpr()._toSql(context) + " " + ob.getDir().name().toUpperCase()).toString(", ");
 		}
 
+		if(q.getLimit().isPresent()){
+			Long offset = q.getOffset().orElse(null);
+			if(offset == null){
+				sql = context.getDbType().sqlWithLimit(q.getLimit().get(), sql);
+			} else {
+				sql = context.getDbType().sqlWithLimitAndOffset(q.getLimit().get(),offset, sql);
+			}
+		}
+
 
 		if(asSubQuery) {
 			sql = "(" + sql + ")";

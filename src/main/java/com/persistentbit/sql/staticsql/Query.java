@@ -1,6 +1,7 @@
 package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.staticsql.expr.*;
 
 import java.util.Optional;
@@ -16,21 +17,24 @@ public class Query{
 	final         PList<OrderBy> orderBy;
 	private final PList<Join>    joins;
 	private final ETypeBoolean   where;
+	private final Tuple2<Long,Long>	limitAndOffset;
 
 	public Query(ETypeObject from, boolean distinct,
 				 PList<OrderBy> orderBy,
 				 PList<Join> joins,
-				 ETypeBoolean where
+				 ETypeBoolean where,
+				 Tuple2<Long,Long> limitAndOffset
 	) {
 		this.from = from;
 		this.distinct = distinct;
 		this.orderBy = orderBy;
 		this.joins = joins;
 		this.where = where;
+		this.limitAndOffset = limitAndOffset;
 	}
 
 	public Query(ETypeObject from, PList<Join> joins) {
-		this(from, false, PList.empty(), joins, null);
+		this(from, false, PList.empty(), joins, null,null);
 	}
 
 	static public Query from(ETypeObject table) {
@@ -39,7 +43,7 @@ public class Query{
 
 
 	public Query distinct() {
-		return new Query(from, true, orderBy, joins, where);
+		return new Query(from, true, orderBy, joins, where,limitAndOffset);
 	}
 
 
@@ -48,7 +52,7 @@ public class Query{
 	}
 
 	public Query orderBy(OrderBy orderBy) {
-		return new Query(from, distinct, this.orderBy.plus(orderBy), joins, where);
+		return new Query(from, distinct, this.orderBy.plus(orderBy), joins, where,limitAndOffset);
 	}
 
 	public Query orderByAsc(Expr<?> expr) {
@@ -73,11 +77,11 @@ public class Query{
 	}
 
 	public Query where(ETypeBoolean whereExpr) {
-		return new Query(from, distinct, orderBy, joins, whereExpr);
+		return new Query(from, distinct, orderBy, joins, whereExpr,limitAndOffset);
 	}
 
 	Query addJoin(Join j) {
-		return new Query(from, distinct, orderBy, joins.plus(j), where);
+		return new Query(from, distinct, orderBy, joins.plus(j), where,limitAndOffset);
 	}
 
 
@@ -91,6 +95,27 @@ public class Query{
 
 	public Optional<ETypeBoolean> getWhere() {
 		return Optional.ofNullable(where);
+	}
+
+
+	public Query	limit(long limit){
+		return new Query(from,distinct,orderBy,joins,where,Tuple2.of(limit,null));
+	}
+	public Query	limitAndOffset(long limit, long offset){
+		return new Query(from,distinct,orderBy,joins,where,Tuple2.of(limit,offset));
+	}
+
+	public Optional<Long> getLimit() {
+		if(limitAndOffset == null){
+			return Optional.empty();
+		}
+		return limitAndOffset.get1();
+	}
+	public Optional<Long> getOffset() {
+		if(limitAndOffset == null){
+			return Optional.empty();
+		}
+		return limitAndOffset.get2();
 	}
 
 	public <T> Selection1<T> selection(Expr<T> selection) {

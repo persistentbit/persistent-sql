@@ -381,6 +381,11 @@ public final class DbJavaGen{
 
 					}
 					be();
+					//************** Query
+					addImport(Query.class);
+					bs("public\tQuery\tquery()");{
+						println("return Query.from(this);");
+					}be();
 
 					//**************   Auto Generated Key
 					generateAutGenKeyFunctions(vc);

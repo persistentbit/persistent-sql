@@ -33,6 +33,11 @@ public class SqlWorkRunner{
 		}
 
 		@Override
+		public String toString() {
+			return "DbWorkTrans[]";
+		}
+
+		@Override
 		public Connection get() {
 			return connection;
 		}

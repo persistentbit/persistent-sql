@@ -36,6 +36,11 @@ public interface DbContext{
 			public Optional<String> getSchemaName() {
 				return Optional.ofNullable(schemaName);
 			}
+
+			@Override
+			public String toString() {
+				return "DbContext[" + type + getSchemaName().map(s -> ", " + s).orElse("") + "]";
+			}
 		};
 	}
 }

@@ -32,6 +32,10 @@ public abstract class AbstractDbType implements DbType{
 		throw new PersistSqlException("Not Yet implemented for " + this.getClass().getSimpleName());
 	}
 
+	@Override
+	public String toString() {
+		return getDatabaseName();
+	}
 
 	static void registerDriver(String driverClass) {
 		try {
@@ -41,4 +45,5 @@ public abstract class AbstractDbType implements DbType{
 			throw new PersistSqlException(e);
 		}
 	}
+
 }

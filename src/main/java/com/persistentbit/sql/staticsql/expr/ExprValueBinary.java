@@ -52,6 +52,6 @@ public class ExprValueBinary implements ETypeValue<PByteList>{
 
     @Override
     public String _literalValueToSql(ExprToSqlContext context) {
-        return context.getDbType().asLiteralBlob(value);
+        return value == null ? "NULL" : context.getDbType().asLiteralBlob(value);
     }
 }

@@ -38,7 +38,7 @@ public class ExprValueDate implements Expr<LocalDate>, ETypeDate, ETypeValue<Loc
 
 	@Override
 	public String _literalValueToSql(ExprToSqlContext context) {
-		return context.getDbType().asLiteralDate(value);
+		return value == null ? "NULL" : context.getDbType().asLiteralDate(value);
 	}
 
 

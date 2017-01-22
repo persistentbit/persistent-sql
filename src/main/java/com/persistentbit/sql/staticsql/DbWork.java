@@ -9,6 +9,8 @@ import com.persistentbit.core.result.Result;
 import com.persistentbit.sql.sqlwork.DbTransManager;
 import com.persistentbit.sql.sqlwork.SqlWork;
 
+import java.util.function.Predicate;
+
 /**
  * TODOC
  *
@@ -50,6 +52,22 @@ public interface DbWork<R>{
 						return Result.<T>failure(e);
 					}
 				})
+		);
+	}
+
+	default DbWork<R> verify(Predicate<R> condition, String message) {
+		return this.flatMap(r ->
+								condition.test(r)
+									? Result.success(r)
+									: Result.failure("Verification of " + r + " failed:" + message)
+		);
+	}
+
+	default DbWork<OK> verifyToOK(Predicate<R> condition, String message) {
+		return this.flatMap(r ->
+								condition.test(r)
+									? OK.result
+									: Result.failure("Verification of " + r + " failed:" + message)
 		);
 	}
 
@@ -108,13 +126,13 @@ public interface DbWork<R>{
 		}
 
 		@FunctionalInterface
-		public interface SSqlWorkWithLogging<R>{
+		public interface DbWorkWithLogging<R>{
 
 			DbWork<R> create(DbWork.FLogging log) throws Exception;
 		}
 
 		@SuppressWarnings("unchecked")
-		public <R> DbWork<R> code(SSqlWorkWithLogging<R> code) {
+		public <R> DbWork<R> code(DbWorkWithLogging<R> code) {
 			return (dbc, tm) ->
 				code
 					.create(this)

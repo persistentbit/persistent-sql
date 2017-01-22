@@ -35,5 +35,20 @@ public interface DbBuilder{
 	 */
 	DbWork<Boolean> hasUpdatesThatAreDone();
 
+	/**
+	 * If there are any updates done: drop all and rebuild
+	 *
+	 * @return succes or failure
+	 */
+	default DbWork<OK> resetDb() {
+		return DbWork.function().code(l -> (dbc, tm) -> {
+			boolean hasUpdates = hasUpdatesThatAreDone().execute(dbc, tm).orElse(false);
+			if(hasUpdates) {
+				dropAll().execute(dbc, tm);
+			}
+			return buildOrUpdate().execute(dbc, tm);
+		});
+
+	}
 
 }

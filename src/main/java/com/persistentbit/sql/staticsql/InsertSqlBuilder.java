@@ -1,6 +1,7 @@
 package com.persistentbit.sql.staticsql;
 
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.logging.Log;
 import com.persistentbit.core.result.Result;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.sqlwork.SqlWork;
@@ -57,36 +58,37 @@ class InsertSqlBuilder{
 	}
 
 	private String generate(ExprToSqlContext context) {
-		String fullTableName = insert.getInto().getFullTableName(dbContext.getSchemaName().orElse(null));
-		context.uniqueInstanceName(insert.getInto(), fullTableName);
-		String nl        = "\r\n";
-		String res       = "";
-		String tableName = insert.getInto()._getTableName();
-		res += "INSERT INTO " + fullTableName + " ";
-		@SuppressWarnings("unchecked")
-		PList<Tuple2<String, Expr>> all                  = insert.getInto()._all();
-		PList<Expr>                 expanded             = all.map(e -> e._2._expand()).<Expr>flatten().plist();
-		@SuppressWarnings("unchecked")
-		PList<Expr>                 expandedGenerated    = generatedKeys._expand();
-		PList<Expr>                 expandedNotGenerated = expanded.filter(e -> expandedGenerated.contains(e) == false);
-
-		PList<String> names = expandedNotGenerated.map(e -> e._fullColumnName(context));
-		res += "(" + names.toString(", ") + ")" + nl;
-		res += "VALUES \r\n";
-		res += insert.getValues().map(v -> {
+		return Log.function(context).code(l -> {
+			String fullTableName = insert.getInto().getFullTableName(dbContext.getSchemaName().orElse(null));
+			context.uniqueInstanceName(insert.getInto(), fullTableName);
+			String nl        = "\r\n";
+			String res       = "";
+			String tableName = insert.getInto()._getTableName();
+			res += "INSERT INTO " + fullTableName + " ";
 			@SuppressWarnings("unchecked")
-			PList<Expr> vals      = v._expand();
-			PList<Expr> valsNoGen = PList.empty();
-			for(int t = 0; t < expanded.size(); t++) {
-				boolean generated = expandedGenerated.contains(expanded.get(t));
-				if(generated == false) {
-					valsNoGen = valsNoGen.plus(vals.get(t));
+			PList<Tuple2<String, Expr>> all = insert.getInto()._all();
+			PList<Expr> expanded = all.map(e -> e._2._expand()).<Expr>flatten().plist();
+			@SuppressWarnings("unchecked")
+			PList<Expr> expandedGenerated = generatedKeys._expand();
+			PList<Expr> expandedNotGenerated = expanded.filter(e -> expandedGenerated.contains(e) == false);
+
+			PList<String> names = expandedNotGenerated.map(e -> e._fullColumnName(context));
+			res += "(" + names.toString(", ") + ")" + nl;
+			res += "VALUES \r\n";
+			res += insert.getValues().map(v -> {
+				@SuppressWarnings("unchecked")
+				PList<Expr> vals = v._expand();
+				PList<Expr> valsNoGen = PList.empty();
+				for(int t = 0; t < expanded.size(); t++) {
+					boolean generated = expandedGenerated.contains(expanded.get(t));
+					if(generated == false) {
+						valsNoGen = valsNoGen.plus(vals.get(t));
+					}
 				}
-			}
-			return valsNoGen.map(vn -> vn._toSql(context)).toString("(", ", ", ")");
-		}).toString(",\r\n");
+				return valsNoGen.map(vn -> vn._toSql(context)).toString("(", ", ", ")");
+			}).toString(",\r\n");
 
-
-		return res;
+			return res;
+		});
 	}
 }

@@ -41,7 +41,7 @@ public class ExprValueEnum<T extends Enum<T>> implements ETypeEnum<T>, ETypeValu
 
 	@Override
 	public String _literalValueToSql(ExprToSqlContext context) {
-		return context.getDbType().asLiteralString(value.name());
+		return value == null ? "NULL" : context.getDbType().asLiteralString(value.name());
 	}
 
 

@@ -38,6 +38,6 @@ public class ExprValueString implements ETypeString, ETypeValue<String>{
 
 	@Override
 	public String _literalValueToSql(ExprToSqlContext context) {
-		return context.getDbType().asLiteralString(value);
+		return value == null ? "NULL" : context.getDbType().asLiteralString(value);
 	}
 }

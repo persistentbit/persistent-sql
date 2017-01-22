@@ -37,6 +37,6 @@ public class ExprValueDateTime implements Expr<LocalDateTime>, ETypeDateTime, ET
 
 	@Override
 	public String _literalValueToSql(ExprToSqlContext context) {
-		return context.getDbType().asLiteralDateTime(value);
+		return value == null ? "NULL" : context.getDbType().asLiteralDateTime(value);
 	}
 }

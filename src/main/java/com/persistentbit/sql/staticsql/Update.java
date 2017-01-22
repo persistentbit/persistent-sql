@@ -39,6 +39,10 @@ public class Update implements DbWork<Integer>{
 		this(table, null, PList.empty());
 	}
 
+	public static Update table(ETypeObject table) {
+		return new Update(table);
+	}
+
 	public <V> Update set(Expr<V> property, Expr<? extends V> value) {
 		return new Update(table, where, set.plus(Tuple2.of(property, value)));
 	}

@@ -3,6 +3,7 @@ package com.persistentbit.sql;
 import com.persistentbit.core.logging.printing.LogFormatter;
 import com.persistentbit.core.logging.printing.LogPrint;
 import com.persistentbit.core.logging.printing.LogPrintStream;
+import com.persistentbit.sql.connect.PooledConnectionSupplier;
 import com.persistentbit.sql.connect.SimpleConnectionSupplier;
 import com.persistentbit.sql.databases.DbDerby;
 import com.persistentbit.sql.databases.DbType;
@@ -26,10 +27,10 @@ public class SQLTestTools{
 	static final LogPrint             logPrint        = LogPrintStream.sysOut(logFormatter);
 	static final DbType               testDbType      = new DbDerby();
 	static final String               testSchema      = null;
-	static final Supplier<Connection> testDbConnector = new SimpleConnectionSupplier(
+	static final Supplier<Connection> testDbConnector = new PooledConnectionSupplier(new SimpleConnectionSupplier(
 		"org.apache.derby.jdbc.EmbeddedDriver",
 		DbDerby.urlInMemory(testSchema)
-	);
+	),2);
 
 	static final DbContext    testDbContext = DbContext.of(testDbType, testSchema);
 	static final DbWorkRunner dbRun         = DbWorkRunner.create(testDbConnector, testDbContext);

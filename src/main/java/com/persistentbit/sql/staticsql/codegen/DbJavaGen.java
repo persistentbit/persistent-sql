@@ -648,8 +648,12 @@ public final class DbJavaGen{
 		 */
 		public Result<GeneratedJava> generateDb(PList<RValueClass> valueClasses) {
 			return Result.function(valueClasses.map(vc -> vc.getTypeSig())).code(log -> {
-
-				RClass dbCls = new RClass(packageName, "Db");
+				String dbName =
+					atUtils.getOneAnnotation(substema.getPackageDef().getAnnotations(), rclassDbName)
+						.map(at -> atUtils.getStringProperty(at, "name").orElse(""))
+						.map(name -> "Db" + StringUtils.firstUpperCase(name))
+						.orElse("Db");
+				RClass dbCls = new RClass(packageName, dbName);
 				addImport(dbCls);
 
 				addImport(TransactionRunner.class);
@@ -659,7 +663,7 @@ public final class DbJavaGen{
 						.map(at -> atUtils.getStringProperty(at, "name").map(n -> "\"" + n + "\"").orElse(null))
 						.orElse(null);
 				generateJavaDoc(substema.getPackageDef().getAnnotations());
-				bs("public class Db");
+				bs("public class " + dbName);
 				{
 
 

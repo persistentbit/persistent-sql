@@ -22,6 +22,7 @@ public final class DbAnnotationsUtils{
 
 	public static final String packageDbAnnotations = "com.persistentbit.sql.annotations";
 
+	public static final RClass rclassDbName  = new RClass(packageDbAnnotations, "DbName");
 	public static final RClass rclassSchema  = new RClass(packageDbAnnotations, "Schema");
 	public static final RClass rclassTable   = new RClass(packageDbAnnotations, "Table");
 	public static final RClass rclassColumn  = new RClass(packageDbAnnotations, "Column");

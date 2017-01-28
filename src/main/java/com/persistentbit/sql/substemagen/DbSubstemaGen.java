@@ -141,6 +141,7 @@ public class DbSubstemaGen{
 
 	/**
 	 * Load the definition of the tables<br>
+	 * @return executed ok?
 	 */
 	public Result<OK> loadTables() {
 		return Result.function().code(log -> {

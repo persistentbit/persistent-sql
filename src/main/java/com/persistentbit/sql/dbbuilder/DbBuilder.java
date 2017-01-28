@@ -18,13 +18,14 @@ public interface DbBuilder{
 	 * Execute all the database update methods not registered in the SchemaHistory table.<br>
 	 * If there is a declared method in this class with the same name,
 	 * then that method is executed with a {@link Connection} as argument.<br>
+	 * @return executed ok?
 	 */
 	DbWork<OK> buildOrUpdate();
 
 	/**
 	 * Drop all tables, views,... created by buildOrUpdate
 	 *
-	 * @return true if dropAll executed without errors
+	 * @return executed ok?
 	 */
 	DbWork<OK> dropAll();
 

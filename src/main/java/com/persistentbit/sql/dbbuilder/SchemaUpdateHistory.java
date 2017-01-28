@@ -29,12 +29,14 @@ public interface SchemaUpdateHistory{
 	 *
 	 * @param packageName The package or module Name (ex. com.persistentbit.sql)
 	 * @param updateName  The name of the update (ex. create_initial_tables)
+	 * @return executed ok?
 	 */
 	DbWork<OK> setDone(String packageName, String updateName);
 
 	/**
 	 * removes the update history for a given package.<br>
 	 * @param packageName The packageName to remove the history for
+	 * @return executed ok?
 	 */
 	DbWork<OK> removeUpdateHistory(String packageName);
 

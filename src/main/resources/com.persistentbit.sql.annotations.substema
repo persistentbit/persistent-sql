@@ -4,6 +4,10 @@ annotation Schema{
     name:String;
 }
 
+annotation DbName{
+    name:String;
+}
+
 annotation Table{
     name:?String;
 }

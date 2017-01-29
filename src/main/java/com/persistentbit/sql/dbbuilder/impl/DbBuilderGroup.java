@@ -28,7 +28,7 @@ public class DbBuilderGroup implements DbBuilder{
 
 	@Override
 	public DbWork<OK> dropAll() {
-		return DbWork.sequence(builders.map(DbBuilder::buildOrUpdate));
+		return DbWork.sequence(builders.map(DbBuilder::dropAll));
 	}
 
 	@Override

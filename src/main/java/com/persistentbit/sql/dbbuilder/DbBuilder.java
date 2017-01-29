@@ -44,9 +44,12 @@ public interface DbBuilder{
 	default DbWork<OK> resetDb() {
 		return DbWork.function().code(l -> (dbc, tm) -> {
 			boolean hasUpdates = hasUpdatesThatAreDone().execute(dbc, tm).orElse(false);
+			l.info("Do we have updates? " + hasUpdates);
 			if(hasUpdates) {
-				dropAll().execute(dbc, tm);
+				l.info("Let's drop all");
+				l.add(dropAll().execute(dbc, tm)).orElseThrow();
 			}
+			l.info("Now rebuild all..");
 			return buildOrUpdate().execute(dbc, tm);
 		});
 

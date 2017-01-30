@@ -16,6 +16,7 @@ import com.persistentbit.sql.staticsql.*;
 import com.persistentbit.sql.staticsql.expr.*;
 import com.persistentbit.sql.transactions.TransactionRunner;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
+import com.persistentbit.substema.compiler.SubstemaException;
 import com.persistentbit.substema.compiler.SubstemaUtils;
 import com.persistentbit.substema.compiler.values.*;
 import com.persistentbit.substema.javagen.*;
@@ -138,35 +139,56 @@ public final class DbJavaGen{
 	 * Find external classes and enums used by the provided cls.<br>
 	 * used enums and substema classes are ignored
 	 *
-	 * @param found list of found external classes
+	 * @param foundList list of found external classes
 	 * @param cls   The class to process
 	 *
 	 * @return Set of RClass
 	 */
-	private PSet<RClass> findExternalDefinitions(PSet<RClass> found, RClass cls) {
-		if(found.contains(cls)) {
-			return found;
-		}
-		if(SubstemaUtils.isSubstemaClass(cls)) {
-			return found;
-		}
+	private PSet<RClass> findExternalDefinitions(PSet<RClass> foundList, RClass cls) {
+		return Log.function("<foundList>", cls).code(l -> {
+			if(foundList.contains(cls)) {
+				return foundList;
+			}
+			if(SubstemaUtils.isSubstemaClass(cls)) {
+				return foundList;
+			}
+			PSet<RClass> result = foundList;
+			if(cls.getPackageName().equals(substema.getPackageName()) == false) {
+				result = result.plus(cls);
+				RSubstema   extSubstema = compiler.compile(cls.getPackageName()).orElseThrow();
+				RValueClass vc          =
+					extSubstema.getValueClasses().find(evc -> evc.getTypeSig().getName().equals(cls)).orElse(null);
+				if(vc == null) {
+					extSubstema.getEnums().find(ec -> ec.getName().equals(cls))
+						.orElseThrow(() -> new SubstemaException("Expected an enum or value class for " + cls));
+					return result;//Must be an enum
+				}
+				for(RProperty prop : vc.getProperties()) {
+					RClass searchClass = prop.getValueType().getTypeSig().getName();
+					System.out.println("Looking for " + searchClass);
+					if(searchClass.equals(cls) == false) {
+						result = result.plusAll(findExternalDefinitions(result, searchClass));
+					}
+				}
+				return result;
+			}
 
-		if(cls.getPackageName().equals(substema.getPackageName()) == false) {
-			found = found.plus(cls);
-		}
 
+			RValueClass vc = getValueClass(cls).orElse(null);
+			if(vc == null) {
 
-		RValueClass vc = getValueClass(cls).orElse(null);
-		if(vc == null) {
+				return result;
+			}
 
-			return found;
-		}
-
-		for(RProperty prop : vc.getProperties()) {
-
-			found = found.plusAll(findExternalDefinitions(found, prop.getValueType().getTypeSig().getName()));
-		}
-		return found;
+			for(RProperty prop : vc.getProperties()) {
+				RClass searchClass = prop.getValueType().getTypeSig().getName();
+				//System.out.println("Looking for " + searchClass);
+				if(searchClass.equals(cls) == false) {
+					result = result.plusAll(findExternalDefinitions(result, searchClass));
+				}
+			}
+			return result;
+		});
 	}
 
 
@@ -651,7 +673,7 @@ public final class DbJavaGen{
 				String dbName =
 					atUtils.getOneAnnotation(substema.getPackageDef().getAnnotations(), rclassDbName)
 						.map(at -> atUtils.getStringProperty(at, "name").orElse(""))
-						.map(name -> "Db" + StringUtils.firstUpperCase(name))
+						.map(name -> "Db" + name)
 						.orElse("Db");
 				RClass dbCls = new RClass(packageName, dbName);
 				addImport(dbCls);

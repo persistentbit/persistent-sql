@@ -165,7 +165,7 @@ public final class DbJavaGen{
 				}
 				for(RProperty prop : vc.getProperties()) {
 					RClass searchClass = prop.getValueType().getTypeSig().getName();
-					System.out.println("Looking for " + searchClass);
+					//System.out.println("Looking for " + searchClass);
 					if(searchClass.equals(cls) == false) {
 						result = result.plusAll(findExternalDefinitions(result, searchClass));
 					}

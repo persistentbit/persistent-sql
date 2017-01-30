@@ -75,9 +75,20 @@ public interface DbWork<R>{
 		return (dbc, tm) -> {
 			Result<R> thisResult = this.execute(dbc, tm);
 			if(thisResult.isError()) {
-				return thisResult.map(v -> null);
+				return thisResult.map(v -> null);//Convert the failure from <R> to <T>
 			}
 			Result<T> afterResult = after.apply(thisResult).execute(dbc, tm);
+			return afterResult.mapLog(l -> thisResult.getLog().append(l));
+		};
+	}
+
+	default <T> DbWork<T> andThenOnSuccess(ThrowingFunction<R, DbWork<T>, Exception> after) {
+		return (dbc, tm) -> {
+			Result<R> thisResult = this.execute(dbc, tm);
+			if(thisResult.isPresent() == false) {
+				return thisResult.map(v -> null);//Convert the failure or empty from <R> to <T>
+			}
+			Result<T> afterResult = after.apply(thisResult.orElseThrow()).execute(dbc, tm);
 			return afterResult.mapLog(l -> thisResult.getLog().append(l));
 		};
 	}

@@ -6,9 +6,11 @@ import com.persistentbit.core.logging.FunctionLogging;
 import com.persistentbit.core.logging.entries.LogContext;
 import com.persistentbit.core.logging.entries.LogEntryFunction;
 import com.persistentbit.core.result.Result;
+import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.sql.sqlwork.DbTransManager;
 import com.persistentbit.sql.sqlwork.SqlWork;
 
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -81,6 +83,19 @@ public interface DbWork<R>{
 			return afterResult.mapLog(l -> thisResult.getLog().append(l));
 		};
 	}
+
+	default <OTHER> DbWork<Tuple2<R, OTHER>> combine(Function<R, DbWork<OTHER>> other) {
+		return (dbc, tm) -> {
+			Result<R> resR = execute(dbc, tm);
+			if(resR.isPresent() == false) {
+				return resR.map(v -> null); //Map error
+			}
+			R r = resR.orElseThrow();
+			return other.apply(r).execute(dbc, tm)
+						.map(o -> Tuple2.of(r, o));
+		};
+	}
+
 
 	default <T> DbWork<T> andThenOnSuccess(ThrowingFunction<R, DbWork<T>, Exception> after) {
 		return (dbc, tm) -> {

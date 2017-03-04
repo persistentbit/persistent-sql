@@ -9,8 +9,8 @@ import com.persistentbit.core.logging.Log;
 import com.persistentbit.core.result.Result;
 import com.persistentbit.core.tuples.Tuple2;
 import com.persistentbit.core.tuples.Tuple3;
-import com.persistentbit.core.utils.StringUtils;
 import com.persistentbit.core.utils.ToDo;
+import com.persistentbit.core.utils.UString;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.staticsql.codegen.DbAnnotationsUtils;
 import com.persistentbit.substema.compiler.AnnotationsUtils;
@@ -611,7 +611,7 @@ public class DbSubstemaGen{
 				prefix.isEmpty() ? "" : mapColumnNameToSubstemaName.apply(prefix.substring(0, prefix.length() - 1));
 			if(substemaPropertyName.isEmpty()) {
 				//If the prefix name is empty...
-				substemaPropertyName = StringUtils.firstLowerCase(embeddable.getTypeSig().getName().getClassName());
+				substemaPropertyName = UString.firstLowerCase(embeddable.getTypeSig().getName().getClassName());
 				RAnnotation colAt = new RAnnotation(DbAnnotationsUtils.rclassNoPrefix, PMap.empty());
 				annotations = annotations.plus(colAt);
 			}

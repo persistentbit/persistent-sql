@@ -9,7 +9,7 @@ import com.persistentbit.core.logging.Log;
 import com.persistentbit.core.result.Result;
 import com.persistentbit.core.sourcegen.SourceGen;
 import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.core.utils.StringUtils;
+import com.persistentbit.core.utils.UString;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.sql.databases.DbType;
 import com.persistentbit.sql.staticsql.*;
@@ -396,7 +396,7 @@ public final class DbJavaGen{
 						println("return _cache.updatedFromCache(" + vcCls.getClassName() + ".build(b-> b");
 						indent();
 						vc.getProperties()
-							.forEach(p -> println(".set" + StringUtils.firstUpperCase(p.getName()) + "(" + p
+						  .forEach(p -> println(".set" + UString.firstUpperCase(p.getName()) + "(" + p
 								.getName() + ")"));
 						outdent();
 						println("));");
@@ -447,7 +447,7 @@ public final class DbJavaGen{
 
 
 			RClass cls    = p.getValueType().getTypeSig().getName();
-			String getter = "v.get" + StringUtils.firstUpperCase(p.getName()) + "()";
+			String getter = "v.get" + UString.firstUpperCase(p.getName()) + "()";
 			if(p.getValueType().isRequired() == false) {
 				getter = getter + ".orElse(null)";
 			}
@@ -503,7 +503,7 @@ public final class DbJavaGen{
 				else {
 					String typeName = autoGenProp.getValueType().getTypeSig().getName().getClassName();
 					println("return object.with" +
-								StringUtils.firstUpperCase(autoGenProp.getName()) + "((" + typeName + ") value);");
+						UString.firstUpperCase(autoGenProp.getName()) + "((" + typeName + ") value);");
 				}
 			}
 			be();
@@ -612,7 +612,7 @@ public final class DbJavaGen{
 					.filter(p -> atUtils.hasAnnotation(p.getAnnotations(), rclassAutoGen) == false)
 					.forEach(p -> {
 						RClass cls    = p.getValueType().getTypeSig().getName();
-						String getter = "_row.get" + StringUtils.firstUpperCase(p.getName()) + "()";
+						String getter = "_row.get" + UString.firstUpperCase(p.getName()) + "()";
 						if(p.getValueType().isRequired() == false) {
 							getter = getter + ".orElse(null)";
 						}
@@ -654,7 +654,7 @@ public final class DbJavaGen{
 		}
 
 		private String getValGetter(RProperty p, String valueName) {
-			String getter = valueName + ".get" + StringUtils.firstUpperCase(p.getName()) + "()";
+			String getter = valueName + ".get" + UString.firstUpperCase(p.getName()) + "()";
 			if(p.getValueType().isRequired() == false) {
 				getter = getter + ".orElse(null)";
 			}
@@ -700,13 +700,13 @@ public final class DbJavaGen{
 							println(" * @see " + exprCls.getFullName());
 							println(" * @see " + cls.getFullName());
 							println(" */");
-							println("public static " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
+							println("public static " + JavaGenUtils.toString(packageName, exprCls) + " " + UString
 								.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
 								.toString(packageName, exprCls) + "(); }");
 						}
 						else {
 							generateJavaDoc(vc.getAnnotations());
-							println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + StringUtils
+							println("public " + JavaGenUtils.toString(packageName, exprCls) + " " + UString
 								.firstLowerCase(cls.getClassName()) + "(){ return new " + JavaGenUtils
 								.toString(packageName, exprCls) + "(); }");
 						}

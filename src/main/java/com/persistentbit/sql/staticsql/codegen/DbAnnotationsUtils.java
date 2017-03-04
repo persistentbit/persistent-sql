@@ -2,7 +2,7 @@ package com.persistentbit.sql.staticsql.codegen;
 
 import com.persistentbit.core.collections.PList;
 import com.persistentbit.core.collections.PSet;
-import com.persistentbit.core.utils.StringUtils;
+import com.persistentbit.core.utils.UString;
 import com.persistentbit.sql.PersistSqlException;
 import com.persistentbit.substema.compiler.AnnotationsUtils;
 import com.persistentbit.substema.compiler.values.RAnnotation;
@@ -108,7 +108,7 @@ public final class DbAnnotationsUtils{
 					res = res.andThen(String::toUpperCase);
 					break;
 				case "NameCamelToSnake":
-					res = res.andThen(StringUtils::camelCaseTo_snake);
+					res = res.andThen(UString::camelCaseTo_snake);
 					break;
 				case "NamePrefix":
 					String prefix = atUtils.getStringProperty(at, "value").orElse(null);
@@ -178,7 +178,7 @@ public final class DbAnnotationsUtils{
 			res = res.andThen(String::toLowerCase);
 		}
 		if(sortedAt.find(at -> at.getName().getClassName().equals("NameCamelToSnake")).isPresent()) {
-			res = res.andThen(StringUtils::snake_toCamelCase);
+			res = res.andThen(UString::snake_toCamelCase);
 		}
 
 		for(RAnnotation at : sortedAt) {
@@ -215,7 +215,7 @@ public final class DbAnnotationsUtils{
 				case "NameRemovePrefix":
 					res = res.andThen(s -> {
 						String delPrefix = atUtils.getStringProperty(at, "value").orElse(null);
-						s = delPrefix + StringUtils.firstUpperCase(s);
+						s = delPrefix + UString.firstUpperCase(s);
 						return s;
 					});
 					break;
@@ -225,7 +225,7 @@ public final class DbAnnotationsUtils{
 		}
 		if(type == NameType.table) {
 			//Make sure we start the name with an uppercase.
-			res = res.andThen(StringUtils::firstUpperCase);
+			res = res.andThen(UString::firstUpperCase);
 		}
 		return res;
 	}

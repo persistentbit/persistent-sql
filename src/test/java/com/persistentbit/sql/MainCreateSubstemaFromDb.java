@@ -1,8 +1,9 @@
 package com.persistentbit.sql;
 
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.io.IOFiles;
 import com.persistentbit.core.sourcegen.SourcePath;
-import com.persistentbit.core.utils.IO;
+import com.persistentbit.core.io.IO;
 import com.persistentbit.sql.staticsql.codegen.DbJavaGen;
 import com.persistentbit.sql.substemagen.DbSubstemaGen;
 import com.persistentbit.substema.compiler.SubstemaCompiler;
@@ -46,7 +47,7 @@ public class MainCreateSubstemaFromDb extends SQLTestTools{
 		Path resources = SourcePath.findTestResourcePath(MainCreateSubstemaFromDb.class,packageName+".substema").orElseThrow();
 
 
-		IO.writeFile(codeGen.toString(),resources.resolve(packageName+".substema").toFile(),IO.utf8);
+		IOFiles.write(codeGen.toString(),resources.resolve(packageName+".substema").toFile(),IO.utf8);
 		System.out.println(codeGen);
 
 		PList<GeneratedJava> generatedJavas = DbJavaGen
@@ -54,10 +55,10 @@ public class MainCreateSubstemaFromDb extends SQLTestTools{
 			.map(gr -> gr.orElseThrow());
 
 		Path destSource = source.resolve("com").resolve("persistentbit").resolve("sql").resolve("test");
-		IO.mkdirsIfNotExisting(source.toFile())
-			.ifPresent(path -> {
+		IOFiles.mkdirsIfNotExisting(source.toFile())
+			   .ifPresent(path -> {
 				generatedJavas.forEach(gj -> {
-					IO.writeFile(gj.code,destSource.resolve(gj.name.getClassName()+".java").toFile(),IO.utf8);
+					IOFiles.write(gj.code,destSource.resolve(gj.name.getClassName()+".java").toFile(),IO.utf8);
 				});
 			})
 		;

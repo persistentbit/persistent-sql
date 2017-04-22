@@ -1,6 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
-import com.persistentbit.core.utils.ToDo;
+import com.persistentbit.core.exceptions.ToDo;
 import com.persistentbit.sql.staticsql.ExprRowReaderCache;
 import com.persistentbit.sql.staticsql.RowReader;
 

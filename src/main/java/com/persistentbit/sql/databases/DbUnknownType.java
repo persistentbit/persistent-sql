@@ -1,6 +1,6 @@
 package com.persistentbit.sql.databases;
 
-import com.persistentbit.core.utils.ToDo;
+import com.persistentbit.core.exceptions.ToDo;
 
 /**
  * @author Peter Muys

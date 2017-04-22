@@ -1,9 +1,9 @@
 package com.persistentbit.sql.staticsql.expr;
 
 import com.persistentbit.core.collections.PList;
+import com.persistentbit.core.exceptions.ToDo;
 import com.persistentbit.core.result.Result;
 import com.persistentbit.core.tuples.Tuple2;
-import com.persistentbit.core.utils.ToDo;
 import com.persistentbit.sql.sqlwork.DbTransManager;
 import com.persistentbit.sql.staticsql.*;
 

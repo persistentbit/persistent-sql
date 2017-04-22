@@ -1,6 +1,6 @@
 package com.persistentbit.sql.staticsql.expr;
 
-import com.persistentbit.core.utils.ToDo;
+import com.persistentbit.core.exceptions.ToDo;
 
 import java.util.Optional;
 

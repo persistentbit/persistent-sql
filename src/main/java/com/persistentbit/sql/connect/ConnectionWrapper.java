@@ -1,5 +1,7 @@
 package com.persistentbit.sql.connect;
 
+import com.persistentbit.core.doc.annotations.DSupport;
+
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
@@ -12,6 +14,7 @@ import java.util.concurrent.Executor;
  * @see PooledConnectionSupplier
  * @since 13/07/2016
  */
+@DSupport
 class ConnectionWrapper implements Connection{
 
 	private final Connection master;

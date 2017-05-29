@@ -5,7 +5,8 @@ import com.persistentbit.sql.databases.DbType;
 import java.util.Optional;
 
 /**
- * TODOC
+ * The context for database access.<br>
+ * A Context is linked to a {@link DbType} and a database Schema Name.<br>
  *
  * @author petermuys
  * @since 13/01/17

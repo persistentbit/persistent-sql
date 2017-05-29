@@ -1,5 +1,6 @@
 package com.persistentbit.sql.staticsql;
 
+import com.persistentbit.core.logging.FunctionLogging;
 import com.persistentbit.core.logging.Log;
 import com.persistentbit.core.result.Result;
 import com.persistentbit.sql.sqlwork.SqlWorkRunner;
@@ -21,7 +22,7 @@ public interface DbWorkRunner{
 
 
 	static DbWorkRunner create(Supplier<Connection> connectionSupplier, DbContext context) {
-		return Log.function(connectionSupplier, context).code(l -> {
+		return Log.function(connectionSupplier, context).code((FunctionLogging l) -> {
 			Objects.requireNonNull(connectionSupplier, "connectionSupplier");
 			Objects.requireNonNull(context, "context");
 			return new DbWorkRunner(){

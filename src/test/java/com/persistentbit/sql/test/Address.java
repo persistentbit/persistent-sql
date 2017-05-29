@@ -87,7 +87,7 @@ public class Address {
 			", country=" + country +
 			">>";
 	}
-	
+	@SuppressWarnings("unchecked")
 	static public class Builder<_T1,_T2,_T3,_T4,_T5> {
 		private String street;
 		private int houseNumber;

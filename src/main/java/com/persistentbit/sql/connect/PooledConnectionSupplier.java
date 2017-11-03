@@ -1,5 +1,6 @@
 package com.persistentbit.sql.connect;
 
+import com.persistentbit.core.doc.annotations.DUsesClass;
 import com.persistentbit.sql.PersistSqlException;
 
 import java.sql.Connection;
@@ -18,6 +19,7 @@ import java.util.logging.Logger;
  * @author Peter Muys
  * @since 13/07/2016
  */
+@DUsesClass(ConnectionWrapper.class)
 public class PooledConnectionSupplier implements Supplier<Connection>{
 
 	static private final Logger log = Logger.getLogger(PooledConnectionSupplier.class.getName());

@@ -14,8 +14,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * TODOC
- *
+ * A DBWork lambda is a piece of code that accesses a Database.<br>
+ * To execute the code, a {@link DbContext} and a {@link DbTransManager}
  * @author petermuys
  * @since 13/01/17
  */

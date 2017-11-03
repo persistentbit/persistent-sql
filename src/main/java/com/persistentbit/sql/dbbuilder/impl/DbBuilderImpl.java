@@ -20,7 +20,7 @@ import java.util.Optional;
 /**
  * A {@link DbBuilder} implementation that uses resource files to create/update/drop a database schema.<br>
  * If a snippet exists with the name DropAll, then that snippet will be used in the {@link #dropAll()} method.<br>
- * if a snippet exists with the name OnceBefore, then tat snippit will be run once before
+ * if a snippet exists with the name OnceBefore, then that snippet will be run once before
  * every call to {@link #buildOrUpdate()} and {@link #dropAll()}.<br>
  *
  * @author Peter Muys
@@ -30,10 +30,10 @@ import java.util.Optional;
 public class DbBuilderImpl implements DbBuilder{
 
 	public static final String onceBeforeSnippetName = "OnceBefore";
-	public static final String dropAllSnippetName    = "DropAll";
+	public static final String dropAllSnippetName = "DropAll";
 
-	protected final String              packageName;
-	protected final SqlLoader           sqlLoader;
+	protected final String packageName;
+	protected final SqlLoader sqlLoader;
 	protected final SchemaUpdateHistory updateHistory;
 
 
@@ -41,7 +41,6 @@ public class DbBuilderImpl implements DbBuilder{
 	 * Create a new {@link DbBuilder} with the given parameters and a default
 	 * {@link SchemaUpdateHistoryImpl} to keep track of the updates already done.
 	 *
-
 	 * @param packageName     The packageName, used to keep track of the updates already done.
 	 * @param sqlResourceName The name of the java resource file containing the sql statements
 	 */
@@ -50,11 +49,9 @@ public class DbBuilderImpl implements DbBuilder{
 	}
 
 	/**
-	 *
-
-	 * @param packageName The packageName, used to keep track of the updates already done.
+	 * @param packageName     The packageName, used to keep track of the updates already done.
 	 * @param sqlResourceName The name of the java resource file containing the sql statements
-	 * @param updateHistory The {@link SchemaUpdateHistory} to use
+	 * @param updateHistory   The {@link SchemaUpdateHistory} to use
 	 */
 	public DbBuilderImpl(String packageName, String sqlResourceName,
 						 SchemaUpdateHistory updateHistory
@@ -68,21 +65,21 @@ public class DbBuilderImpl implements DbBuilder{
 	public DbWork<OK> buildOrUpdate() {
 		return DbWork.function().code(log -> (dbc, tm) ->
 			executeSnipIfExists(onceBeforeSnippetName)
-														   .flatMap(ok -> {
-															   PList<String> names = sqlLoader.getAllSnippetNames()
-																   .filter(name -> name
-																	   .equalsIgnoreCase(dropAllSnippetName) == false && name
-																	   .equalsIgnoreCase(onceBeforeSnippetName) == false);
-															   for(String name : names) {
-																   Result<OK> snipOk =
-																	   executeSnip(name).execute(dbc, tm);
-																   if(snipOk.isPresent() == false) {
-																	   return snipOk;
-																   }
-															   }
-															   return OK.result;
-														   })
-														   .execute(dbc, tm)
+				.flatMap(ok -> {
+					PList<String> names = sqlLoader.getAllSnippetNames()
+												   .filter(name -> name
+													   .equalsIgnoreCase(dropAllSnippetName) == false && name
+													   .equalsIgnoreCase(onceBeforeSnippetName) == false);
+					for(String name : names) {
+						Result<OK> snipOk =
+							executeSnip(name).execute(dbc, tm);
+						if(snipOk.isPresent() == false) {
+							return snipOk;
+						}
+					}
+					return OK.result;
+				})
+				.execute(dbc, tm)
 		);
 	}
 
@@ -178,9 +175,9 @@ public class DbBuilderImpl implements DbBuilder{
 	@Override
 	public DbWork<Boolean> hasUpdatesThatAreDone() {
 		return (dbc, tm) -> Result.function().code(l ->
-													   updateHistory.getUpdatesDone(packageName)
-														   .map(p -> p.isEmpty() == false)
-														   .execute(dbc, tm)
+			updateHistory.getUpdatesDone(packageName)
+						 .map(p -> p.isEmpty() == false)
+						 .execute(dbc, tm)
 		);
 	}
 }
